@@ -1,0 +1,15 @@
+spring:
+  application:
+    name: retail
+  datasource:
+    url: jdbc:postgresql://localhost:5432/retail_diseno_patrones
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+
+server:
+  port: 8081
+  servlet:
+    session:
+      cookie:
+        http-only: true
+        same-site: lax
