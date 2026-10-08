@@ -10,9 +10,9 @@ import { agregarProductoAlCarrito, cargarCarrito, inicializarCarrito, ocultarCar
 document.querySelector('#app').innerHTML = `
   <main class="container py-5 storefront">
     <header class="site-header mb-3">
-      <a class="site-brand" href="/" aria-label="Retail, inicio">
-        <span class="site-brand-mark" aria-hidden="true">R</span>
-        <span class="site-brand-copy"><strong>RETAIL</strong><small>Tecnología y accesorios</small></span>
+      <a class="site-brand" href="/" aria-label="Píxel Andino, inicio">
+        <span class="site-brand-mark" aria-hidden="true">P</span>
+        <span class="site-brand-copy"><strong>PÍXEL ANDINO</strong><small>Tecnología que conecta contigo</small></span>
       </a>
       <form id="busqueda-rapida" class="site-search" role="search" aria-label="Buscar productos">
         <input id="busqueda-principal" class="form-control" type="search" placeholder="Buscar productos" aria-label="Buscar productos">

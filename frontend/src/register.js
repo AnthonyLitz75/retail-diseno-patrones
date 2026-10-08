@@ -4,7 +4,7 @@ import './style.css'
 document.querySelector('#app').innerHTML = [
   '<main class="container py-5 auth-page">',
   '  <header class="mb-4">',
-  '    <p class="text-primary fw-semibold mb-1">RETAIL</p>',
+  '    <p class="text-primary fw-semibold mb-1">PÍXEL ANDINO</p>',
   '    <h1 class="display-6 fw-bold">Crear cuenta de cliente</h1>',
   '    <p class="text-secondary">Regístrate para guardar tu carrito y realizar compras.</p>',
   '  </header>',

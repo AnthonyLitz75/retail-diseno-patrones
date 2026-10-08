@@ -1,6 +1,8 @@
-# RETAIL — Tienda de tecnología
+# Píxel Andino — Tecnología que conecta contigo
 
-Proyecto académico de comercio electrónico desarrollado con Java, Spring Boot, JDBC, PostgreSQL y una interfaz web con HTML, CSS, JavaScript y Bootstrap.
+Tienda tecnológica desarrollada como proyecto académico con Java, Spring Boot, JDBC, PostgreSQL y una interfaz web con HTML, CSS, JavaScript y Bootstrap.
+
+**Píxel Andino: tecnología que conecta contigo.**
 
 ## Funcionalidades
 
