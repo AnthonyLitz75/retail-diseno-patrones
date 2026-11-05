@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS categoria (
 );
 
 INSERT INTO categoria (nombre)
-VALUES ('Periféricos'), ('Accesorios'), ('General')
+VALUES ('Periféricos'), ('Accesorios'), ('Audio')
 ON CONFLICT (nombre) DO NOTHING;
 
 INSERT INTO categoria (nombre)
@@ -65,7 +65,7 @@ UPDATE producto p
 SET categoria_id = c.id_categoria
 FROM categoria c
 WHERE p.categoria_id IS NULL
-  AND c.nombre = 'General';
+  AND c.nombre = 'Audio';
 
 ALTER TABLE producto
     ALTER COLUMN categoria_id SET NOT NULL;
@@ -157,7 +157,7 @@ BEGIN
 
     ALTER TABLE public.movimiento_inventario
         ADD CONSTRAINT ck_movimiento_inventario_tipo
-        CHECK (tipo IN ('ENTRADA', 'SALIDA', 'AJUSTE'));
+        CHECK (tipo IN ('ENTRADA', 'SALIDA', 'AJUSTE', 'CANCELACION'));
 END $$;
 
 -- 3. Un carrito activo por cliente; las líneas se conservan en PostgreSQL.
@@ -192,6 +192,14 @@ CREATE TABLE IF NOT EXISTS pedido (
     actualizado_en TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS envio (
+    pedido_id BIGINT PRIMARY KEY REFERENCES pedido(id_pedido) ON DELETE CASCADE,
+    transportista VARCHAR(120) NOT NULL CHECK (length(btrim(transportista)) > 0),
+    codigo_seguimiento VARCHAR(120) NOT NULL UNIQUE
+        CHECK (length(btrim(codigo_seguimiento)) > 0),
+    despachado_en TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE INDEX IF NOT EXISTS ix_pedido_usuario_fecha
     ON pedido(usuario_id, creado_en DESC);
 CREATE INDEX IF NOT EXISTS ix_pedido_estado_fecha
@@ -215,7 +223,7 @@ CREATE TABLE IF NOT EXISTS pago (
     metodo VARCHAR(20) NOT NULL DEFAULT 'SIMULADO'
         CHECK (metodo IN ('SIMULADO')),
     estado VARCHAR(20) NOT NULL DEFAULT 'PENDIENTE'
-        CHECK (estado IN ('PENDIENTE', 'APROBADO', 'RECHAZADO')),
+        CHECK (estado IN ('PENDIENTE', 'APROBADO', 'RECHAZADO', 'REVERSADO')),
     monto NUMERIC(10, 2) NOT NULL CHECK (monto > 0),
     referencia VARCHAR(100) UNIQUE,
     creado_en TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -236,9 +244,51 @@ CREATE TABLE IF NOT EXISTS pedido_historial_estado (
 CREATE INDEX IF NOT EXISTS ix_historial_pedido_fecha
     ON pedido_historial_estado(pedido_id, fecha);
 
+CREATE TABLE IF NOT EXISTS consulta_producto (
+    id_consulta BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    producto_id BIGINT NOT NULL REFERENCES producto(id),
+    cliente_id BIGINT NOT NULL REFERENCES usuario(id_usuario),
+    pregunta VARCHAR(1000) NOT NULL CHECK (length(btrim(pregunta)) > 0),
+    respuesta VARCHAR(1000),
+    vendedor_id BIGINT REFERENCES usuario(id_usuario),
+    creada_en TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    respondida_en TIMESTAMPTZ,
+    CHECK (respuesta IS NULL OR length(btrim(respuesta)) > 0),
+    CHECK ((respuesta IS NULL AND vendedor_id IS NULL AND respondida_en IS NULL)
+        OR (respuesta IS NOT NULL AND vendedor_id IS NOT NULL AND respondida_en IS NOT NULL))
+);
+
+CREATE TABLE IF NOT EXISTS notificacion (
+    id_notificacion BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    usuario_id BIGINT NOT NULL REFERENCES usuario(id_usuario) ON DELETE CASCADE,
+    pedido_id BIGINT NOT NULL REFERENCES pedido(id_pedido) ON DELETE CASCADE,
+    estado VARCHAR(30) NOT NULL
+        CHECK (estado IN ('EN_PREPARACION', 'DESPACHADO', 'ENTREGADO', 'CANCELADO')),
+    mensaje VARCHAR(250) NOT NULL CHECK (length(btrim(mensaje)) > 0),
+    leida BOOLEAN NOT NULL DEFAULT FALSE,
+    creada_en TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS ix_notificacion_usuario_id
+    ON notificacion(usuario_id, id_notificacion DESC);
+CREATE INDEX IF NOT EXISTS ix_consulta_cliente_fecha
+    ON consulta_producto(cliente_id, creada_en DESC, id_consulta DESC);
+CREATE INDEX IF NOT EXISTS ix_consulta_pendiente_fecha
+    ON consulta_producto(creada_en, id_consulta) WHERE respuesta IS NULL;
+
+-- Idempotencia y datos de entrega del pedido
+ALTER TABLE pedido
+    ADD COLUMN IF NOT EXISTS clave_confirmacion VARCHAR(100),
+    ADD COLUMN IF NOT EXISTS destinatario VARCHAR(120),
+    ADD COLUMN IF NOT EXISTS direccion_envio VARCHAR(250);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_pedido_clave_confirmacion
+    ON pedido(clave_confirmacion)
+    WHERE clave_confirmacion IS NOT NULL;
+
 COMMIT;
 
--- Verificar que la regla del tipo de movimiento permite ENTRADA, SALIDA y AJUSTE.
+-- Verificar que la regla del tipo de movimiento permite ENTRADA, SALIDA, AJUSTE y CANCELACION.
 SELECT conname, pg_get_constraintdef(oid) AS regla
 FROM pg_constraint
 WHERE conrelid = 'public.movimiento_inventario'::regclass

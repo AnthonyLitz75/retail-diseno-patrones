@@ -1,7 +1,23 @@
--- Datos de prueba idempotentes; ejecutar después de 01_tablas_y_reglas.sql.
--- Para generar el carrito, primero registra registro.web@example.com desde el frontend.
+-- Datos idempotentes de demostración; ejecutar después del esquema base.
+-- Todas las cuentas de prueba usan la clave temporal: PixelAndino2026!
+-- El valor persistido es un hash BCrypt; cambia estas credenciales antes de un uso real.
 
 BEGIN;
+
+-- Cuentas para probar los cinco roles definidos por el dominio.
+-- El mismo hash BCrypt se generó y verificó con BCryptPasswordEncoder del backend.
+INSERT INTO usuario (nombre, correo, clave_hash, rol, activo)
+VALUES
+    ('Cliente de prueba', 'registro.web@example.com', '$2a$10$zCvNJXnkSGUM7XandTmlN..ts2saHukosevl/8K2RX8Q5r/gLcK.y', 'CLIENTE', TRUE),
+    ('Administrador de prueba', 'admin.prueba@example.com', '$2a$10$zCvNJXnkSGUM7XandTmlN..ts2saHukosevl/8K2RX8Q5r/gLcK.y', 'ADMIN', TRUE),
+    ('Vendedor de prueba', 'vendedor.prueba@example.com', '$2a$10$zCvNJXnkSGUM7XandTmlN..ts2saHukosevl/8K2RX8Q5r/gLcK.y', 'VENDEDOR', TRUE),
+    ('Almacén de prueba', 'almacen.prueba@example.com', '$2a$10$zCvNJXnkSGUM7XandTmlN..ts2saHukosevl/8K2RX8Q5r/gLcK.y', 'ALMACEN', TRUE),
+    ('Soporte de prueba', 'soporte.prueba@example.com', '$2a$10$zCvNJXnkSGUM7XandTmlN..ts2saHukosevl/8K2RX8Q5r/gLcK.y', 'SOPORTE', TRUE)
+ON CONFLICT (correo) DO UPDATE
+SET nombre = EXCLUDED.nombre,
+    clave_hash = EXCLUDED.clave_hash,
+    rol = EXCLUDED.rol,
+    activo = EXCLUDED.activo;
 
 -- Productos de ejemplo. Los existentes conservan precio y stock actuales.
 WITH productos_semilla(nombre, categoria, precio, stock) AS (
@@ -26,6 +42,8 @@ INSERT INTO movimiento_inventario (producto_id, tipo, cantidad_firmada, motivo)
 SELECT id, 'ENTRADA', stock, 'Stock inicial de datos de prueba'
 FROM productos_creados
 WHERE stock > 0;
+
+-- Carrito inicial para el cliente de prueba, sin requerir registro manual.
 INSERT INTO carrito (usuario_id)
 SELECT u.id_usuario
 FROM usuario u
@@ -44,13 +62,24 @@ ON CONFLICT (carrito_id, producto_id) DO NOTHING;
 
 COMMIT;
 
--- Verificar productos y categorías migrados.
+-- Verificar cuentas y roles sin mostrar el hash de contraseña.
+SELECT id_usuario, nombre, correo, rol, activo
+FROM usuario
+WHERE correo IN (
+    'registro.web@example.com',
+    'admin.prueba@example.com',
+    'vendedor.prueba@example.com',
+    'almacen.prueba@example.com',
+    'soporte.prueba@example.com'
+)
+ORDER BY rol;
+
+-- Verificar productos, categorías y carrito de demostración.
 SELECT p.id, p.nombre, c.nombre AS categoria, p.precio, p.stock, p.activo
 FROM producto p
 JOIN categoria c ON c.id_categoria = p.categoria_id
 ORDER BY p.id;
 
--- Verificar el carrito de prueba, si existe el cliente indicado.
 SELECT u.correo, c.id_carrito, c.estado, p.nombre AS producto, cd.cantidad
 FROM carrito c
 JOIN usuario u ON u.id_usuario = c.usuario_id
