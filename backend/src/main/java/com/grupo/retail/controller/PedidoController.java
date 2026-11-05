@@ -1,12 +1,14 @@
 package com.grupo.retail.controller;
 
 import com.grupo.retail.dto.SolicitudConfirmarPedido;
+import com.grupo.retail.dto.SolicitudDespachoPedido;
 import com.grupo.retail.exception.PagoRechazadoException;
 import com.grupo.retail.facade.CheckoutFacade;
 import com.grupo.retail.model.PedidoConfirmado;
 import com.grupo.retail.model.PedidoVista;
 import com.grupo.retail.service.SesionCliente;
 import com.grupo.retail.service.PedidoService;
+import com.grupo.retail.service.SesionAutenticada;
 import com.grupo.retail.service.SesionEmpleado;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -32,22 +34,31 @@ public class PedidoController {
     private final CheckoutFacade checkoutFacade;
     private final SesionCliente sesionCliente;
     private final SesionEmpleado sesionEmpleado;
+    private final SesionAutenticada sesionAutenticada;
     private final PedidoService pedidoService;
 
     public PedidoController(
             CheckoutFacade checkoutFacade,
             SesionCliente sesionCliente,
             SesionEmpleado sesionEmpleado,
+            SesionAutenticada sesionAutenticada,
             PedidoService pedidoService) {
         this.checkoutFacade = checkoutFacade;
         this.sesionCliente = sesionCliente;
         this.sesionEmpleado = sesionEmpleado;
+        this.sesionAutenticada = sesionAutenticada;
         this.pedidoService = pedidoService;
     }
 
     @GetMapping("/mis-pedidos")
     public List<PedidoVista> listarMisPedidos(HttpServletRequest peticion) {
         return pedidoService.listarPedidosCliente(sesionCliente.obtenerId(peticion));
+    }
+
+    @GetMapping("/{id}")
+    public PedidoVista obtenerPedido(@PathVariable Long id, HttpServletRequest peticion) {
+        Long clienteId = sesionCliente.obtenerId(peticion);
+        return pedidoService.buscarPedidoCliente(id, clienteId);
     }
 
     @GetMapping("/pendientes")
@@ -72,9 +83,12 @@ public class PedidoController {
 
     @PutMapping("/{id}/despachar")
     public ResponseEntity<Void> despacharPedido(
-            @PathVariable Long id, HttpServletRequest peticion) {
+            @PathVariable Long id,
+            @Valid @RequestBody SolicitudDespachoPedido solicitud,
+            HttpServletRequest peticion) {
         Long responsableId = sesionEmpleado.exigirRol(peticion, "ADMIN", "ALMACEN");
-        pedidoService.despacharPedido(id, responsableId);
+        pedidoService.despacharPedido(
+                id, responsableId, solicitud.transportista(), solicitud.codigoSeguimiento());
         return ResponseEntity.noContent().build();
     }
 
@@ -86,12 +100,29 @@ public class PedidoController {
         return ResponseEntity.noContent().build();
     }
 
+    @PutMapping("/{id}/cancelar")
+    public ResponseEntity<Void> cancelarPedido(
+            @PathVariable Long id, HttpServletRequest peticion) {
+        SesionAutenticada.UsuarioSesion actor = sesionAutenticada.exigirRol(
+                peticion, "CLIENTE", "VENDEDOR");
+        if ("CLIENTE".equals(actor.rol())) {
+            pedidoService.cancelarPedidoComoCliente(id, actor.usuarioId());
+        } else {
+            pedidoService.cancelarPedidoComoVendedor(id, actor.usuarioId());
+        }
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping("/confirmar")
     public ResponseEntity<PedidoConfirmado> confirmar(
             @Valid @RequestBody SolicitudConfirmarPedido solicitud,
             HttpServletRequest peticion) {
         PedidoConfirmado pedido = checkoutFacade.confirmarCompra(
-                sesionCliente.obtenerId(peticion), solicitud.metodoPago());
+                sesionCliente.obtenerId(peticion),
+                solicitud.metodoPago(),
+                solicitud.claveConfirmacion(),
+                solicitud.destinatario(),
+                solicitud.direccionEnvio());
         return ResponseEntity.status(HttpStatus.CREATED).body(pedido);
     }
 
@@ -109,6 +140,12 @@ public class PedidoController {
     @ExceptionHandler(PagoRechazadoException.class)
     public ResponseEntity<Map<String, String>> manejarPagoRechazado(PagoRechazadoException error) {
         return ResponseEntity.status(HttpStatus.PAYMENT_REQUIRED)
+                .body(Map.of("error", error.getMessage()));
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<Map<String, String>> manejarEstadoIlegal(IllegalStateException error) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("error", error.getMessage()));
     }
 }

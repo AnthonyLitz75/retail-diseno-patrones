@@ -20,4 +20,10 @@ public class EstadoEnPreparacion implements EstadoPedido {
     public EstadoPedido entregar() {
         throw new IllegalStateException("El pedido debe despacharse antes de la entrega");
     }
+
+    @Override
+    public EstadoPedido cancelar() {
+        throw new IllegalStateException("Solo se puede cancelar un pedido pendiente");
+    }
+
 }

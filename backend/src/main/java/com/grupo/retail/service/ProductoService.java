@@ -1,10 +1,12 @@
 package com.grupo.retail.service;
 
+import com.grupo.retail.dao.CategoriaDAO;
 import com.grupo.retail.dao.ProductoDAO;
 import com.grupo.retail.dto.NuevoProducto;
 import com.grupo.retail.model.Categoria;
 import com.grupo.retail.model.MovimientoInventario;
 import com.grupo.retail.model.Producto;
+import com.grupo.retail.patterns.composite.CategoriaComponente;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -14,9 +16,11 @@ import java.util.Optional;
 @Service
 public class ProductoService {
     private final ProductoDAO productoDAO;
+    private final CategoriaDAO categoriaDAO;
 
-    public ProductoService(ProductoDAO productoDAO) {
+    public ProductoService(ProductoDAO productoDAO, CategoriaDAO categoriaDAO) {
         this.productoDAO = productoDAO;
+        this.categoriaDAO = categoriaDAO;
     }
 
     public List<Producto> listarProductos(
@@ -26,6 +30,10 @@ public class ProductoService {
 
     public List<Categoria> listarCategorias() {
         return productoDAO.listarCategorias();
+    }
+
+    public List<CategoriaComponente> listarArbolCategorias() {
+        return categoriaDAO.listarArbol();
     }
 
     public Optional<Producto> buscarPorId(Long id) {

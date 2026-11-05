@@ -20,4 +20,10 @@ public class EstadoDespachado implements EstadoPedido {
     public EstadoPedido entregar() {
         return new EstadoEntregado();
     }
+
+    @Override
+    public EstadoPedido cancelar() {
+        throw new IllegalStateException("Solo se puede cancelar un pedido pendiente");
+    }
+
 }

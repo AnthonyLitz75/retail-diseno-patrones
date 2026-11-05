@@ -17,8 +17,20 @@ public class CheckoutFacade {
     }
 
     public PedidoConfirmado confirmarCompra(Long usuarioId, String metodoPago) {
+        return confirmarCompra(usuarioId, metodoPago, null, null, null);
+    }
+
+    public PedidoConfirmado confirmarCompra(
+            Long usuarioId,
+            String metodoPago,
+            String claveConfirmacion,
+            String destinatario,
+            String direccionEnvio) {
         return pedidoDAO.confirmarCompra(
                 usuarioId,
-                total -> puertoPago.procesar(total, metodoPago));
+                total -> puertoPago.procesar(total, metodoPago),
+                claveConfirmacion,
+                destinatario,
+                direccionEnvio);
     }
 }

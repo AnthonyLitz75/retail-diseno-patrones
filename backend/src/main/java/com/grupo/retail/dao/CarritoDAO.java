@@ -2,9 +2,9 @@ package com.grupo.retail.dao;
 
 import com.grupo.retail.model.Carrito;
 import com.grupo.retail.model.LineaCarrito;
+import com.grupo.retail.patterns.singleton.ProveedorConexiones;
 import org.springframework.stereotype.Repository;
 
-import javax.sql.DataSource;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -17,14 +17,14 @@ import java.util.NoSuchElementException;
 @Repository
 public class CarritoDAO {
 
-    private final DataSource dataSource;
+    private final ProveedorConexiones proveedorConexiones;
 
-    public CarritoDAO(DataSource dataSource) {
-        this.dataSource = dataSource;
+    public CarritoDAO(ProveedorConexiones proveedorConexiones) {
+        this.proveedorConexiones = proveedorConexiones;
     }
 
     public Carrito obtener(Long usuarioId) {
-        try (Connection conexion = dataSource.getConnection()) {
+        try (Connection conexion = proveedorConexiones.obtenerConexion()) {
             long carritoId = obtenerOCrearCarrito(conexion, usuarioId);
             return leerCarrito(conexion, carritoId);
         } catch (SQLException error) {
@@ -33,7 +33,7 @@ public class CarritoDAO {
     }
 
     public Carrito agregar(Long usuarioId, Long productoId, int cantidad) {
-        try (Connection conexion = dataSource.getConnection()) {
+        try (Connection conexion = proveedorConexiones.obtenerConexion()) {
             conexion.setAutoCommit(false);
             try {
                 long carritoId = obtenerOCrearCarrito(conexion, usuarioId);
@@ -67,7 +67,7 @@ public class CarritoDAO {
     }
 
     public Carrito actualizarCantidad(Long usuarioId, Long productoId, int cantidad) {
-        try (Connection conexion = dataSource.getConnection()) {
+        try (Connection conexion = proveedorConexiones.obtenerConexion()) {
             conexion.setAutoCommit(false);
             try {
                 long carritoId = buscarCarritoActivo(conexion, usuarioId);
@@ -100,7 +100,7 @@ public class CarritoDAO {
     }
 
     public void quitar(Long usuarioId, Long productoId) {
-        try (Connection conexion = dataSource.getConnection()) {
+        try (Connection conexion = proveedorConexiones.obtenerConexion()) {
             conexion.setAutoCommit(false);
             try {
                 long carritoId = buscarCarritoActivo(conexion, usuarioId);

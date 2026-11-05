@@ -20,4 +20,9 @@ public class EstadoPendiente implements EstadoPedido {
     public EstadoPedido entregar() {
         throw new IllegalStateException("El pedido debe despacharse antes de la entrega");
     }
+
+    @Override
+    public EstadoPedido cancelar() {
+        return new EstadoCancelado();
+    }
 }

@@ -2,6 +2,7 @@ package com.grupo.retail.controller;
 
 import com.grupo.retail.dto.ActualizarPrecio;
 import com.grupo.retail.dto.AjusteInventario;
+import com.grupo.retail.dto.CategoriaArbolDTO;
 import com.grupo.retail.dto.NuevoProducto;
 import com.grupo.retail.model.Categoria;
 import com.grupo.retail.model.MovimientoInventario;
@@ -40,6 +41,13 @@ public class InicioController {
 
     @GetMapping("/api/categorias")
     public List<Categoria> listarCategorias() { return productoService.listarCategorias(); }
+
+    @GetMapping("/api/categorias/arbol")
+    public List<CategoriaArbolDTO> listarArbolCategorias() {
+        return productoService.listarArbolCategorias().stream()
+                .map(CategoriaArbolDTO::desdeComponente)
+                .toList();
+    }
 
     @GetMapping("/api/productos")
     public ResponseEntity<?> listarProductos(

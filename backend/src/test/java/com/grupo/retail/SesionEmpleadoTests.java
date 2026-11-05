@@ -1,15 +1,22 @@
 package com.grupo.retail;
 
 import com.grupo.retail.service.SesionEmpleado;
+import com.grupo.retail.service.SesionAutenticada;
+import com.grupo.retail.dao.UsuarioDAO;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.web.server.ResponseStatusException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class SesionEmpleadoTests {
-    private final SesionEmpleado sesionEmpleado = new SesionEmpleado();
+    private final SesionAutenticada sesionAutenticada = sesionActiva();
+    private final SesionEmpleado sesionEmpleado = new SesionEmpleado(sesionAutenticada);
 
     @Test
     void rechazaOperacionesSinSesion() {
@@ -25,6 +32,13 @@ class SesionEmpleadoTests {
     }
 
     @Test
+    void permiteLosTresRolesDePersonalImplementados() {
+        for (String rol : new String[] { "ADMIN", "VENDEDOR", "ALMACEN" }) {
+            assertEquals(42L, sesionEmpleado.exigirRol(solicitudConRol(rol), rol));
+        }
+    }
+
+    @Test
     void rechazaUnRolQueNoEstaAutorizado() {
         var error = assertThrows(ResponseStatusException.class,
                 () -> sesionEmpleado.exigirRol(solicitudConRol("CLIENTE"), "VENDEDOR"));
@@ -37,5 +51,10 @@ class SesionEmpleadoTests {
         sesion.setAttribute("usuarioId", 42L);
         sesion.setAttribute("usuarioRol", rol);
         return solicitud;
+    }
+    private static SesionAutenticada sesionActiva() {
+        UsuarioDAO usuarioDAO = mock(UsuarioDAO.class);
+        when(usuarioDAO.sesionSigueVigente(anyLong(), anyString())).thenReturn(true);
+        return new SesionAutenticada(usuarioDAO);
     }
 }

@@ -20,4 +20,10 @@ public class EstadoEntregado implements EstadoPedido {
     public EstadoPedido entregar() {
         throw new IllegalStateException("El pedido ya fue entregado");
     }
+
+    @Override
+    public EstadoPedido cancelar() {
+        throw new IllegalStateException("Solo se puede cancelar un pedido pendiente");
+    }
+
 }

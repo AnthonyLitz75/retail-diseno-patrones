@@ -4,9 +4,9 @@ import com.grupo.retail.dto.NuevoProducto;
 import com.grupo.retail.model.Categoria;
 import com.grupo.retail.model.MovimientoInventario;
 import com.grupo.retail.model.Producto;
+import com.grupo.retail.patterns.singleton.ProveedorConexiones;
 import org.springframework.stereotype.Repository;
 
-import javax.sql.DataSource;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -21,15 +21,17 @@ import java.util.Optional;
 public class ProductoDAO {
 
     private static final String SELECT_PRODUCTOS = """
-            SELECT p.id, p.nombre, c.nombre AS categoria, p.precio, p.stock, p.activo
+            SELECT p.id, p.sku, p.nombre, p.marca, COALESCE(c.nombre, p.categoria, 'Otros') AS categoria,
+                   p.categoria_id, p.descripcion, p.precio, p.precio_anterior, p.stock,
+                   p.nuevo, p.imagen, p.activo
             FROM producto p
-            JOIN categoria c ON c.id_categoria = p.categoria_id
+            LEFT JOIN categoria c ON c.id_categoria = p.categoria_id
             """;
 
-    private final DataSource dataSource;
+    private final ProveedorConexiones proveedorConexiones;
 
-    public ProductoDAO(DataSource dataSource) {
-        this.dataSource = dataSource;
+    public ProductoDAO(ProveedorConexiones proveedorConexiones) {
+        this.proveedorConexiones = proveedorConexiones;
     }
 
     public List<Producto> listarTodos(
@@ -38,16 +40,25 @@ public class ProductoDAO {
             BigDecimal precioMin,
             BigDecimal precioMax) {
         StringBuilder sql = new StringBuilder(SELECT_PRODUCTOS)
-                .append(" WHERE p.activo = TRUE AND c.activa = TRUE");
+                .append(" WHERE p.activo = TRUE AND (c.activa IS NULL OR c.activa = TRUE)");
         List<Object> parametros = new ArrayList<>();
 
         if (nombre != null && !nombre.isBlank()) {
-            sql.append(" AND p.nombre ILIKE ?");
-            parametros.add("%" + nombre.trim() + "%");
+            sql.append(" AND (p.nombre ILIKE ? OR p.marca ILIKE ? OR p.sku ILIKE ?)");
+            String patron = "%" + nombre.trim() + "%";
+            parametros.add(patron);
+            parametros.add(patron);
+            parametros.add(patron);
         }
         if (categoria != null && !categoria.isBlank()) {
-            sql.append(" AND c.nombre = ?");
-            parametros.add(categoria.trim());
+            String categoriaLimpia = categoria.trim();
+            if ("Otros".equalsIgnoreCase(categoriaLimpia) || "Sin categoría".equalsIgnoreCase(categoriaLimpia)) {
+                sql.append(" AND p.categoria_id IS NULL");
+            } else {
+                sql.append(" AND (c.nombre = ? OR c.categoria_padre_id = (SELECT id_categoria FROM categoria WHERE nombre = ?))");
+                parametros.add(categoriaLimpia);
+                parametros.add(categoriaLimpia);
+            }
         }
         if (precioMin != null) {
             sql.append(" AND p.precio >= ?");
@@ -60,7 +71,7 @@ public class ProductoDAO {
         sql.append(" ORDER BY p.id");
 
         List<Producto> productos = new ArrayList<>();
-        try (Connection conexion = dataSource.getConnection();
+        try (Connection conexion = proveedorConexiones.obtenerConexion();
                 PreparedStatement consulta = conexion.prepareStatement(sql.toString())) {
             for (int i = 0; i < parametros.size(); i++) {
                 Object parametro = parametros.get(i);
@@ -83,20 +94,21 @@ public class ProductoDAO {
 
     public List<Categoria> listarCategorias() {
         String sql = """
-                SELECT id_categoria, nombre, activa
+                SELECT id_categoria, nombre, activa, categoria_padre_id
                 FROM categoria
                 WHERE activa = TRUE
                 ORDER BY nombre
                 """;
         List<Categoria> categorias = new ArrayList<>();
-        try (Connection conexion = dataSource.getConnection();
+        try (Connection conexion = proveedorConexiones.obtenerConexion();
                 PreparedStatement consulta = conexion.prepareStatement(sql);
                 ResultSet resultado = consulta.executeQuery()) {
             while (resultado.next()) {
                 categorias.add(new Categoria(
                         resultado.getLong("id_categoria"),
                         resultado.getString("nombre"),
-                        resultado.getBoolean("activa")));
+                        resultado.getBoolean("activa"),
+                        resultado.getObject("categoria_padre_id", Long.class)));
             }
             return categorias;
         } catch (SQLException error) {
@@ -105,7 +117,7 @@ public class ProductoDAO {
     }
 
     public Optional<Producto> buscarPorId(Long id) {
-        try (Connection conexion = dataSource.getConnection()) {
+        try (Connection conexion = proveedorConexiones.obtenerConexion()) {
             return buscarPorId(conexion, id);
         } catch (SQLException error) {
             throw new IllegalStateException("No se pudo buscar el producto", error);
@@ -126,11 +138,11 @@ public class ProductoDAO {
 
     public Producto crear(NuevoProducto datos, Long responsableId) {
         String productoSql = """
-                INSERT INTO producto (nombre, categoria, categoria_id, precio, stock)
-                SELECT ?, c.nombre, c.id_categoria, ?, ?
+                INSERT INTO producto (nombre, categoria, categoria_id, precio, stock, activo)
+                SELECT ?, c.nombre, c.id_categoria, ?, ?, TRUE
                 FROM categoria c
                 WHERE c.nombre = ? AND c.activa = TRUE
-                RETURNING id, nombre, categoria, precio, stock, activo
+                RETURNING id, sku, nombre, marca, categoria, categoria_id, descripcion, precio, precio_anterior, stock, nuevo, imagen, activo
                 """;
         String movimientoSql = """
                 INSERT INTO movimiento_inventario
@@ -138,7 +150,7 @@ public class ProductoDAO {
                 VALUES (?, 'ENTRADA', ?, 'Stock inicial al crear producto', ?)
                 """;
 
-        try (Connection conexion = dataSource.getConnection()) {
+        try (Connection conexion = proveedorConexiones.obtenerConexion()) {
             conexion.setAutoCommit(false);
             try {
                 Producto creado;
@@ -150,7 +162,7 @@ public class ProductoDAO {
                     try (ResultSet resultado = consulta.executeQuery()) {
                         if (!resultado.next()) {
                             throw new IllegalArgumentException(
-                                    "La categoría seleccionada no existe o está inactiva");
+                                     "La categoría seleccionada no existe o está inactiva");
                         }
                         creado = mapearProducto(resultado);
                     }
@@ -178,7 +190,7 @@ public class ProductoDAO {
 
     public Optional<Producto> actualizarPrecio(Long id, BigDecimal precio) {
         String sql = "UPDATE producto SET precio = ? WHERE id = ? AND activo = TRUE";
-        try (Connection conexion = dataSource.getConnection();
+        try (Connection conexion = proveedorConexiones.obtenerConexion();
                 PreparedStatement consulta = conexion.prepareStatement(sql)) {
             consulta.setBigDecimal(1, precio);
             consulta.setLong(2, id);
@@ -201,7 +213,7 @@ public class ProductoDAO {
                 VALUES (?, 'AJUSTE', ?, ?, ?)
                 """;
 
-        try (Connection conexion = dataSource.getConnection()) {
+        try (Connection conexion = proveedorConexiones.obtenerConexion()) {
             conexion.setAutoCommit(false);
             try {
                 Producto actual;
@@ -236,8 +248,10 @@ public class ProductoDAO {
                 }
                 conexion.commit();
                 return Optional.of(new Producto(
-                        actual.id(), actual.nombre(), actual.categoria(), actual.precio(),
-                        nuevoStock, actual.activo()));
+                        actual.id(), actual.sku(), actual.nombre(), actual.marca(),
+                        actual.categoria(), actual.categoriaId(), actual.descripcion(),
+                        actual.precio(), actual.precioAnterior(), nuevoStock,
+                        actual.nuevo(), actual.imagen(), actual.activo()));
             } catch (SQLException | RuntimeException error) {
                 conexion.rollback();
                 throw error;
@@ -249,13 +263,13 @@ public class ProductoDAO {
 
     public List<MovimientoInventario> listarMovimientos(Long productoId) {
         String sql = """
-                SELECT id, producto_id, tipo, cantidad_firmada, motivo, fecha
+                SELECT id, producto_id, tipo, cantidad_firmada, motivo, usuario_responsable_id, fecha
                 FROM movimiento_inventario
                 WHERE producto_id = ?
                 ORDER BY id
                 """;
         List<MovimientoInventario> movimientos = new ArrayList<>();
-        try (Connection conexion = dataSource.getConnection();
+        try (Connection conexion = proveedorConexiones.obtenerConexion();
                 PreparedStatement consulta = conexion.prepareStatement(sql)) {
             consulta.setLong(1, productoId);
             try (ResultSet resultado = consulta.executeQuery()) {
@@ -266,6 +280,7 @@ public class ProductoDAO {
                             resultado.getString("tipo"),
                             resultado.getInt("cantidad_firmada"),
                             resultado.getString("motivo"),
+                            resultado.getObject("usuario_responsable_id", Long.class),
                             resultado.getObject("fecha", OffsetDateTime.class)));
                 }
             }
@@ -279,10 +294,17 @@ public class ProductoDAO {
     private Producto mapearProducto(ResultSet resultado) throws SQLException {
         return new Producto(
                 resultado.getLong("id"),
+                resultado.getString("sku"),
                 resultado.getString("nombre"),
+                resultado.getString("marca"),
                 resultado.getString("categoria"),
+                resultado.getObject("categoria_id", Long.class),
+                resultado.getString("descripcion"),
                 resultado.getBigDecimal("precio"),
+                resultado.getBigDecimal("precio_anterior"),
                 resultado.getInt("stock"),
+                resultado.getBoolean("nuevo"),
+                resultado.getString("imagen"),
                 resultado.getBoolean("activo"));
     }
 }
