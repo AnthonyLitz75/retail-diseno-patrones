@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="100%" height="100%" fill="none">
+  <defs>
+    <linearGradient id="ssd-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f8fafc"/>
+      <stop offset="100%" stop-color="#e2e8f0"/>
+    </linearGradient>
+    <linearGradient id="ssd-pcb" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#090d16"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+    <filter id="ssd-shadow" x="-10%" y="-10%" width="125%" height="125%">
+      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#0f172a" flood-opacity="0.18"/>
+    </filter>
+  </defs>
+
+  <rect width="400" height="300" rx="16" fill="url(#ssd-bg)"/>
+  <rect x="12" y="12" width="376" height="276" rx="12" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5"/>
+
+  <g filter="url(#ssd-shadow)" transform="translate(60, 95)">
+    <!-- PCB M.2 NVMe (Factor de forma 2280) -->
+    <rect x="0" y="0" width="280" height="85" rx="4" fill="url(#ssd-pcb)" stroke="#334155" stroke-width="1.5"/>
+
+    <!-- Muesca semicircular para tornillo M.2 en la izquierda -->
+    <path d="M 0 35 A 8 8 0 0 1 0 50 Z" fill="#ffffff"/>
+
+    <!-- Conector M-Key dorado en la derecha -->
+    <rect x="268" y="5" width="12" height="75" rx="1" fill="#ca8a04"/>
+    <rect x="268" y="22" width="12" height="6" fill="#1e293b"/> <!-- M-key notch -->
+
+    <!-- Controlador NAND Flash -->
+    <rect x="40" y="18" width="45" height="48" rx="3" fill="#020617" stroke="#475569" stroke-width="1"/>
+    <circle cx="50" cy="28" r="2" fill="#94a3b8"/>
+    <text x="62" y="46" text-anchor="middle" fill="#94a3b8" font-family="monospace" font-size="8">NVMe</text>
+
+    <!-- Chip DRAM Cache -->
+    <rect x="95" y="24" width="30" height="36" rx="2" fill="#020617" stroke="#475569" stroke-width="1"/>
+    <text x="110" y="45" text-anchor="middle" fill="#64748b" font-family="monospace" font-size="7">DRAM</text>
+
+    <!-- Módulo 3D NAND 1 -->
+    <rect x="140" y="15" width="50" height="55" rx="3" fill="#0f172a" stroke="#00f0ff" stroke-width="1"/>
+    <text x="165" y="44" text-anchor="middle" fill="#00f0ff" font-family="system-ui, sans-serif" font-size="8" font-weight="700">3D NAND</text>
+    <text x="165" y="56" text-anchor="middle" fill="#94a3b8" font-family="monospace" font-size="6">1024 GB</text>
+
+    <!-- Módulo 3D NAND 2 -->
+    <rect x="200" y="15" width="50" height="55" rx="3" fill="#0f172a" stroke="#00f0ff" stroke-width="1"/>
+    <text x="225" y="44" text-anchor="middle" fill="#00f0ff" font-family="system-ui, sans-serif" font-size="8" font-weight="700">PCIe 4.0</text>
+    <text x="225" y="56" text-anchor="middle" fill="#94a3b8" font-family="monospace" font-size="6">7000 MB/s</text>
+  </g>
+
+  <text x="200" y="265" text-anchor="middle" fill="#0284c7" font-family="system-ui, sans-serif" font-size="12" font-weight="700" letter-spacing="1.5">ALMACENAMIENTO SSD M.2 NVMe</text>
+</svg>

@@ -1,0 +1,147 @@
+/* ==========================================================================
+   CARRITO.CSS — PÍXEL ANDINO TECH STORE (DRAWER OFFCANVAS Y RESUMEN)
+   ========================================================================== */
+
+#seccion-carrito.offcanvas {
+  width: min(100vw, 440px) !important;
+  border-top-left-radius: 16px !important;
+  border-bottom-left-radius: 16px !important;
+  border: none !important;
+  box-shadow: -12px 0 40px rgba(7, 15, 30, 0.18) !important;
+}
+
+#seccion-carrito .offcanvas-header {
+  background: #ffffff;
+  padding: 1.25rem 1.5rem;
+}
+
+#seccion-carrito .offcanvas-body {
+  background: #ffffff;
+  padding: 1.25rem 1.5rem;
+}
+
+/* Ítems del Carrito */
+.cart-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.9rem 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.cart-item:last-child {
+  border-bottom: none;
+}
+
+.cart-item-thumb {
+  width: 58px;
+  height: 58px;
+  border-radius: 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.cart-item-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 4px;
+}
+
+.cart-item-info {
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.cart-item-name {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 0.2rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cart-item-price {
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: var(--retail-blue);
+}
+
+.cart-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.cart-qty-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  display: grid;
+  place-items: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.cart-qty-btn:hover:not(:disabled) {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+  color: #0f172a;
+}
+
+.cart-qty-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.cart-qty-val {
+  font-size: 0.88rem;
+  font-weight: 700;
+  min-width: 20px;
+  text-align: center;
+}
+
+.cart-btn-remove {
+  color: #ef4444;
+  background: none;
+  border: none;
+  padding: 0.35rem;
+  cursor: pointer;
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
+  transition: background-color 0.15s ease;
+}
+
+.cart-btn-remove:hover {
+  background-color: #fee2e2;
+}
+
+/* Pie del Carrito con Resumen y Checkout */
+.cart-drawer-footer {
+  background: #ffffff;
+}
+
+.cart-order-summary {
+  background: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+
+#btn-confirmar-compra {
+  height: 48px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  border-radius: 10px;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+}

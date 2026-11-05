@@ -1,0 +1,341 @@
+/* ==========================================================================
+   HEADER.CSS — PÍXEL ANDINO TECH STORE (DISEÑO EN 2 NIVELES TIPO DISTRIBUIDOR)
+   ========================================================================== */
+
+/* Contenedor General del Header */
+.header-wrapper {
+  position: relative;
+  width: 100%;
+  z-index: 1030;
+}
+
+/* Nivel 1: Barra Principal Superior (Blanca) */
+.header-level-1 {
+  background: #ffffff;
+  border-bottom: 1px solid var(--retail-border);
+  padding: 0.75rem 0;
+}
+
+.header-level-1-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+}
+
+/* Marca / Logo */
+.header-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--retail-ink);
+  text-decoration: none;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.header-brand:hover {
+  color: var(--retail-blue);
+}
+
+.header-brand-mark {
+  width: 2.5rem;
+  height: 2.5rem;
+  display: grid;
+  place-items: center;
+}
+
+.header-brand-copy {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.header-brand-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: #0b192c;
+}
+
+.header-brand-subtitle {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--retail-muted);
+}
+
+/* Buscador Central */
+.header-search-form {
+  flex: 1;
+  max-width: 580px;
+  position: relative;
+}
+
+.header-search-input-group {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  border: 1.5px solid var(--retail-border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #ffffff;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.header-search-input-group:focus-within {
+  border-color: var(--retail-blue);
+  box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15);
+}
+
+.header-search-input {
+  border: none;
+  box-shadow: none;
+  padding: 0.55rem 1rem;
+  font-size: 0.9rem;
+  color: var(--retail-ink);
+  width: 100%;
+}
+
+.header-search-input:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.header-search-btn {
+  background: var(--retail-blue);
+  color: #ffffff;
+  border: none;
+  min-width: 52px;
+  padding: 0 1.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  white-space: nowrap;
+  font-weight: 600;
+  font-size: 0.88rem;
+  transition: background-color 0.2s ease;
+}
+
+.header-search-btn:hover {
+  background: var(--retail-blue-dark);
+}
+
+/* Acciones de Cuenta y Carrito */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  white-space: nowrap;
+}
+
+.header-link-login {
+  color: #1e293b;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.header-link-login:hover {
+  color: var(--retail-blue);
+}
+
+.header-cart-btn {
+  background: var(--retail-blue);
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.55rem 1.15rem;
+  font-weight: 600;
+  font-size: 0.88rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 4px 12px rgba(13, 110, 253, 0.25);
+  transition: transform 0.15s ease, background-color 0.2s ease;
+}
+
+.header-cart-btn:hover {
+  background: var(--retail-blue-dark);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.header-cart-badge {
+  background: #ffffff;
+  color: var(--retail-blue);
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  min-width: 1.4rem;
+  text-align: center;
+}
+
+/* Nivel 2: Barra Azul Oscuro Sticky */
+.header-level-2 {
+  background: var(--retail-navy);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  position: sticky;
+  top: 0;
+  z-index: 1020;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+}
+
+.header-level-2-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0;
+}
+
+/* Botón Desplegable de Categorías */
+.category-dropdown-wrapper {
+  position: relative;
+}
+
+.category-dropdown-btn {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  border: none;
+  padding: 0.75rem 1.4rem;
+  font-weight: 700;
+  font-size: 0.82rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.category-dropdown-btn:hover,
+.category-dropdown-btn[aria-expanded="true"] {
+  background: var(--retail-blue);
+  color: #ffffff;
+}
+
+/* Menú Desplegable de Categorías (Nivel 1 y Submenú Nivel 2) */
+.category-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 250px;
+  background: #ffffff;
+  border-radius: 0 0 8px 8px;
+  box-shadow: 0 12px 36px rgba(11, 25, 44, 0.2);
+  border: 1px solid var(--retail-border);
+  border-top: none;
+  padding: 0.5rem 0;
+  margin: 0;
+  list-style: none;
+  display: none;
+  z-index: 1050;
+}
+
+.category-dropdown-menu.show {
+  display: block;
+}
+
+.category-dropdown-item {
+  position: relative;
+}
+
+.category-dropdown-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 1.25rem;
+  color: #334155;
+  font-size: 0.88rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.category-dropdown-link:hover,
+.category-dropdown-link:focus-visible {
+  background: #f1f5f9;
+  color: var(--retail-blue);
+  outline: none;
+}
+
+/* Submenú Lateral para categorías compuestas */
+.category-submenu {
+  position: absolute;
+  top: 0;
+  left: 100%;
+  min-width: 220px;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 12px 36px rgba(11, 25, 44, 0.2);
+  border: 1px solid var(--retail-border);
+  padding: 0.5rem 0;
+  margin: 0;
+  list-style: none;
+  display: none;
+}
+
+.category-dropdown-item:hover > .category-submenu,
+.category-dropdown-item:focus-within > .category-submenu {
+  display: block;
+}
+
+/* Enlaces de Navegación de Nivel 2 */
+.header-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-x: auto;
+}
+
+.header-nav-link {
+  color: #cbd5e1;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 0.75rem 0.85rem;
+  text-decoration: none;
+  display: inline-block;
+  white-space: nowrap;
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.header-nav-link:hover {
+  color: var(--retail-cyan);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* Responsive */
+@media (max-width: 991.98px) {
+  .header-level-1-container {
+    flex-wrap: wrap;
+  }
+  
+  .header-search-form {
+    order: 3;
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .header-nav-links {
+    display: none; /* En móvil se controla mediante offcanvas o dropdown */
+  }
+
+  .category-submenu {
+    position: static;
+    box-shadow: none;
+    border: none;
+    padding-left: 1rem;
+    background: #f8fafc;
+  }
+}

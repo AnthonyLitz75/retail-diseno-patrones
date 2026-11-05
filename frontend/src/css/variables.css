@@ -1,0 +1,21 @@
+/* ==========================================================================
+   VARIABLES.CSS — PÍXEL ANDINO TECH STORE
+   Tokens de diseño, paleta corporativa y tipografía
+   ========================================================================== */
+
+:root {
+  color-scheme: light;
+  --retail-ink: #0f172a;
+  --retail-blue: #0d6efd;
+  --retail-blue-dark: #0a58ca;
+  --retail-cyan: #00d2ff;
+  --retail-navy: #0b192c;
+  --retail-navy-dark: #070f1e;
+  --retail-muted: #64748b;
+  --retail-border: #e2e8f0;
+  --retail-surface: #ffffff;
+  --retail-bg-page: #f8fafc;
+  --retail-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  --retail-shadow-hover: 0 10px 25px rgba(13, 110, 253, 0.12);
+  --retail-motion: cubic-bezier(.22, 1, .36, 1);
+}

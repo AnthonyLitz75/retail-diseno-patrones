@@ -1,0 +1,366 @@
+/* ==========================================================================
+   AUTH.CSS — PÍXEL ANDINO TECH STORE (SPLIT SCREEN & MODERN AUTH LAYOUT)
+   ========================================================================== */
+
+/* Contenedor Principal Split-Screen (Login) */
+.auth-split-layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #f8fafc;
+}
+
+@media (min-width: 992px) {
+  .auth-split-layout {
+    display: grid;
+    grid-template-columns: minmax(420px, 45%) 1fr;
+    min-height: 100vh;
+  }
+}
+
+/* Panel Izquierdo: Branding, Propuesta de Valor y Confianza */
+.auth-showcase-panel {
+  background: linear-gradient(145deg, #070f1e 0%, #0b192c 45%, #0f2b5c 100%);
+  color: #ffffff;
+  padding: clamp(2rem, 5vw, 4rem);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-showcase-panel::before {
+  content: "";
+  position: absolute;
+  top: -10%;
+  left: -10%;
+  width: 50%;
+  height: 50%;
+  background: radial-gradient(circle, rgba(0, 210, 255, 0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.auth-showcase-panel::after {
+  content: "";
+  position: absolute;
+  bottom: -15%;
+  right: -15%;
+  width: 60%;
+  height: 60%;
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.15) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.auth-showcase-content {
+  max-width: 520px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  justify-content: space-between;
+  gap: 2.5rem;
+  position: relative;
+  z-index: 2;
+}
+
+.auth-showcase-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.85rem;
+  text-decoration: none;
+  color: #ffffff;
+}
+
+.auth-showcase-brand:hover {
+  color: #ffffff;
+}
+
+.auth-brand-logo {
+  display: grid;
+  place-items: center;
+  filter: drop-shadow(0 4px 10px rgba(0, 210, 255, 0.35));
+}
+
+.auth-brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.auth-brand-text .brand-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: #ffffff;
+}
+
+.auth-brand-text .brand-title strong {
+  color: var(--retail-cyan, #00d2ff);
+}
+
+.auth-brand-text .brand-subtitle {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: #94a3b8;
+}
+
+.auth-showcase-hero {
+  margin: auto 0;
+}
+
+.auth-showcase-title {
+  font-size: clamp(1.85rem, 3.2vw, 2.6rem);
+  font-weight: 800;
+  line-height: 1.18;
+  color: #ffffff;
+  margin-bottom: 1rem;
+  letter-spacing: -0.02em;
+}
+
+.auth-showcase-desc {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #cbd5e1;
+  margin-bottom: 2rem;
+}
+
+/* Píldoras de Confianza (Trust Badges) */
+.auth-trust-pills {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.auth-trust-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.75rem 1.15rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  color: #f1f5f9;
+  font-size: 0.9rem;
+  font-weight: 600;
+  backdrop-filter: blur(8px);
+  transition: transform 0.18s ease, background-color 0.18s ease;
+}
+
+.auth-trust-pill:hover {
+  transform: translateX(4px);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.auth-trust-pill .trust-icon {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: rgba(0, 210, 255, 0.15);
+  color: #00d2ff;
+  flex-shrink: 0;
+}
+
+.auth-showcase-footer {
+  color: #64748b;
+  font-size: 0.82rem;
+}
+
+/* Panel Derecho: Formulario de Login */
+.auth-form-panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(1.5rem, 4vw, 3.5rem);
+  background: #f8fafc;
+}
+
+.auth-card-wrapper {
+  width: 100%;
+  max-width: 460px;
+}
+
+.auth-badge-welcome {
+  display: inline-block;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-weight: 700;
+  font-size: 0.75rem;
+  padding: 0.35rem 0.8rem;
+  border-radius: 999px;
+  letter-spacing: 0.04em;
+}
+
+.auth-form-title {
+  font-size: 1.85rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 0.35rem;
+  letter-spacing: -0.02em;
+}
+
+.auth-form-subtitle {
+  font-size: 0.92rem;
+  color: #64748b;
+}
+
+.auth-card {
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.06), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
+}
+
+.auth-card .card-body {
+  padding: 2rem;
+}
+
+/* Input Groups con Iconos Integrados */
+.auth-input-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.auth-input-icon {
+  position: absolute;
+  left: 14px;
+  color: #94a3b8;
+  pointer-events: none;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+}
+
+.auth-input {
+  padding-left: 42px !important;
+  padding-right: 42px;
+  height: 48px;
+  border-radius: 10px;
+  border: 1.5px solid #cbd5e1;
+  font-size: 0.95rem;
+  color: #0f172a;
+  background: #ffffff;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.auth-input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  outline: none;
+}
+
+.auth-password-toggle {
+  position: absolute;
+  right: 10px;
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  padding: 0.4rem;
+  cursor: pointer;
+  border-radius: 6px;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  transition: color 0.15s ease;
+}
+
+.auth-password-toggle:hover {
+  color: #1e293b;
+}
+
+.auth-submit-btn {
+  background: linear-gradient(135deg, #0066ff 0%, #0052cc 100%);
+  color: #ffffff;
+  border: none;
+  height: 48px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 0.98rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  box-shadow: 0 4px 14px rgba(0, 102, 255, 0.3);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.auth-submit-btn:hover {
+  background: linear-gradient(135deg, #0052cc 0%, #003d99 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(0, 102, 255, 0.45);
+  color: #ffffff;
+}
+
+.auth-submit-btn:disabled {
+  opacity: 0.65;
+  transform: none;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.auth-back-link {
+  color: #64748b;
+  font-size: 0.88rem;
+  font-weight: 500;
+  transition: color 0.15s ease;
+}
+
+.auth-back-link:hover {
+  color: var(--retail-blue);
+}
+
+/* ==========================================================================
+   Página de Registro Centrada (`register.html`)
+   ========================================================================== */
+.auth-page {
+  display: flex;
+  width: min(100%, 480px);
+  min-height: 100vh;
+  flex-direction: column;
+  justify-content: center;
+  padding: 2.5rem 1rem !important;
+  margin: 0 auto;
+}
+
+.auth-brand-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.4rem 0.95rem;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  box-shadow: 0 2px 8px rgba(11, 25, 44, 0.05);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.auth-brand-badge:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(11, 25, 44, 0.09);
+}
+
+.auth-brand-badge .auth-brand-logo,
+.site-brand-mark {
+  width: 40px !important;
+  height: 40px !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.auth-brand-badge .auth-brand-logo svg,
+.site-brand-mark svg {
+  width: 40px !important;
+  height: 40px !important;
+  display: block;
+}
+
+.auth-page .auth-card {
+  border-radius: 16px;
+  background: #ffffff;
+}

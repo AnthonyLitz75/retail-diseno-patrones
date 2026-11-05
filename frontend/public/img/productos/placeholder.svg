@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="100%" height="100%" fill="none">
+  <defs>
+    <linearGradient id="ph-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f8fafc"/>
+      <stop offset="100%" stop-color="#edf2f7"/>
+    </linearGradient>
+    <linearGradient id="ph-box" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0b132b"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+    <linearGradient id="ph-cyan" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00f0ff"/>
+      <stop offset="100%" stop-color="#007bff"/>
+    </linearGradient>
+    <filter id="ph-shadow" x="-10%" y="-10%" width="125%" height="125%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#0f172a" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+
+  <rect width="400" height="300" rx="16" fill="url(#ph-bg)"/>
+  <rect x="12" y="12" width="376" height="276" rx="12" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5"/>
+
+  <!-- Emblema Tecnológico Píxel Andino -->
+  <g filter="url(#ph-shadow)" transform="translate(145, 65)">
+    <rect width="110" height="110" rx="24" fill="url(#ph-box)" stroke="#334155" stroke-width="2"/>
+    <rect x="22" y="22" width="10" height="10" rx="2" fill="url(#ph-cyan)"/>
+    <rect x="36" y="22" width="10" height="10" rx="2" fill="#00f0ff"/>
+    <rect x="22" y="36" width="10" height="10" rx="2" fill="#0066ff"/>
+    <path d="M 36 36 L 68 36 C 82 36 90 44 90 54 C 90 64 82 72 68 72 L 52 72 L 52 86 C 52 88 50 90 48 90 L 40 90 C 38 90 36 88 36 86 Z" fill="url(#ph-cyan)"/>
+    <path d="M 52 48 L 66 48 C 72 48 76 50 76 54 C 76 58 72 60 66 60 L 52 60 Z" fill="#0b132b"/>
+    <path d="M 52 60 L 60 52 L 64 55 L 70 48 L 76 54" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <text x="200" y="215" text-anchor="middle" fill="#0f172a" font-family="system-ui, sans-serif" font-size="14" font-weight="800" letter-spacing="0.5">PÍXEL ANDINO</text>
+  <text x="200" y="235" text-anchor="middle" fill="#64748b" font-family="system-ui, sans-serif" font-size="12" font-weight="500">Hardware & Tecnología Oficial</text>
+</svg>

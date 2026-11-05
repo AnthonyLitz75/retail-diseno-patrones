@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="100%" height="100%" fill="none">
+  <defs>
+    <linearGradient id="cpu-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f8fafc"/>
+      <stop offset="100%" stop-color="#e2e8f0"/>
+    </linearGradient>
+    <linearGradient id="cpu-pcb" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f766e"/>
+      <stop offset="100%" stop-color="#115e59"/>
+    </linearGradient>
+    <linearGradient id="cpu-ihs" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f1f5f9"/>
+      <stop offset="30%" stop-color="#cbd5e1"/>
+      <stop offset="70%" stop-color="#94a3b8"/>
+      <stop offset="100%" stop-color="#64748b"/>
+    </linearGradient>
+    <filter id="cpu-shadow" x="-10%" y="-10%" width="125%" height="125%">
+      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#0f172a" flood-opacity="0.18"/>
+    </filter>
+  </defs>
+
+  <rect width="400" height="300" rx="16" fill="url(#cpu-bg)"/>
+  <rect x="12" y="12" width="376" height="276" rx="12" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5"/>
+
+  <g filter="url(#cpu-shadow)" transform="translate(115, 60)">
+    <!-- Substrato Verde PCB -->
+    <rect x="0" y="0" width="170" height="170" rx="10" fill="url(#cpu-pcb)" stroke="#042f2e" stroke-width="2"/>
+
+    <!-- Puntos de contacto dorados en las esquinas -->
+    <polygon points="12,12 24,12 12,24" fill="#fbbf24"/>
+    <circle cx="158" cy="12" r="4" fill="#fbbf24"/>
+    <circle cx="12" cy="158" r="4" fill="#fbbf24"/>
+    <circle cx="158" cy="158" r="4" fill="#fbbf24"/>
+
+    <!-- Pistas de circuito en el sustrato -->
+    <path d="M 20 50 L 30 50 L 30 120 L 20 120" stroke="#14b8a6" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+    <path d="M 150 50 L 140 50 L 140 120 L 150 120" stroke="#14b8a6" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+
+    <!-- Disipador Integrado (IHS Metálico) -->
+    <rect x="25" y="25" width="120" height="120" rx="8" fill="url(#cpu-ihs)" stroke="#475569" stroke-width="2"/>
+    <rect x="30" y="30" width="110" height="110" rx="6" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="1.5"/>
+
+    <!-- Hendidura central y grabados láser -->
+    <circle cx="85" cy="85" r="32" fill="#334155" fill-opacity="0.15" stroke="#475569" stroke-width="1"/>
+    
+    <!-- Microchip core logo -->
+    <rect x="73" y="73" width="24" height="24" rx="4" fill="#0f172a"/>
+    <polygon points="85,76 93,90 77,90" fill="#00f0ff"/>
+
+    <!-- Texto grabado con láser -->
+    <text x="85" y="52" text-anchor="middle" fill="#1e293b" font-family="system-ui, sans-serif" font-size="9" font-weight="800" letter-spacing="1">PÍXEL CORE</text>
+    <text x="85" y="63" text-anchor="middle" fill="#475569" font-family="monospace" font-size="7">PROCESADOR PRO</text>
+    <text x="85" y="125" text-anchor="middle" fill="#475569" font-family="monospace" font-size="7">SOCKET AM4 / LGA</text>
+  </g>
+
+  <text x="200" y="265" text-anchor="middle" fill="#0d9488" font-family="system-ui, sans-serif" font-size="12" font-weight="700" letter-spacing="1.5">PROCESADOR DE ALTO RENDIMIENTO</text>
+</svg>

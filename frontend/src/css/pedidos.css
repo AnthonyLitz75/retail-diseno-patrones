@@ -1,0 +1,330 @@
+/* ==========================================================================
+   PEDIDOS.CSS — PÍXEL ANDINO TECH STORE (VISTA DE PEDIDOS Y SEGUIMIENTO)
+   ========================================================================== */
+
+/* 1. Contenedor Principal de la Sección de Pedidos */
+#seccion-pedidos {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04);
+  overflow: hidden;
+}
+
+#seccion-pedidos .card-body {
+  padding: 2rem;
+}
+
+#titulo-pedidos {
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.25rem;
+}
+
+#estado-pedidos {
+  font-size: 0.9rem;
+  color: #64748b;
+  margin-bottom: 1.5rem;
+}
+
+#lista-pedidos {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  background: transparent;
+  border: none;
+}
+
+/* 2. Tarjeta Individual de Pedido */
+.order-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.04);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.order-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.07);
+}
+
+.order-card-header {
+  background: #f8fafc;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.order-card-body {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* 3. Stepper Visual del Patrón State */
+.order-stepper-container {
+  padding: 1.5rem 1rem 1rem;
+  background: #f8fafc;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+}
+
+.order-stepper {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  position: relative;
+  width: 100%;
+}
+
+/* Línea base y de progreso contenidas exactamente entre los centros del primer (12.5%) y último nodo (87.5%) */
+.order-stepper-track {
+  position: absolute;
+  top: 17px;
+  left: 12.5%;
+  right: 12.5%;
+  height: 4px;
+  background: #e2e8f0;
+  border-radius: 999px;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.order-stepper-progress {
+  height: 100%;
+  background: linear-gradient(90deg, #2563eb, #00d2ff);
+  transition: width 0.35s ease;
+  border-radius: 999px;
+}
+
+.order-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  z-index: 3;
+  width: 25%;
+  text-align: center;
+}
+
+.order-step-node {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  background: #ffffff;
+  border: 3px solid #cbd5e1;
+  color: #64748b;
+  transition: all 0.25s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.order-step-node svg {
+  width: 18px;
+  height: 18px;
+}
+
+.order-step-label {
+  margin-top: 0.5rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #64748b;
+  transition: color 0.2s ease;
+}
+
+/* Paso completado */
+.order-step.is-completed .order-step-node {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3);
+}
+
+.order-step.is-completed .order-step-label {
+  color: #0f172a;
+}
+
+/* Paso activo actual */
+.order-step.is-current .order-step-node,
+.order-step.is-active .order-step-node {
+  background: #ffffff;
+  border-color: #2563eb;
+  color: #2563eb;
+  transform: scale(1.15);
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.18);
+}
+
+.order-step.is-current .order-step-label,
+.order-step.is-active .order-step-label {
+  color: #2563eb;
+  font-weight: 700;
+}
+
+/* Banner de Pedido Cancelado */
+.order-cancelled-banner {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  color: #991b1b;
+  margin: 0.5rem 0;
+}
+
+/* 4. Caja de Envío / Courier */
+.order-shipping-box {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 1.25rem;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 12px;
+  color: #166534;
+}
+
+/* 5. Lista y Miniaturas de Productos (Solución Definitiva a la Imagen Gigante) */
+.order-products-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.order-product-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.order-product-item:hover {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+}
+
+.order-product-thumb {
+  width: 68px;
+  height: 68px;
+  min-width: 68px;
+  max-width: 68px;
+  border-radius: 10px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 4px;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+}
+
+.order-product-thumb img {
+  max-width: 100% !important;
+  max-height: 100% !important;
+  width: auto !important;
+  height: auto !important;
+  object-fit: contain !important;
+  mix-blend-mode: multiply;
+  transition: transform 0.2s ease;
+}
+
+.order-product-item:hover .order-product-thumb img {
+  transform: scale(1.08);
+}
+
+/* 6. Auditoría e Historial de Estados (Timeline) */
+.order-timeline-details {
+  border-top: 1px solid #e2e8f0;
+  padding-top: 0.85rem;
+  margin-top: 0.5rem;
+}
+
+.order-timeline-details summary {
+  cursor: pointer;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: #475569;
+  user-select: none;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: color 0.15s ease;
+}
+
+.order-timeline-details summary:hover {
+  color: #2563eb;
+}
+
+.order-timeline-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.order-timeline-details summary::before {
+  content: "▶";
+  font-size: 0.72rem;
+  color: #94a3b8;
+  transition: transform 0.2s ease;
+}
+
+.order-timeline-details[open] summary::before {
+  transform: rotate(90deg);
+}
+
+.order-timeline-list {
+  list-style: none;
+  padding-left: 1.5rem;
+  margin-top: 0.85rem;
+  margin-bottom: 0;
+  border-left: 2px solid #e2e8f0;
+  position: relative;
+}
+
+.order-timeline-item {
+  position: relative;
+  padding-bottom: 0.85rem;
+  padding-left: 0.75rem;
+  font-size: 0.85rem;
+}
+
+.order-timeline-item:last-child {
+  padding-bottom: 0;
+}
+
+.order-timeline-item::before {
+  content: "";
+  position: absolute;
+  left: -1.95rem;
+  top: 5px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #2563eb;
+  border: 2px solid #ffffff;
+  box-shadow: 0 0 0 2px #2563eb;
+}
+
+.order-badge-estado {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  letter-spacing: 0.04em;
+}

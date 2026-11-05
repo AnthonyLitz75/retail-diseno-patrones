@@ -1,0 +1,187 @@
+/* ==========================================================================
+   BASE.CSS — PÍXEL ANDINO TECH STORE
+   Estilos base, resets y utilidades flotantes globales
+   ========================================================================== */
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 1.5rem;
+}
+
+body {
+  min-width: 320px;
+  color: var(--retail-ink);
+  background: #f8fafc;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+a,
+input,
+select {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn,
+.form-control,
+.form-select,
+a {
+  transition:
+    color 180ms var(--retail-motion),
+    background-color 180ms var(--retail-motion),
+    border-color 180ms var(--retail-motion),
+    box-shadow 180ms var(--retail-motion),
+    transform 180ms var(--retail-motion),
+    opacity 180ms var(--retail-motion);
+}
+
+.btn {
+  border-radius: .7rem;
+  font-weight: 600;
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(.975);
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+}
+
+.form-control,
+.form-select {
+  border-color: #d7e0eb;
+  border-radius: .7rem;
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 .22rem rgb(37 99 235 / 12%);
+}
+
+.storefront {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+/* ==========================================================================
+   ELEMENTOS FLOTANTES (7. Elementos flotantes)
+   ========================================================================== */
+
+/* Barra Flotante de Redes Sociales (Izquierda) */
+.floating-social-dock {
+  position: fixed;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  z-index: 1000;
+}
+
+.floating-social-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 1px solid var(--retail-border);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  display: grid;
+  place-items: center;
+  color: #475569;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.floating-social-btn:hover {
+  background: var(--retail-blue);
+  color: #ffffff;
+  border-color: var(--retail-blue);
+  transform: scale(1.1);
+}
+
+/* Barra Flotante de Accesos Rápidos (Derecha) */
+.floating-utility-dock {
+  position: fixed;
+  right: 1.25rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  z-index: 1000;
+}
+
+.floating-utility-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 1px solid var(--retail-border);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+  display: grid;
+  place-items: center;
+  color: #334155;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.floating-utility-btn:hover {
+  background: var(--retail-navy);
+  color: #ffffff;
+  transform: scale(1.1);
+}
+
+/* Botón Flotante de WhatsApp */
+.floating-whatsapp-pill {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  background: #25d366;
+  color: #ffffff;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 20px rgba(37, 211, 102, 0.4);
+  text-decoration: none;
+  z-index: 1010;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.floating-whatsapp-pill:hover {
+  transform: scale(1.08);
+  box-shadow: 0 8px 25px rgba(37, 211, 102, 0.55);
+  color: #ffffff;
+}
+
+@media (max-width: 768px) {
+  .floating-social-dock,
+  .floating-utility-dock {
+    display: none !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+  }
+}
