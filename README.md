@@ -42,14 +42,22 @@ $env:DB_PASSWORD = "<tu-contrasena-local>"
 ## Preparar la base de datos
 
 1. Crea la base `retail_diseno_patrones` en PostgreSQL.
-2. Abre esa base en pgAdmin y ejecuta, en este orden:
-   - `database/01_tablas_y_reglas.sql`
-   - Registra desde la interfaz un cliente con el correo `registro.web@example.com` si quieres que los datos de prueba creen también su carrito.
-   - `database/02_datos_prueba.sql`
-   - `database/03_usuarios_prueba_empleados.sql` para crear las cuentas de prueba de vendedor y almacén.
+2. En una base nueva, ejecuta `database/00_esquema_base.sql`. Para una base existente, conserva el flujo de actualización y ejecuta `database/01_tablas_y_reglas.sql`.
+3. Ejecuta `database/02_datos_prueba.sql` para cargar las cuentas de los cinco roles, productos y el carrito inicial del cliente.
+4. `database/03_usuarios_prueba_empleados.sql` queda como consulta de verificación de vendedor y almacén; ya no crea ni modifica cuentas.
+5. Si estás actualizando una base que todavía no admite cancelaciones, ejecuta también `database/04_cancelacion_pedido.sql` antes de usar esa función.
 
-Los scripts de datos son idempotentes para los registros de prueba documentados. Usa una base de desarrollo o temporal para probarlos.
+Cuentas temporales de demostración (todas usan la misma clave `PixelAndino2026!`):
 
+| Rol | Correo | Observación |
+| --- | --- | --- |
+| CLIENTE | `registro.web@example.com` | Incluye un carrito con Mouse inalámbrico. |
+| ADMIN | `admin.prueba@example.com` | Administración según las funciones implementadas. |
+| VENDEDOR | `vendedor.prueba@example.com` | Operaciones de catálogo disponibles. |
+| ALMACEN | `almacen.prueba@example.com` | Operaciones de inventario y pedidos disponibles. |
+| SOPORTE | `soporte.prueba@example.com` | La cuenta está sembrada; sus funciones aún no están implementadas. |
+
+El script guarda las claves como hash BCrypt, es repetible para estas cuentas y productos de prueba, y nunca consulta ni imprime los hashes. Usa una base local de desarrollo; no ejecutes semillas de prueba sobre datos reales.
 ## Ejecutar el backend
 
 Desde `backend/`, con PostgreSQL activo y las variables de entorno configuradas:

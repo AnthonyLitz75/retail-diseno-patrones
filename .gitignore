@@ -32,6 +32,10 @@ build/
 ### VS Code ###
 .vscode/
 
+# Scratch scripts and local docs
+scratch/
+docs/
+
 # Local environment files
 .env
 .env.*
