@@ -34,7 +34,8 @@ build/
 
 # Scratch scripts and local docs
 scratch/
-docs/
+docs/*
+!docs/img/
 
 # Local environment files
 .env
