@@ -7,7 +7,7 @@
 **Plataforma de comercio electrónico y gestión operativa para retail tecnológico.**
 
 ![Java](https://img.shields.io/badge/Java-25-ED8B00?logo=openjdk&logoColor=white)
-![Spring Boot](https://img.shields.io/badge/Spring_Boot-4.1.1-6DB33F?logo=springboot&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring_Boot-4.1.2-6DB33F?logo=springboot&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15+-4169E1?logo=postgresql&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-8.3.3-646CFF?logo=vite&logoColor=white)
 ![Bootstrap](https://img.shields.io/badge/Bootstrap-5.3.8-7952B3?logo=bootstrap&logoColor=white)
@@ -74,7 +74,7 @@ Las notificaciones in-app muestran un contador de alertas no leídas y pausan el
 
 | Capa                 | Tecnologías                                                                                   |
 | :------------------- | :-------------------------------------------------------------------------------------------- |
-| **Backend**          | Java 25, Spring Boot 4.1.1, JDBC, JUnit 5, Mockito                                            |
+| **Backend**          | Java 25, Spring Boot 4.1.2, JDBC, JUnit 5, Mockito                                            |
 | **Base de datos**    | PostgreSQL 15+                                                                                |
 | **Frontend**         | HTML5, CSS3 (BEM y variables nativas), JavaScript con ES Modules, Bootstrap 5.3.8, Vite 8.3.3 |
 | **Pruebas frontend** | Node.js Test Runner                                                                           |
@@ -112,6 +112,8 @@ Define las credenciales de la base de datos:
 | :------------ | :----------------------------------------------- |
 | `DB_USER`     | Usuario de PostgreSQL (por ejemplo, `postgres`). |
 | `DB_PASSWORD` | Contraseña del usuario.                          |
+
+En despliegues con HTTPS define también `SESSION_COOKIE_SECURE=true`.
 
 <details>
 <summary><b>Windows (PowerShell)</b></summary>
@@ -207,17 +209,18 @@ El backend sigue una arquitectura en capas (controller, service, DAO) con acceso
 | :----------------------- | :------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **State**                | Comportamental | Ciclo de vida del pedido (`PENDIENTE` → `EN_PREPARACION` → `DESPACHADO` → `ENTREGADO` / `CANCELADO`) con transiciones válidas encapsuladas en `patterns/state`. El frontend lo refleja en `pedidos/pedidos-stepper.js`. |
 | **Composite**            | Estructural    | Árbol recursivo de categorías y subcategorías (`ArbolCategoriaBuilder`, `CategoriaDAO`), consumido por el menú multinivel y las migas de pan (`router/enrutador.js`).                                                   |
-| **Adapter**              | Estructural    | Integración con la pasarela de pago simulada mediante `ServicioPago` y `SimuladorPagoAdapter`, que aísla la lógica de negocio de la API del proveedor.                                                                  |
+| **Adapter**              | Estructural    | Integración con la pasarela de pago simulada mediante `PuertoPago` y `PagoPruebaAdapter`, que aísla la lógica de negocio de la API del proveedor.                                                                  |
 | **Facade**               | Estructural    | `CheckoutFacade` orquesta de forma transaccional la validación de stock, la reserva, el pago y la emisión del pedido.                                                                                                   |
-| **Factory Method**       | Creacional     | `NotificadorFactory` crea el canal de notificación: `NotificadorInApp` (persistencia en BD) o `NotificadorConsola` (logging).                                                                                           |
-| **Singleton**            | Creacional     | `ProveedorConexiones` administra el pool de conexiones JDBC.                                                                                                                                                            |
+| **Factory Method**       | Creacional     | `FabricaNotificador` crea el canal de notificación: `NotificadorInApp` (persistencia en BD) o `NotificadorConsola` (logging).                                                                                           |
+| **Singleton**            | Creacional     | `ProveedorConexiones` es el punto único de acceso a las conexiones JDBC: un componente de alcance singleton de Spring que delega en el pool (`DataSource`).                                                                                                                                                            |
 | **Inversión de control** | Arquitectural  | En el frontend, los modales de Bootstrap, el cliente `apiRequest` y el estado global se inyectan en los componentes, lo que permite probarlos de forma aislada en Node.js.                                              |
 
 ## Seguridad
 
 - **XSS:** utilidades centralizadas de sanitización (`escaparHtml` y _template tag_ `html`) y manipulación segura del DOM (`textContent`, `replaceChildren`).
 - **Contraseñas:** almacenadas con hash BCrypt.
-- **Errores:** `GlobalExceptionHandler` responde con el formato Problem Details (RFC 9457) y no expone trazas internas.
+- **Errores:** `GlobalExceptionHandler` responde con un JSON `{"error": "..."}` y no expone trazas internas. Los fallos de acceso a datos (`ErrorAccesoDatosException`) se registran en el log y se responden como 500 genérico.
+- **Sesión:** cookie `HttpOnly` y `SameSite=Lax`. Define `SESSION_COOKIE_SECURE=true` cuando el despliegue use HTTPS (el `Dockerfile` ya lo hace).
 - **Pagos idempotentes:** cada checkout usa una clave `UUID` única para evitar cargos duplicados.
 - **Control de acceso:** autorización por roles (`CLIENTE`, `ADMIN`, `VENDEDOR`, `ALMACEN`, `SOPORTE`).
 

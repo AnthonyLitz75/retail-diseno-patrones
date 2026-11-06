@@ -1,5 +1,6 @@
 package com.grupo.retail.dao;
 
+import com.grupo.retail.exception.ErrorAccesoDatosException;
 import com.grupo.retail.dto.LineaEntradaInventario;
 import com.grupo.retail.model.MovimientoInventario;
 import com.grupo.retail.patterns.singleton.ProveedorConexiones;
@@ -71,7 +72,7 @@ public class InventarioDAO {
                 throw error;
             }
         } catch (SQLException error) {
-            throw new IllegalStateException("No se pudieron registrar las entradas de inventario", error);
+            throw new ErrorAccesoDatosException("No se pudieron registrar las entradas de inventario", error);
         }
     }
 
@@ -116,7 +117,7 @@ public class InventarioDAO {
             }
             return List.copyOf(movimientos);
         } catch (SQLException error) {
-            throw new IllegalStateException("No se pudo consultar el kardex", error);
+            throw new ErrorAccesoDatosException("No se pudo consultar el kardex", error);
         }
     }
 

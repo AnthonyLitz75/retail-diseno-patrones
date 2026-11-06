@@ -59,7 +59,13 @@ export function configurarControlesUI({
           Array.isArray(cat.subcategorias) &&
           cat.subcategorias.length > 0
         ) {
-          a.innerHTML = `<span>${cat.nombre}</span> <span class="arrow-flyout" aria-hidden="true">›</span>`;
+          const etiquetaCat = document.createElement("span");
+          etiquetaCat.textContent = cat.nombre;
+          const flecha = document.createElement("span");
+          flecha.className = "arrow-flyout";
+          flecha.setAttribute("aria-hidden", "true");
+          flecha.textContent = "›";
+          a.append(etiquetaCat, " ", flecha);
           a.addEventListener("click", () => {
             menuCategoriasDropdown.classList.remove("show");
             btnToggleCategoriasMenu?.setAttribute("aria-expanded", "false");

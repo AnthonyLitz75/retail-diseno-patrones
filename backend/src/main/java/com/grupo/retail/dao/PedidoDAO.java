@@ -1,5 +1,6 @@
 package com.grupo.retail.dao;
 
+import com.grupo.retail.exception.ErrorAccesoDatosException;
 import com.grupo.retail.model.DetallePedido;
 import com.grupo.retail.model.EventoNotificacion;
 import com.grupo.retail.model.EventoEstadoPedido;
@@ -86,7 +87,7 @@ public class PedidoDAO {
                         listarHistorial(conexion, pedidoId)));
             }
         } catch (SQLException error) {
-            throw new IllegalStateException("No se pudo consultar el pedido", error);
+            throw new ErrorAccesoDatosException("No se pudo consultar el pedido", error);
         }
     }
 
@@ -142,7 +143,7 @@ public class PedidoDAO {
             }
             return pedidos;
         } catch (SQLException error) {
-            throw new IllegalStateException("No se pudieron consultar los pedidos", error);
+            throw new ErrorAccesoDatosException("No se pudieron consultar los pedidos", error);
         }
     }
 
@@ -218,7 +219,7 @@ public class PedidoDAO {
                         : Optional.empty();
             }
         } catch (SQLException error) {
-            throw new IllegalStateException("No se pudo consultar el estado del pedido", error);
+            throw new ErrorAccesoDatosException("No se pudo consultar el estado del pedido", error);
         }
     }
 
@@ -285,7 +286,7 @@ public class PedidoDAO {
             if ("23505".equals(error.getSQLState())) {
                 throw new CodigoSeguimientoDuplicadoException(error);
             }
-            throw new IllegalStateException("No se pudo actualizar el estado del pedido", error);
+            throw new ErrorAccesoDatosException("No se pudo actualizar el estado del pedido", error);
         }
     }
 
@@ -415,7 +416,7 @@ public class PedidoDAO {
                 throw error;
             }
         } catch (SQLException error) {
-            throw new IllegalStateException("No se pudo cancelar el pedido", error);
+            throw new ErrorAccesoDatosException("No se pudo cancelar el pedido", error);
         }
     }
 
@@ -448,7 +449,7 @@ public class PedidoDAO {
         try (Connection conexion = proveedorConexiones.obtenerConexion()) {
             return buscarPorClaveConfirmacion(conexion, usuarioId, claveConfirmacion.trim());
         } catch (SQLException error) {
-            throw new IllegalStateException("No se pudo verificar la clave de confirmación", error);
+            throw new ErrorAccesoDatosException("No se pudo verificar la clave de confirmación", error);
         }
     }
 
@@ -514,7 +515,7 @@ public class PedidoDAO {
                 throw error;
             }
         } catch (SQLException error) {
-            throw new IllegalStateException("No se pudo confirmar la compra", error);
+            throw new ErrorAccesoDatosException("No se pudo confirmar la compra", error);
         }
     }
 

@@ -1,5 +1,6 @@
 package com.grupo.retail.dao;
 
+import com.grupo.retail.exception.ErrorAccesoDatosException;
 import com.grupo.retail.exception.CategoriaDuplicadaException;
 import com.grupo.retail.model.Categoria;
 import com.grupo.retail.patterns.composite.ArbolCategoriaBuilder;
@@ -36,7 +37,7 @@ public class CategoriaDAO {
             }
             return List.copyOf(categorias);
         } catch (SQLException error) {
-            throw new IllegalStateException("No se pudieron consultar las categorías", error);
+            throw new ErrorAccesoDatosException("No se pudieron consultar las categorías", error);
         }
     }
 
@@ -86,7 +87,7 @@ public class CategoriaDAO {
 
             return ArbolCategoriaBuilder.construirArbol(categorias, conteoPorCategoria, productosSinCategoria);
         } catch (SQLException error) {
-            throw new IllegalStateException("No se pudo construir el árbol de categorías", error);
+            throw new ErrorAccesoDatosException("No se pudo construir el árbol de categorías", error);
         }
     }
 
@@ -121,7 +122,7 @@ public class CategoriaDAO {
             if ("23505".equals(error.getSQLState())) {
                 throw new CategoriaDuplicadaException();
             }
-            throw new IllegalStateException("No se pudo crear la categoría", error);
+            throw new ErrorAccesoDatosException("No se pudo crear la categoría", error);
         }
     }
 
@@ -142,7 +143,7 @@ public class CategoriaDAO {
             if ("23505".equals(error.getSQLState())) {
                 throw new CategoriaDuplicadaException();
             }
-            throw new IllegalStateException("No se pudo actualizar la categoría", error);
+            throw new ErrorAccesoDatosException("No se pudo actualizar la categoría", error);
         }
     }
 
@@ -160,7 +161,7 @@ public class CategoriaDAO {
                 return resultado.next() ? Optional.of(mapear(resultado)) : Optional.empty();
             }
         } catch (SQLException error) {
-            throw new IllegalStateException("No se pudo actualizar el estado de la categoría", error);
+            throw new ErrorAccesoDatosException("No se pudo actualizar el estado de la categoría", error);
         }
     }
 

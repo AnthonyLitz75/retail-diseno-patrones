@@ -1,5 +1,6 @@
 package com.grupo.retail.dao;
 
+import com.grupo.retail.exception.ErrorAccesoDatosException;
 import com.grupo.retail.dto.NuevoProducto;
 import com.grupo.retail.model.Categoria;
 import com.grupo.retail.model.MovimientoInventario;
@@ -88,7 +89,7 @@ public class ProductoDAO {
             }
             return productos;
         } catch (SQLException error) {
-            throw new IllegalStateException("No se pudieron consultar los productos", error);
+            throw new ErrorAccesoDatosException("No se pudieron consultar los productos", error);
         }
     }
 
@@ -112,7 +113,7 @@ public class ProductoDAO {
             }
             return categorias;
         } catch (SQLException error) {
-            throw new IllegalStateException("No se pudieron consultar las categorías", error);
+            throw new ErrorAccesoDatosException("No se pudieron consultar las categorías", error);
         }
     }
 
@@ -120,7 +121,7 @@ public class ProductoDAO {
         try (Connection conexion = proveedorConexiones.obtenerConexion()) {
             return buscarPorId(conexion, id);
         } catch (SQLException error) {
-            throw new IllegalStateException("No se pudo buscar el producto", error);
+            throw new ErrorAccesoDatosException("No se pudo buscar el producto", error);
         }
     }
 
@@ -199,7 +200,7 @@ public class ProductoDAO {
             }
             return buscarPorId(conexion, id);
         } catch (SQLException error) {
-            throw new IllegalStateException("No se pudo actualizar el precio", error);
+            throw new ErrorAccesoDatosException("No se pudo actualizar el precio", error);
         }
     }
 
@@ -257,7 +258,7 @@ public class ProductoDAO {
                 throw error;
             }
         } catch (SQLException error) {
-            throw new IllegalStateException("No se pudo ajustar el inventario", error);
+            throw new ErrorAccesoDatosException("No se pudo ajustar el inventario", error);
         }
     }
 

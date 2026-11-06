@@ -1,5 +1,6 @@
 package com.grupo.retail.dao;
 
+import com.grupo.retail.exception.ErrorAccesoDatosException;
 import com.grupo.retail.exception.CorreoYaRegistradoException;
 import com.grupo.retail.exception.OperacionAdminNoPermitidaException;
 import com.grupo.retail.model.CredencialesUsuario;
@@ -55,7 +56,7 @@ public class UsuarioDAO {
             if ("23505".equals(error.getSQLState())) {
                 throw new CorreoYaRegistradoException();
             }
-            throw new IllegalStateException("No se pudo registrar el cliente", error);
+            throw new ErrorAccesoDatosException("No se pudo registrar el cliente", error);
         }
     }
 
@@ -81,7 +82,7 @@ public class UsuarioDAO {
             if ("23505".equals(error.getSQLState())) {
                 throw new CorreoYaRegistradoException();
             }
-            throw new IllegalStateException("No se pudo registrar la cuenta de personal", error);
+            throw new ErrorAccesoDatosException("No se pudo registrar la cuenta de personal", error);
         }
     }
 
@@ -96,7 +97,7 @@ public class UsuarioDAO {
             }
             return List.copyOf(usuarios);
         } catch (SQLException error) {
-            throw new IllegalStateException("No se pudieron consultar las cuentas", error);
+            throw new ErrorAccesoDatosException("No se pudieron consultar las cuentas", error);
         }
     }
 
@@ -144,7 +145,7 @@ public class UsuarioDAO {
                 throw error;
             }
         } catch (SQLException error) {
-            throw new IllegalStateException("No se pudo actualizar el rol", error);
+            throw new ErrorAccesoDatosException("No se pudo actualizar el rol", error);
         }
     }
 
@@ -180,7 +181,7 @@ public class UsuarioDAO {
                 throw error;
             }
         } catch (SQLException error) {
-            throw new IllegalStateException("No se pudo desactivar la cuenta", error);
+            throw new ErrorAccesoDatosException("No se pudo desactivar la cuenta", error);
         }
     }
 
@@ -210,7 +211,7 @@ public class UsuarioDAO {
                 return resultado.next();
             }
         } catch (SQLException error) {
-            throw new IllegalStateException("No se pudo validar la sesión", error);
+            throw new ErrorAccesoDatosException("No se pudo validar la sesión", error);
         }
     }
 
@@ -232,7 +233,7 @@ public class UsuarioDAO {
                 return Optional.of(new CredencialesUsuario(usuario, claveHash));
             }
         } catch (SQLException error) {
-            throw new IllegalStateException("No se pudo consultar la cuenta", error);
+            throw new ErrorAccesoDatosException("No se pudo consultar la cuenta", error);
         }
     }
 

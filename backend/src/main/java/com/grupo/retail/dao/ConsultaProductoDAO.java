@@ -1,5 +1,6 @@
 package com.grupo.retail.dao;
 
+import com.grupo.retail.exception.ErrorAccesoDatosException;
 import com.grupo.retail.model.ConsultaProducto;
 import com.grupo.retail.patterns.singleton.ProveedorConexiones;
 import org.springframework.stereotype.Repository;
@@ -53,7 +54,7 @@ public class ConsultaProductoDAO {
             return buscar(conexion, consultaId)
                     .orElseThrow(() -> new IllegalStateException("No se pudo leer la pregunta creada"));
         } catch (SQLException error) {
-            throw new IllegalStateException("No se pudo registrar la pregunta", error);
+            throw new ErrorAccesoDatosException("No se pudo registrar la pregunta", error);
         }
     }
 
@@ -80,7 +81,7 @@ public class ConsultaProductoDAO {
             actualizacion.setLong(3, consultaId);
             return actualizacion.executeUpdate() == 1;
         } catch (SQLException error) {
-            throw new IllegalStateException("No se pudo responder la pregunta", error);
+            throw new ErrorAccesoDatosException("No se pudo responder la pregunta", error);
         }
     }
 
@@ -93,7 +94,7 @@ public class ConsultaProductoDAO {
                 return resultado.next();
             }
         } catch (SQLException error) {
-            throw new IllegalStateException("No se pudo consultar la pregunta", error);
+            throw new ErrorAccesoDatosException("No se pudo consultar la pregunta", error);
         }
     }
 
@@ -111,7 +112,7 @@ public class ConsultaProductoDAO {
             }
             return List.copyOf(consultas);
         } catch (SQLException error) {
-            throw new IllegalStateException("No se pudieron consultar las preguntas", error);
+            throw new ErrorAccesoDatosException("No se pudieron consultar las preguntas", error);
         }
     }
 

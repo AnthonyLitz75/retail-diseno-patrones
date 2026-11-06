@@ -6,6 +6,7 @@
 
 import { generarSlug } from "../utilidades/enrutador.js";
 import { obtenerBadgeStock } from "../utilidades/stock.js";
+import { escaparHtml } from "../utilidades/seguridad.js";
 
 /**
  * Calcula el porcentaje y monto de ahorro si el producto tiene descuento.
@@ -47,6 +48,17 @@ export function renderizarVistaDetalleProducto(producto, {
   const stockInfo = obtenerBadgeStock(producto.stock);
   const ahorro = calcularAhorroProducto(producto.precio, producto.precioAnterior);
   const slugCat = generarSlug(producto.categoria || "catalogo");
+  // Todo dato proveniente del servidor se escapa antes de interpolarse en innerHTML.
+  const nombreSeguro = escaparHtml(producto.nombre);
+  const categoriaVolver = escaparHtml(producto.categoria || "Catálogo");
+  const categoriaBadge = escaparHtml(producto.categoria || "General");
+  const marcaSegura = escaparHtml(producto.marca);
+  const skuSeguro = escaparHtml(producto.sku || `PA-${producto.id}`);
+  const descripcionSegura = escaparHtml(
+    producto.descripcion ||
+      "Producto con garantía oficial y especificaciones certificadas por el fabricante para alto rendimiento y durabilidad.",
+  );
+  const imagenSegura = escaparHtml(imagenUrl);
 
   const contenedor = document.createElement("section");
   contenedor.className = "product-detail-card card shadow-sm border-0 mb-5";
@@ -62,7 +74,7 @@ export function renderizarVistaDetalleProducto(producto, {
           <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
           </svg>
-          <span>Volver a <strong>${producto.categoria || "Catálogo"}</strong></span>
+          <span>Volver a <strong>${categoriaVolver}</strong></span>
         </a>
       </nav>
 
@@ -79,7 +91,7 @@ export function renderizarVistaDetalleProducto(producto, {
 
             <!-- Imagen Principal sin sobreposiciones -->
             <div class="product-detail-image-box">
-              <img id="detail-product-img" src="${imagenUrl}" alt="${producto.nombre}" class="img-fluid product-detail-img" loading="eager" />
+              <img id="detail-product-img" src="${imagenSegura}" alt="${nombreSeguro}" class="img-fluid product-detail-img" loading="eager" />
             </div>
           </div>
         </div>
@@ -89,8 +101,8 @@ export function renderizarVistaDetalleProducto(producto, {
           <div class="product-detail-content d-flex flex-column gap-3">
             <!-- Badges de Marca, Categoría y Promoción Desacoplados -->
             <div class="d-flex flex-wrap align-items-center gap-2">
-              <span class="badge bg-light text-primary border border-primary-subtle px-3 py-1 fw-bold text-uppercase">${producto.categoria || "General"}</span>
-              ${producto.marca ? `<span class="badge bg-light text-secondary border px-3 py-1 fw-semibold">${producto.marca}</span>` : ""}
+              <span class="badge bg-light text-primary border border-primary-subtle px-3 py-1 fw-bold text-uppercase">${categoriaBadge}</span>
+              ${producto.marca ? `<span class="badge bg-light text-secondary border px-3 py-1 fw-semibold">${marcaSegura}</span>` : ""}
               ${
                 ahorro.tieneDescuento
                   ? `<span class="badge bg-danger text-white border-0 px-2.5 py-1 fw-bold shadow-sm">-${ahorro.porcentaje}% OFF</span>`
@@ -104,11 +116,11 @@ export function renderizarVistaDetalleProducto(producto, {
             </div>
 
             <!-- Título Principal -->
-            <h1 class="product-detail-title h3 fw-bold text-dark mb-1">${producto.nombre}</h1>
+            <h1 class="product-detail-title h3 fw-bold text-dark mb-1">${nombreSeguro}</h1>
 
             <!-- SKU y Calificación -->
             <div class="d-flex flex-wrap align-items-center gap-3 text-secondary small pb-2 border-bottom">
-              <span>Ref / SKU: <strong class="text-dark">${producto.sku || `PA-${producto.id}`}</strong></span>
+              <span>Ref / SKU: <strong class="text-dark">${skuSeguro}</strong></span>
               <span class="text-muted">|</span>
               <span class="d-inline-flex align-items-center gap-1 text-warning fw-semibold">
                 ★★★★★ <span class="text-secondary ms-1">5.0 (48 opiniones verificadas)</span>
@@ -150,7 +162,7 @@ export function renderizarVistaDetalleProducto(producto, {
             <!-- Descripción -->
             <div class="product-detail-description my-2">
               <h2 class="h6 fw-bold text-dark mb-2">Descripción del producto</h2>
-              <p class="text-secondary mb-0 leading-relaxed">${producto.descripcion || "Producto con garantía oficial y especificaciones certificadas por el fabricante para alto rendimiento y durabilidad."}</p>
+              <p class="text-secondary mb-0 leading-relaxed">${descripcionSegura}</p>
             </div>
 
             <!-- Selector de Cantidad y Botones de Compra -->

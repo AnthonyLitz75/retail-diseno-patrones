@@ -1,5 +1,6 @@
 package com.grupo.retail.dao;
 
+import com.grupo.retail.exception.ErrorAccesoDatosException;
 import com.grupo.retail.model.Carrito;
 import com.grupo.retail.model.LineaCarrito;
 import com.grupo.retail.patterns.singleton.ProveedorConexiones;
@@ -28,7 +29,7 @@ public class CarritoDAO {
             long carritoId = obtenerOCrearCarrito(conexion, usuarioId);
             return leerCarrito(conexion, carritoId);
         } catch (SQLException error) {
-            throw new IllegalStateException("No se pudo consultar el carrito", error);
+            throw new ErrorAccesoDatosException("No se pudo consultar el carrito", error);
         }
     }
 
@@ -62,7 +63,7 @@ public class CarritoDAO {
                 throw error;
             }
         } catch (SQLException error) {
-            throw new IllegalStateException("No se pudo agregar el producto al carrito", error);
+            throw new ErrorAccesoDatosException("No se pudo agregar el producto al carrito", error);
         }
     }
 
@@ -95,7 +96,7 @@ public class CarritoDAO {
                 throw error;
             }
         } catch (SQLException error) {
-            throw new IllegalStateException("No se pudo actualizar el carrito", error);
+            throw new ErrorAccesoDatosException("No se pudo actualizar el carrito", error);
         }
     }
 
@@ -119,7 +120,7 @@ public class CarritoDAO {
                 throw error;
             }
         } catch (SQLException error) {
-            throw new IllegalStateException("No se pudo quitar el producto del carrito", error);
+            throw new ErrorAccesoDatosException("No se pudo quitar el producto del carrito", error);
         }
     }
 

@@ -1,5 +1,6 @@
 package com.grupo.retail.dao;
 
+import com.grupo.retail.exception.ErrorAccesoDatosException;
 import com.grupo.retail.model.ResumenAdministrativo;
 import com.grupo.retail.model.VentaReporte;
 import com.grupo.retail.patterns.singleton.ProveedorConexiones;
@@ -73,7 +74,7 @@ public class ReporteDAO {
             return new ResumenAdministrativo(pedidos, ventas, productos, unidades, valor,
                     Map.copyOf(movimientos));
         } catch (SQLException error) {
-            throw new IllegalStateException("No se pudo generar el resumen administrativo", error);
+            throw new ErrorAccesoDatosException("No se pudo generar el resumen administrativo", error);
         }
     }
 
@@ -99,7 +100,7 @@ public class ReporteDAO {
                 return List.copyOf(ventas);
             }
         } catch (SQLException error) {
-            throw new IllegalStateException("No se pudo exportar el reporte de ventas", error);
+            throw new ErrorAccesoDatosException("No se pudo exportar el reporte de ventas", error);
         }
     }
 

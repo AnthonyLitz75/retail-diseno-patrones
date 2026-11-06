@@ -267,12 +267,16 @@ export function renderizarChipsFiltrosActivos({
   chips.forEach((chip) => {
     const chipSpan = document.createElement("span");
     chipSpan.className = "filter-chip";
-    chipSpan.innerHTML = `
-      <span>${chip.label}</span>
-      <button type="button" class="btn-close-chip" aria-label="Quitar filtro ${chip.label}">&times;</button>
-    `;
-    const btnClose = chipSpan.querySelector(".btn-close-chip");
-    if (btnClose && typeof onQuitarFiltro === "function") {
+    // La etiqueta puede incluir texto escrito por el usuario: se asigna como texto, no como HTML.
+    const etiqueta = document.createElement("span");
+    etiqueta.textContent = chip.label;
+    const btnClose = document.createElement("button");
+    btnClose.type = "button";
+    btnClose.className = "btn-close-chip";
+    btnClose.setAttribute("aria-label", `Quitar filtro ${chip.label}`);
+    btnClose.textContent = "\u00d7";
+    chipSpan.append(etiqueta, " ", btnClose);
+    if (typeof onQuitarFiltro === "function") {
       btnClose.addEventListener("click", () => {
         onQuitarFiltro(chip.tipo);
       });

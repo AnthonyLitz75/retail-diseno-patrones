@@ -72,6 +72,13 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.PAYMENT_REQUIRED).body(Map.of("error", error.getMessage()));
     }
 
+    @ExceptionHandler(ErrorAccesoDatosException.class)
+    public ResponseEntity<Map<String, String>> manejarErrorAccesoDatos(ErrorAccesoDatosException error) {
+        LOGGER.log(System.Logger.Level.ERROR, "Fallo de acceso a datos: " + error.getMessage(), error);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Ocurrió un error inesperado en el servidor"));
+    }
+
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<Map<String, String>> manejarEstadoIlegal(IllegalStateException error) {
         String mensaje = error.getMessage() != null && !error.getMessage().isBlank()

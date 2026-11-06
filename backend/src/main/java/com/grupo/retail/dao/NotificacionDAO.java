@@ -1,5 +1,6 @@
 package com.grupo.retail.dao;
 
+import com.grupo.retail.exception.ErrorAccesoDatosException;
 import com.grupo.retail.model.Notificacion;
 import com.grupo.retail.patterns.singleton.ProveedorConexiones;
 import org.springframework.stereotype.Repository;
@@ -46,7 +47,7 @@ public class NotificacionDAO {
                 return List.copyOf(notificaciones);
             }
         } catch (SQLException error) {
-            throw new IllegalStateException("No se pudieron consultar las notificaciones", error);
+            throw new ErrorAccesoDatosException("No se pudieron consultar las notificaciones", error);
         }
     }
 }

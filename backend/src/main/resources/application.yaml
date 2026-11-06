@@ -13,3 +13,5 @@ server:
       cookie:
         http-only: true
         same-site: lax
+        # En producción (HTTPS) define SESSION_COOKIE_SECURE=true. En local queda en false.
+        secure: ${SESSION_COOKIE_SECURE:false}

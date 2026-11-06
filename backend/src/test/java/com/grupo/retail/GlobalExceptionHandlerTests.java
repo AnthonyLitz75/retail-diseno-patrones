@@ -3,6 +3,7 @@ package com.grupo.retail;
 import com.grupo.retail.exception.CategoriaDuplicadaException;
 import com.grupo.retail.exception.CodigoSeguimientoDuplicadoException;
 import com.grupo.retail.exception.CorreoYaRegistradoException;
+import com.grupo.retail.exception.ErrorAccesoDatosException;
 import com.grupo.retail.exception.GlobalExceptionHandler;
 import com.grupo.retail.exception.OperacionAdminNoPermitidaException;
 import com.grupo.retail.exception.PagoRechazadoException;
@@ -127,6 +128,17 @@ class GlobalExceptionHandlerTests {
         assertEquals(HttpStatus.CONFLICT, respuesta.getStatusCode());
         assertNotNull(respuesta.getBody());
         assertEquals("Solo se puede cancelar un pedido pendiente", respuesta.getBody().get("error"));
+    }
+
+    @Test
+    void manejarErrorAccesoDatosRetorna500GenericoSinExponerDetalle() {
+        ResponseEntity<Map<String, String>> respuesta =
+                handler.manejarErrorAccesoDatos(new ErrorAccesoDatosException(
+                        "No se pudo consultar el pedido", new java.sql.SQLException("connection refused")));
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, respuesta.getStatusCode());
+        assertNotNull(respuesta.getBody());
+        assertEquals("Ocurrió un error inesperado en el servidor", respuesta.getBody().get("error"));
     }
 
     @Test

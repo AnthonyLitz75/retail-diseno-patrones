@@ -122,7 +122,7 @@ class FactoryNotificacionesTests {
         doThrow(new java.sql.SQLException("fallo de persistencia"))
                 .when(notifier).notificar(eq(conexion), any(EventoNotificacion.class));
 
-        assertThrows(IllegalStateException.class, () -> new com.grupo.retail.dao.PedidoDAO(proveedor, factory)
+        assertThrows(com.grupo.retail.exception.ErrorAccesoDatosException.class, () -> new com.grupo.retail.dao.PedidoDAO(proveedor, factory)
                 .cambiarEstado(15L, "PENDIENTE", "EN_PREPARACION", 8L, "Preparado"));
         verify(conexion).rollback();
         verify(conexion, never()).commit();
