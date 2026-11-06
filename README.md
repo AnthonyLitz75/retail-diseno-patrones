@@ -30,24 +30,6 @@ Píxel Andino es una aplicación web full stack que cubre el flujo completo de u
 
 Fue desarrollada como proyecto académico del curso **Diseño de Patrones de Software** , con el objetivo de aplicar patrones del catálogo GoF sobre un dominio realista, con un backend en capas y un frontend modular sin frameworks de UI.
 
-## Capturas
-
-<!--
-Guarda tus capturas de pantalla en docs/img/ (catalogo.png, checkout.png, pedidos.png, admin.png)
-y descomenta esta tabla para visualizarlas en GitHub:
-
-|        Vitrina del catálogo        |              Checkout              |
-| :--------------------------------: | :--------------------------------: |
-| ![Catálogo](docs/img/catalogo.png) | ![Checkout](docs/img/checkout.png) |
-
-|      Seguimiento de pedidos      |        Panel de administración        |
-| :------------------------------: | :-----------------------------------: |
-| ![Pedidos](docs/img/pedidos.png) | ![Administración](docs/img/admin.png) |
--->
-
-> [!NOTE]
-> Las capturas visuales de la interfaz (`catalogo.png`, `checkout.png`, `pedidos.png`, `admin.png`) se configuran en el directorio [`docs/img/`](docs/img/).
-
 ## Características
 
 ### Tienda (cliente)
@@ -274,19 +256,3 @@ retail/
 │   └── test/                # Pruebas unitarias
 └── database/                # Scripts DDL y DML para PostgreSQL
 ```
-
-## Roadmap
-
-- [ ] Documentación de la API con OpenAPI/Swagger.
-- [ ] Integración con una pasarela de pago real.
-- [ ] Autenticación basada en tokens (JWT).
-- [ ] Integración continua con GitHub Actions.
-- [ ] Despliegue con Docker Compose.
-
-## Autores
-
-- `<Nombre>` — [@makaay_atr](https://github.com/AnthonyLitz75)
-
-## Licencia
-
-Distribuido bajo la licencia MIT. Consulta el archivo [`LICENSE`](LICENSE) para más información.
