@@ -142,8 +142,8 @@ document.querySelector("#app").innerHTML = `
           <span id="usuario-activo" class="text-secondary small fw-semibold" aria-live="polite" hidden></span>
           <button id="cerrar-sesion" class="btn btn-outline-secondary btn-sm" type="button" hidden>Cerrar sesión</button>
 
-          <div id="contenedor-notificaciones" class="dropdown d-inline-block" hidden>
-            <button id="btn-notificaciones" class="btn btn-outline-secondary position-relative me-1" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Notificaciones de pedidos">
+          <div id="contenedor-notificaciones" class="dropdown" style="display: none;" hidden>
+            <button id="btn-notificaciones" class="btn btn-outline-secondary position-relative me-1" type="button" aria-expanded="false" aria-haspopup="true" aria-label="Notificaciones de pedidos">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-bell" viewBox="0 0 16 16" aria-hidden="true">
                 <path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2zM8 1.918l-.797.161A4.002 4.002 0 0 0 4 6c0 .628-.134 2.197-.459 3.742-.16.767-.376 1.566-.663 2.258h10.244c-.287-.692-.502-1.49-.663-2.258C12.134 8.197 12 6.628 12 6a4.002 4.002 0 0 0-3.203-3.92L8 1.917zM14.22 12c.223.447.481.801.78 1H1c.299-.199.557-.553.78-1C2.68 10.2 3 6.88 3 6c0-2.42 1.72-4.44 4.005-4.901a1 1 0 1 1 1.99 0A5.002 5.002 0 0 1 13 6c0 .88.32 4.2 1.22 6z"/>
               </svg>
@@ -1261,6 +1261,8 @@ const modalPreguntaMensaje = document.querySelector("#modal-pregunta-mensaje");
 const contenedorNotificaciones = document.querySelector(
   "#contenedor-notificaciones",
 );
+const btnNotificaciones = document.querySelector("#btn-notificaciones");
+const menuNotificaciones = document.querySelector("#menu-notificaciones");
 const badgeContadorNotificaciones = document.querySelector(
   "#badge-contador-notificaciones",
 );
@@ -2987,20 +2989,41 @@ async function mostrarSesionActiva(usuario) {
     cargarPreguntasCliente();
     cargarCarrito();
     cargarNotificacionesCliente();
+    iniciarPollingNotificaciones();
   } else {
+    detenerPollingNotificaciones();
     preguntasCliente = [];
     ocultarCarrito();
-    contenedorNotificaciones.hidden = true;
+    if (contenedorNotificaciones) {
+      contenedorNotificaciones.hidden = true;
+      contenedorNotificaciones.style.display = "none";
+    }
+    if (menuNotificaciones) {
+      menuNotificaciones.classList.remove("show");
+    }
+    if (btnNotificaciones) {
+      btnNotificaciones.setAttribute("aria-expanded", "false");
+    }
     badgeContadorNotificaciones.hidden = true;
     listaPreguntasVendedor.replaceChildren();
   }
 }
 
 function mostrarSesionCerrada() {
+  detenerPollingNotificaciones();
   usuarioSesion = null;
   establecerUsuarioSesion(null);
   preguntasCliente = [];
-  contenedorNotificaciones.hidden = true;
+  if (contenedorNotificaciones) {
+    contenedorNotificaciones.hidden = true;
+    contenedorNotificaciones.style.display = "none";
+  }
+  if (menuNotificaciones) {
+    menuNotificaciones.classList.remove("show");
+  }
+  if (btnNotificaciones) {
+    btnNotificaciones.setAttribute("aria-expanded", "false");
+  }
   badgeContadorNotificaciones.hidden = true;
   listaNotificaciones.replaceChildren();
   seccionGestionProductos.hidden = true;
@@ -3025,13 +3048,36 @@ function mostrarSesionCerrada() {
 }
 
 let notificacionesCliente = [];
+let timerPollingNotificaciones = null;
+
+function iniciarPollingNotificaciones() {
+  detenerPollingNotificaciones();
+  timerPollingNotificaciones = setInterval(() => {
+    if (usuarioSesion?.rol === "CLIENTE") {
+      cargarNotificacionesCliente();
+    }
+  }, 25000);
+}
+
+function detenerPollingNotificaciones() {
+  if (timerPollingNotificaciones) {
+    clearInterval(timerPollingNotificaciones);
+    timerPollingNotificaciones = null;
+  }
+}
 
 async function cargarNotificacionesCliente() {
   if (usuarioSesion?.rol !== "CLIENTE") {
-    contenedorNotificaciones.hidden = true;
+    if (contenedorNotificaciones) {
+      contenedorNotificaciones.hidden = true;
+      contenedorNotificaciones.style.display = "none";
+    }
     return;
   }
-  contenedorNotificaciones.hidden = false;
+  if (contenedorNotificaciones) {
+    contenedorNotificaciones.hidden = false;
+    contenedorNotificaciones.style.display = "inline-block";
+  }
   try {
     const datos = await consultarMisNotificaciones(apiRequest, 50);
     notificacionesCliente = Array.isArray(datos) ? datos : [];
@@ -3079,6 +3125,9 @@ function renderizarBandejaNotificaciones(notificaciones) {
     const item = document.createElement("div");
     item.className =
       "notification-item p-2 mb-1 rounded text-decoration-none d-block";
+    if (!notif.leida) {
+      item.classList.add("is-unread");
+    }
     item.style.cursor = "pointer";
 
     const badgeInfo = obtenerBadgeEstadoNotificacion(notif.estado);
@@ -3108,6 +3157,12 @@ function renderizarBandejaNotificaciones(notificaciones) {
     item.append(cabecera, mensajeP, linkSmall);
 
     item.addEventListener("click", () => {
+      if (menuNotificaciones) {
+        menuNotificaciones.classList.remove("show");
+      }
+      if (btnNotificaciones) {
+        btnNotificaciones.setAttribute("aria-expanded", "false");
+      }
       cambiarVista("pedidos");
       setTimeout(() => {
         const elementoPedido = document.querySelector(
@@ -3230,10 +3285,55 @@ document
   .querySelector("#actualizar-preguntas-vendedor")
   .addEventListener("click", cargarPreguntasVendedor);
 
+if (btnNotificaciones && menuNotificaciones) {
+  btnNotificaciones.addEventListener("click", (evento) => {
+    evento.stopPropagation();
+    // Cerrar menú de categorías si estuviese abierto
+    if (menuCategoriasDropdown) {
+      menuCategoriasDropdown.classList.remove("show");
+    }
+    if (btnToggleCategoriasMenu) {
+      btnToggleCategoriasMenu.setAttribute("aria-expanded", "false");
+    }
+
+    const esVisible = menuNotificaciones.classList.toggle("show");
+    btnNotificaciones.setAttribute("aria-expanded", String(esVisible));
+
+    if (esVisible) {
+      cargarNotificacionesCliente();
+    }
+  });
+
+  // Evitar que hacer clic dentro de la cabecera o lista del menú lo cierre inesperadamente
+  menuNotificaciones.addEventListener("click", (evento) => {
+    evento.stopPropagation();
+  });
+
+  // Cerrar al hacer clic en cualquier otra parte del documento
+  document.addEventListener("click", (evento) => {
+    if (!evento.target.closest("#contenedor-notificaciones")) {
+      menuNotificaciones.classList.remove("show");
+      btnNotificaciones.setAttribute("aria-expanded", "false");
+    }
+  });
+
+  // Cerrar accesiblemente al presionar Escape
+  document.addEventListener("keydown", (evento) => {
+    if (evento.key === "Escape" && menuNotificaciones.classList.contains("show")) {
+      menuNotificaciones.classList.remove("show");
+      btnNotificaciones.setAttribute("aria-expanded", "false");
+      btnNotificaciones.focus();
+    }
+  });
+}
+
 if (btnRefrescarNotificaciones) {
   btnRefrescarNotificaciones.addEventListener("click", (evento) => {
     evento.stopPropagation();
-    cargarNotificacionesCliente();
+    btnRefrescarNotificaciones.classList.add("opacity-50");
+    cargarNotificacionesCliente().finally(() => {
+      btnRefrescarNotificaciones.classList.remove("opacity-50");
+    });
   });
 }
 
@@ -3591,6 +3691,12 @@ window.addEventListener("hashchange", () => {
 if (btnToggleCategoriasMenu && menuCategoriasDropdown) {
   btnToggleCategoriasMenu.addEventListener("click", (e) => {
     e.stopPropagation();
+    if (menuNotificaciones) {
+      menuNotificaciones.classList.remove("show");
+    }
+    if (btnNotificaciones) {
+      btnNotificaciones.setAttribute("aria-expanded", "false");
+    }
     const esVisible = menuCategoriasDropdown.classList.toggle("show");
     btnToggleCategoriasMenu.setAttribute("aria-expanded", String(esVisible));
   });
