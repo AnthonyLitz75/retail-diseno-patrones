@@ -2,16 +2,12 @@ package com.grupo.retail.controller;
 
 import com.grupo.retail.dto.ActualizarRolUsuario;
 import com.grupo.retail.dto.RegistroPersonal;
-import com.grupo.retail.exception.CorreoYaRegistradoException;
-import com.grupo.retail.exception.OperacionAdminNoPermitidaException;
 import com.grupo.retail.model.Usuario;
 import com.grupo.retail.service.SesionEmpleado;
 import com.grupo.retail.service.UsuarioService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -23,8 +19,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
 import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
 
 @RestController
 @RequestMapping("/api/admin/usuarios")
@@ -68,26 +62,5 @@ public class UsuarioAdminController {
         Long administradorId = sesionEmpleado.exigirRol(peticion, "ADMIN");
         usuarioService.desactivar(id, administradorId);
         return ResponseEntity.noContent().build();
-    }
-
-    @ExceptionHandler(CorreoYaRegistradoException.class)
-    public ResponseEntity<Map<String, String>> manejarCorreoDuplicado(
-            CorreoYaRegistradoException error) {
-        return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(Map.of("error", error.getMessage()));
-    }
-
-    @ExceptionHandler(OperacionAdminNoPermitidaException.class)
-    public ResponseEntity<Map<String, String>> manejarOperacionNoPermitida(
-            OperacionAdminNoPermitidaException error) {
-        return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(Map.of("error", error.getMessage()));
-    }
-
-    @ExceptionHandler(NoSuchElementException.class)
-    public ResponseEntity<Map<String, String>> manejarCuentaNoEncontrada(
-            NoSuchElementException error) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(Map.of("error", error.getMessage()));
     }
 }

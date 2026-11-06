@@ -440,6 +440,18 @@ public class PedidoDAO {
     private record LineaParaReponer(long productoId, int cantidad) {
     }
 
+    public Optional<PedidoConfirmado> buscarPorClaveConfirmacion(
+            Long usuarioId, String claveConfirmacion) {
+        if (claveConfirmacion == null || claveConfirmacion.isBlank() || usuarioId == null) {
+            return Optional.empty();
+        }
+        try (Connection conexion = proveedorConexiones.obtenerConexion()) {
+            return buscarPorClaveConfirmacion(conexion, usuarioId, claveConfirmacion.trim());
+        } catch (SQLException error) {
+            throw new IllegalStateException("No se pudo verificar la clave de confirmación", error);
+        }
+    }
+
     public PedidoConfirmado confirmarCompra(
             Long usuarioId, Function<BigDecimal, ResultadoPago> procesarPago) {
         return confirmarCompra(usuarioId, procesarPago, null, null, null);
@@ -475,58 +487,18 @@ public class PedidoDAO {
 
                 long carritoId = bloquearCarritoActivo(conexion, usuarioId);
                 List<ProductoDelCarrito> productos = leerYBloquearProductos(conexion, carritoId);
-                if (productos.isEmpty()) {
-                    throw new IllegalArgumentException("Tu carrito está vacío");
-                }
-
-                BigDecimal total = BigDecimal.ZERO;
-                for (ProductoDelCarrito producto : productos) {
-                    if (!producto.activo()) {
-                        throw new IllegalArgumentException(
-                                "El producto " + producto.nombre() + " ya no está disponible");
-                    }
-                    if (producto.precio().signum() <= 0) {
-                        throw new IllegalArgumentException(
-                                "El precio de " + producto.nombre() + " debe ser mayor que cero");
-                    }
-                    if (producto.cantidad() > producto.stock()) {
-                        throw new IllegalArgumentException(
-                                "Stock insuficiente para " + producto.nombre()
-                                        + ". Disponible: " + producto.stock());
-                    }
-                    total = total.add(
-                            producto.precio().multiply(BigDecimal.valueOf(producto.cantidad())));
-                }
+                validarProductosParaCompra(productos);
+                BigDecimal total = calcularTotal(productos);
 
                 ResultadoPago resultadoPago = procesarPago.apply(total);
-                if (!resultadoPago.aprobado()) {
-                    throw new PagoRechazadoException(resultadoPago.mensaje());
-                }
+                validarResultadoPago(resultadoPago);
 
-                PedidoCreado pedido = insertarPedido(
-                        conexion, usuarioId, total, claveLimpia, destLimpio, dirLimpia);
-                List<DetallePedido> detalles = new ArrayList<>();
-
-                for (ProductoDelCarrito producto : productos) {
-                    insertarDetalle(conexion, pedido.id(), producto);
-                    descontarStock(conexion, pedido.id(), usuarioId, producto);
-                    BigDecimal subtotal = producto.precio()
-                            .multiply(BigDecimal.valueOf(producto.cantidad()));
-                    detalles.add(new DetallePedido(
-                            producto.id(), producto.nombre(), producto.precio(),
-                            producto.cantidad(), subtotal));
-                }
-
-                insertarPago(conexion, pedido.id(), total, resultadoPago);
-                insertarHistorialInicial(conexion, pedido.id(), usuarioId);
-                vaciarYConvertirCarrito(conexion, carritoId);
+                PedidoConfirmado confirmado = registrarCompraEnTransaccion(
+                        conexion, usuarioId, total, resultadoPago, productos,
+                        carritoId, claveLimpia, destLimpio, dirLimpia);
 
                 conexion.commit();
-                return new PedidoConfirmado(
-                        pedido.id(), "PENDIENTE", total, pedido.creadoEn(),
-                        resultadoPago.metodo(), resultadoPago.estado(),
-                        resultadoPago.referencia(), List.copyOf(detalles),
-                        claveLimpia, destLimpio, dirLimpia);
+                return confirmado;
             } catch (SQLException | RuntimeException error) {
                 conexion.rollback();
                 if (claveLimpia != null) {
@@ -544,6 +516,76 @@ public class PedidoDAO {
         } catch (SQLException error) {
             throw new IllegalStateException("No se pudo confirmar la compra", error);
         }
+    }
+
+    private void validarProductosParaCompra(List<ProductoDelCarrito> productos) {
+        if (productos.isEmpty()) {
+            throw new IllegalArgumentException("Tu carrito está vacío");
+        }
+        for (ProductoDelCarrito producto : productos) {
+            if (!producto.activo()) {
+                throw new IllegalArgumentException(
+                        "El producto " + producto.nombre() + " ya no está disponible");
+            }
+            if (producto.precio().signum() <= 0) {
+                throw new IllegalArgumentException(
+                        "El precio de " + producto.nombre() + " debe ser mayor que cero");
+            }
+            if (producto.cantidad() > producto.stock()) {
+                throw new IllegalArgumentException(
+                        "Stock insuficiente para " + producto.nombre()
+                                + ". Disponible: " + producto.stock());
+            }
+        }
+    }
+
+    private BigDecimal calcularTotal(List<ProductoDelCarrito> productos) {
+        BigDecimal total = BigDecimal.ZERO;
+        for (ProductoDelCarrito producto : productos) {
+            total = total.add(
+                    producto.precio().multiply(BigDecimal.valueOf(producto.cantidad())));
+        }
+        return total;
+    }
+
+    private void validarResultadoPago(ResultadoPago resultadoPago) {
+        if (resultadoPago == null || !resultadoPago.aprobado()) {
+            String mensaje = resultadoPago != null ? resultadoPago.mensaje() : "Pago rechazado";
+            throw new PagoRechazadoException(mensaje);
+        }
+    }
+
+    private PedidoConfirmado registrarCompraEnTransaccion(
+            Connection conexion, Long usuarioId, BigDecimal total, ResultadoPago resultadoPago,
+            List<ProductoDelCarrito> productos, long carritoId,
+            String claveConfirmacion, String destinatario, String direccionEnvio) throws SQLException {
+        PedidoCreado pedido = insertarPedido(
+                conexion, usuarioId, total, claveConfirmacion, destinatario, direccionEnvio);
+        List<DetallePedido> detalles = new ArrayList<>();
+
+        for (ProductoDelCarrito producto : productos) {
+            insertarDetalle(conexion, pedido.id(), producto);
+            descontarStock(conexion, pedido.id(), usuarioId, producto);
+            BigDecimal subtotal = producto.precio()
+                    .multiply(BigDecimal.valueOf(producto.cantidad()));
+            detalles.add(new DetallePedido(
+                    producto.id(), producto.nombre(), producto.precio(),
+                    producto.cantidad(), subtotal));
+        }
+
+        insertarPago(conexion, pedido.id(), total, resultadoPago);
+        insertarHistorialInicial(conexion, pedido.id(), usuarioId);
+        vaciarYConvertirCarrito(conexion, carritoId);
+
+        return new PedidoConfirmado(
+                pedido.id(), "PENDIENTE", total, pedido.creadoEn(),
+                resultadoPago.metodo(), resultadoPago.estado(),
+                resultadoPago.referencia(), List.copyOf(detalles),
+                claveConfirmacion, destinatario, direccionEnvio);
+    }
+
+    private String normalizar(String valor) {
+        return valor != null && !valor.isBlank() ? valor.trim() : null;
     }
 
     private Optional<PedidoConfirmado> buscarPorClaveConfirmacion(

@@ -5,6 +5,7 @@ import com.grupo.retail.dao.CategoriaDAO;
 import com.grupo.retail.dao.ProductoDAO;
 import com.grupo.retail.dto.CategoriaArbolDTO;
 import com.grupo.retail.model.Categoria;
+import com.grupo.retail.patterns.composite.ArbolCategoriaBuilder;
 import com.grupo.retail.patterns.composite.CategoriaComponente;
 import com.grupo.retail.patterns.composite.CategoriaCompuesta;
 import com.grupo.retail.patterns.composite.CategoriaSimple;
@@ -136,6 +137,39 @@ class CategoriaCompositeTests {
     }
 
     @Test
+    @DisplayName("ArbolCategoriaBuilder ensambla directamente el árbol composite de forma desacoplada del DAO")
+    void arbolCategoriaBuilderEnsamblaJerarquiaDirectamente() {
+        List<Categoria> categorias = List.of(
+                new Categoria(10L, "Monitores", true, null),
+                new Categoria(20L, "Audio", true, null),
+                new Categoria(21L, "Auriculares", true, 20L)
+        );
+        Map<Long, Integer> conteos = Map.of(10L, 5, 20L, 0, 21L, 2);
+
+        List<CategoriaComponente> arbol = ArbolCategoriaBuilder.construirArbol(categorias, conteos, 3);
+
+        assertEquals(3, arbol.size());
+        assertEquals("Monitores", arbol.get(0).getNombre());
+        assertEquals("Audio", arbol.get(1).getNombre());
+        assertTrue(arbol.get(1).esCompuesta());
+        assertEquals(2, arbol.get(1).getTotalProductos());
+        assertEquals("Otros", arbol.get(2).getNombre());
+        assertEquals(3, arbol.get(2).getTotalProductos());
+    }
+
+    @Test
+    @DisplayName("ArbolCategoriaBuilder maneja lista vacía o nula con gracia")
+    void arbolCategoriaBuilderManejaListaVaciaONula() {
+        assertTrue(ArbolCategoriaBuilder.construirArbol(null, null, 0).isEmpty());
+        assertTrue(ArbolCategoriaBuilder.construirArbol(List.of(), Map.of(), 0).isEmpty());
+
+        List<CategoriaComponente> soloOtros = ArbolCategoriaBuilder.construirArbol(null, null, 4);
+        assertEquals(1, soloOtros.size());
+        assertEquals("Otros", soloOtros.get(0).getNombre());
+        assertEquals(4, soloOtros.get(0).getTotalProductos());
+    }
+
+    @Test
     @DisplayName("CategoriaArbolDTO serializa fielmente la jerarquía generada por el Composite")
     void dtoSerializaJerarquiaDelComposite() {
         CategoriaCompuesta pc = new CategoriaCompuesta(7L, "Componentes para PC", 0);
@@ -161,18 +195,20 @@ class CategoriaCompositeTests {
 
         CategoriaCompuesta pc = new CategoriaCompuesta(7L, "Componentes para PC", 0);
         pc.agregarSubcategoria(new CategoriaSimple(8L, "Procesadores", 3));
+
         when(service.listarArbolCategorias()).thenReturn(List.of(pc));
 
         List<CategoriaArbolDTO> resultado = controller.listarArbolCategorias();
+
         assertEquals(1, resultado.size());
         assertEquals("Componentes para PC", resultado.get(0).nombre());
-        assertEquals(3, resultado.get(0).totalProductos());
         assertEquals(1, resultado.get(0).subcategorias().size());
+        assertEquals("Procesadores", resultado.get(0).subcategorias().get(0).nombre());
     }
 
     @Test
-    @DisplayName("ProductoDAO filtra subcategorías al consultar por categoría padre")
-    void productoDaoFiltraSubcategoriasAlConsultarCategoriaPadre() throws Exception {
+    @DisplayName("ProductoDAO filtra subcategorías y categoría padre con SQL anidado")
+    void productoDaoFiltraSubcategoriasYPadre() throws Exception {
         ProveedorConexiones provider = mock(ProveedorConexiones.class);
         Connection connection = mock(Connection.class);
         PreparedStatement statement = mock(PreparedStatement.class);

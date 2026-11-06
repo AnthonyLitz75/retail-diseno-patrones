@@ -10,7 +10,6 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -18,9 +17,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.Map;
-import java.util.NoSuchElementException;
 
 @RestController
 @RequestMapping("/api/carrito")
@@ -44,7 +40,7 @@ public class CarritoController {
             @Valid @RequestBody AgregarProductoCarrito datos,
             HttpServletRequest solicitud) {
         Carrito carrito = carritoService.agregar(
-                sesionCliente.obtenerId(solicitud), datos.productoId(), datos.cantidad());
+            sesionCliente.obtenerId(solicitud), datos.productoId(), datos.cantidad());
         return ResponseEntity.status(HttpStatus.CREATED).body(carrito);
     }
 
@@ -63,16 +59,5 @@ public class CarritoController {
             HttpServletRequest solicitud) {
         carritoService.quitar(sesionCliente.obtenerId(solicitud), productoId);
         return ResponseEntity.noContent().build();
-    }
-
-    @ExceptionHandler(NoSuchElementException.class)
-    public ResponseEntity<Map<String, String>> manejarNoEncontrado(NoSuchElementException error) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(Map.of("error", error.getMessage()));
-    }
-
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<Map<String, String>> manejarDatoInvalido(IllegalArgumentException error) {
-        return ResponseEntity.badRequest().body(Map.of("error", error.getMessage()));
     }
 }

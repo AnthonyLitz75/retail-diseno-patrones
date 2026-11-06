@@ -2,7 +2,6 @@ package com.grupo.retail.controller;
 
 import com.grupo.retail.dto.SolicitudConfirmarPedido;
 import com.grupo.retail.dto.SolicitudDespachoPedido;
-import com.grupo.retail.exception.PagoRechazadoException;
 import com.grupo.retail.facade.CheckoutFacade;
 import com.grupo.retail.model.PedidoConfirmado;
 import com.grupo.retail.model.PedidoVista;
@@ -14,7 +13,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -23,9 +21,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Map;
 import java.util.List;
-import java.util.NoSuchElementException;
 
 @RestController
 @RequestMapping("/api/pedidos")
@@ -124,28 +120,5 @@ public class PedidoController {
                 solicitud.destinatario(),
                 solicitud.direccionEnvio());
         return ResponseEntity.status(HttpStatus.CREATED).body(pedido);
-    }
-
-    @ExceptionHandler(NoSuchElementException.class)
-    public ResponseEntity<Map<String, String>> manejarNoEncontrado(NoSuchElementException error) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(Map.of("error", error.getMessage()));
-    }
-
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<Map<String, String>> manejarDatoInvalido(IllegalArgumentException error) {
-        return ResponseEntity.badRequest().body(Map.of("error", error.getMessage()));
-    }
-
-    @ExceptionHandler(PagoRechazadoException.class)
-    public ResponseEntity<Map<String, String>> manejarPagoRechazado(PagoRechazadoException error) {
-        return ResponseEntity.status(HttpStatus.PAYMENT_REQUIRED)
-                .body(Map.of("error", error.getMessage()));
-    }
-
-    @ExceptionHandler(IllegalStateException.class)
-    public ResponseEntity<Map<String, String>> manejarEstadoIlegal(IllegalStateException error) {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("error", error.getMessage()));
     }
 }

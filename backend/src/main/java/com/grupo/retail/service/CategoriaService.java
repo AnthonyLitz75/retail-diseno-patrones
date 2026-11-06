@@ -3,6 +3,7 @@ package com.grupo.retail.service;
 import com.grupo.retail.dao.CategoriaDAO;
 import com.grupo.retail.dto.SolicitudCategoria;
 import com.grupo.retail.model.Categoria;
+import com.grupo.retail.patterns.composite.CategoriaComponente;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -18,6 +19,10 @@ public class CategoriaService {
 
     public List<Categoria> listarTodas() {
         return categoriaDAO.listarTodas();
+    }
+
+    public List<CategoriaComponente> listarArbol() {
+        return categoriaDAO.listarArbol();
     }
 
     public Categoria crear(SolicitudCategoria solicitud) {

@@ -7,6 +7,7 @@ import com.grupo.retail.dao.UsuarioDAO;
 import com.grupo.retail.dto.ActualizarEstadoCategoria;
 import com.grupo.retail.dto.SolicitudCategoria;
 import com.grupo.retail.exception.CategoriaDuplicadaException;
+import com.grupo.retail.exception.GlobalExceptionHandler;
 import com.grupo.retail.model.Categoria;
 import com.grupo.retail.patterns.singleton.ProveedorConexiones;
 import com.grupo.retail.service.CategoriaService;
@@ -173,8 +174,8 @@ class CategoriaAdminTests {
 
     @Test
     void duplicadoSeTraduceA409() {
-        var respuesta = controller(mock(CategoriaService.class))
-                .manejarDuplicado(new CategoriaDuplicadaException());
+        var respuesta = new GlobalExceptionHandler()
+                .manejarCategoriaDuplicada(new CategoriaDuplicadaException());
         assertEquals(409, respuesta.getStatusCode().value());
     }
 

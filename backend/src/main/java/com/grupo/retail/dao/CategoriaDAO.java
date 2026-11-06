@@ -2,9 +2,8 @@ package com.grupo.retail.dao;
 
 import com.grupo.retail.exception.CategoriaDuplicadaException;
 import com.grupo.retail.model.Categoria;
+import com.grupo.retail.patterns.composite.ArbolCategoriaBuilder;
 import com.grupo.retail.patterns.composite.CategoriaComponente;
-import com.grupo.retail.patterns.composite.CategoriaCompuesta;
-import com.grupo.retail.patterns.composite.CategoriaSimple;
 import com.grupo.retail.patterns.singleton.ProveedorConexiones;
 import org.springframework.stereotype.Repository;
 
@@ -13,7 +12,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -86,66 +84,22 @@ public class CategoriaDAO {
                 }
             }
 
-            return construirArbol(categorias, conteoPorCategoria, productosSinCategoria);
+            return ArbolCategoriaBuilder.construirArbol(categorias, conteoPorCategoria, productosSinCategoria);
         } catch (SQLException error) {
             throw new IllegalStateException("No se pudo construir el árbol de categorías", error);
         }
     }
 
+    /**
+     * @deprecated La lógica de ensamblado del patrón Composite se trasladó a {@link ArbolCategoriaBuilder#construirArbol}.
+     * Se mantiene este método delegado para compatibilidad hacia atrás.
+     */
+    @Deprecated(since = "1.1")
     public static List<CategoriaComponente> construirArbol(
             List<Categoria> categorias,
             Map<Long, Integer> conteoPorCategoria,
             int productosSinCategoria) {
-        Map<Long, List<Categoria>> subcategoriasPorPadre = new HashMap<>();
-        List<Categoria> principales = new ArrayList<>();
-
-        for (Categoria cat : categorias) {
-            if (cat.categoriaPadreId() == null) {
-                principales.add(cat);
-            } else {
-                subcategoriasPorPadre
-                        .computeIfAbsent(cat.categoriaPadreId(), k -> new ArrayList<>())
-                        .add(cat);
-            }
-        }
-
-        List<CategoriaComponente> resultado = new ArrayList<>();
-
-        for (Categoria principal : principales) {
-            List<Categoria> hijas = subcategoriasPorPadre.getOrDefault(
-                    principal.idCategoria(), Collections.emptyList());
-            int conteoPropio = conteoPorCategoria.getOrDefault(principal.idCategoria(), 0);
-
-            if (!hijas.isEmpty()) {
-                CategoriaCompuesta compuesta = new CategoriaCompuesta(
-                        principal.idCategoria(), principal.nombre(), conteoPropio);
-                for (Categoria hija : hijas) {
-                    int conteoHija = conteoPorCategoria.getOrDefault(hija.idCategoria(), 0);
-                    // Omitir subcategorías con 0 productos
-                    if (conteoHija > 0) {
-                        compuesta.agregarSubcategoria(
-                                new CategoriaSimple(hija.idCategoria(), hija.nombre(), conteoHija));
-                    }
-                }
-                // Omitir categorías compuestas si el total acumulado es 0
-                if (compuesta.getTotalProductos() > 0) {
-                    resultado.add(compuesta);
-                }
-            } else {
-                // Categoría simple / hoja sin subcategorías
-                if (conteoPropio > 0) {
-                    resultado.add(new CategoriaSimple(
-                            principal.idCategoria(), principal.nombre(), conteoPropio));
-                }
-            }
-        }
-
-        // Categoría virtual "Otros" para productos sin categoría asignada (solo si hay al menos uno)
-        if (productosSinCategoria > 0) {
-            resultado.add(new CategoriaSimple(null, "Otros", productosSinCategoria));
-        }
-
-        return resultado;
+        return ArbolCategoriaBuilder.construirArbol(categorias, conteoPorCategoria, productosSinCategoria);
     }
 
     public Categoria crear(String nombre) {

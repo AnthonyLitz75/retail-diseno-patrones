@@ -5,6 +5,7 @@ import com.grupo.retail.dao.UsuarioDAO;
 import com.grupo.retail.dto.ActualizarRolUsuario;
 import com.grupo.retail.dto.RegistroPersonal;
 import com.grupo.retail.exception.CorreoYaRegistradoException;
+import com.grupo.retail.exception.GlobalExceptionHandler;
 import com.grupo.retail.exception.OperacionAdminNoPermitidaException;
 import com.grupo.retail.model.Usuario;
 import com.grupo.retail.patterns.singleton.ProveedorConexiones;
@@ -112,8 +113,8 @@ class UsuarioAdminTests {
 
     @Test
     void controladorDevuelve409ParaCorreoDuplicado() {
-        UsuarioAdminController controller = controller(mock(UsuarioService.class));
-        var respuesta = controller.manejarCorreoDuplicado(new CorreoYaRegistradoException());
+        var respuesta = new GlobalExceptionHandler()
+                .manejarCorreoDuplicado(new CorreoYaRegistradoException());
         assertEquals(409, respuesta.getStatusCode().value());
     }
 

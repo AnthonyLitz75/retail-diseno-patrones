@@ -33,6 +33,29 @@ class FactoryNotificacionesTests {
     }
 
     @Test
+    void notificadorConsolaEmiteSinRequerirConexion() {
+        var evento = new EventoNotificacion(7L, 15L, "ENTREGADO", "Pedido entregado con éxito");
+        var notificador = new NotificadorConsola();
+        assertDoesNotThrow(() -> notificador.notificar(evento));
+    }
+
+    @Test
+    void notificadorConsolaDelegaCorrectamenteConSobrecargaDeConexion() {
+        Connection conexion = mock(Connection.class);
+        var evento = new EventoNotificacion(7L, 15L, "ENTREGADO", "Pedido entregado con éxito");
+        var notificador = new NotificadorConsola();
+        assertDoesNotThrow(() -> notificador.notificar(conexion, evento));
+        verifyNoInteractions(conexion);
+    }
+
+    @Test
+    void notificadorInAppLanzaExcepcionSiSeLlamaSinConexion() {
+        var evento = new EventoNotificacion(7L, 15L, "PENDIENTE", "Pedido en espera");
+        var notificador = new NotificadorInApp();
+        assertThrows(UnsupportedOperationException.class, () -> notificador.notificar(evento));
+    }
+
+    @Test
     void notificadorInAppInsertaUsandoLaConexionDeLaTransaccion() throws Exception {
         Connection conexion = mock(Connection.class);
         PreparedStatement insercion = mock(PreparedStatement.class);

@@ -82,6 +82,30 @@ class PedidoConfirmacionTests {
     }
 
     @Test
+    void checkoutFacadeRechazaUsuarioNuloOMetodoPagoInvalido() {
+        PedidoDAO dao = mock(PedidoDAO.class);
+        PuertoPago puerto = mock(PuertoPago.class);
+        CheckoutFacade facade = new CheckoutFacade(dao, puerto);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> facade.confirmarCompra(null, "PRUEBA_APROBADA"));
+        assertThrows(IllegalArgumentException.class,
+                () -> facade.confirmarCompra(1L, "   "));
+        assertThrows(IllegalArgumentException.class,
+                () -> facade.confirmarCompra(1L, null));
+    }
+
+    @Test
+    void buscarPorClaveConfirmacionRetornaEmptySiParametrosSonInvalidos() {
+        ProveedorConexiones proveedor = mock(ProveedorConexiones.class);
+        PedidoDAO dao = new PedidoDAO(proveedor);
+
+        assertTrue(dao.buscarPorClaveConfirmacion(null, "clave-123").isEmpty());
+        assertTrue(dao.buscarPorClaveConfirmacion(1L, null).isEmpty());
+        assertTrue(dao.buscarPorClaveConfirmacion(1L, "   ").isEmpty());
+    }
+
+    @Test
     void confirmarCompraRetornaPedidoExistenteCuandoClaveYaFueRegistrada() throws Exception {
         ProveedorConexiones proveedor = mock(ProveedorConexiones.class);
         Connection conexion = mock(Connection.class);

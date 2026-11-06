@@ -52,21 +52,29 @@ public class UsuarioService {
 
     public Usuario actualizarRol(Long usuarioId, Long administradorId, ActualizarRolUsuario datos) {
         String rol = validarRol(datos.rol(), ROLES_PERSONAL);
-        if (usuarioId.equals(administradorId) && !"ADMIN".equals(rol)) {
-            throw new OperacionAdminNoPermitidaException(
-                    "No puedes cambiar tu propio rol de administrador");
-        }
+        validarNoCambiarPropioRol(usuarioId, administradorId, rol);
         return usuarioDAO.actualizarRol(usuarioId, rol)
                 .orElseThrow(() -> new java.util.NoSuchElementException("No existe la cuenta activa"));
     }
 
     public void desactivar(Long usuarioId, Long administradorId) {
+        validarNoDesactivarPropiaCuenta(usuarioId, administradorId);
+        if (!usuarioDAO.desactivar(usuarioId)) {
+            throw new java.util.NoSuchElementException("No existe la cuenta activa");
+        }
+    }
+
+    private void validarNoCambiarPropioRol(Long usuarioId, Long administradorId, String nuevoRol) {
+        if (usuarioId.equals(administradorId) && !"ADMIN".equals(nuevoRol)) {
+            throw new OperacionAdminNoPermitidaException(
+                    "No puedes cambiar tu propio rol de administrador");
+        }
+    }
+
+    private void validarNoDesactivarPropiaCuenta(Long usuarioId, Long administradorId) {
         if (usuarioId.equals(administradorId)) {
             throw new OperacionAdminNoPermitidaException(
                     "No puedes desactivar tu propia cuenta");
-        }
-        if (!usuarioDAO.desactivar(usuarioId)) {
-            throw new java.util.NoSuchElementException("No existe la cuenta activa");
         }
     }
 

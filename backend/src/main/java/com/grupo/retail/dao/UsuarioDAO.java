@@ -121,11 +121,7 @@ public class UsuarioDAO {
                     conexion.commit();
                     return Optional.empty();
                 }
-                if ("ADMIN".equals(actual.rol()) && !"ADMIN".equals(rol)
-                        && administradores.size() <= 1) {
-                    throw new OperacionAdminNoPermitidaException(
-                            "No se puede cambiar el rol del último administrador activo");
-                }
+                validarInvarianteUltimoAdminParaCambioRol(actual, rol, administradores.size());
                 if (actual.rol().equals(rol)) {
                     conexion.commit();
                     return Optional.of(actual);
@@ -172,10 +168,7 @@ public class UsuarioDAO {
                     conexion.commit();
                     return false;
                 }
-                if ("ADMIN".equals(actual.rol()) && administradores.size() <= 1) {
-                    throw new OperacionAdminNoPermitidaException(
-                            "No se puede desactivar el último administrador activo");
-                }
+                validarInvarianteUltimoAdminParaDesactivacion(actual, administradores.size());
                 try (PreparedStatement consulta = conexion.prepareStatement(sqlDesactivar)) {
                     consulta.setLong(1, usuarioId);
                     boolean desactivado = consulta.executeUpdate() == 1;
@@ -188,6 +181,22 @@ public class UsuarioDAO {
             }
         } catch (SQLException error) {
             throw new IllegalStateException("No se pudo desactivar la cuenta", error);
+        }
+    }
+
+    private void validarInvarianteUltimoAdminParaCambioRol(
+            Usuario actual, String nuevoRol, int totalAdminsActivos) {
+        if ("ADMIN".equals(actual.rol()) && !"ADMIN".equals(nuevoRol) && totalAdminsActivos <= 1) {
+            throw new OperacionAdminNoPermitidaException(
+                    "No se puede cambiar el rol del último administrador activo");
+        }
+    }
+
+    private void validarInvarianteUltimoAdminParaDesactivacion(
+            Usuario actual, int totalAdminsActivos) {
+        if ("ADMIN".equals(actual.rol()) && totalAdminsActivos <= 1) {
+            throw new OperacionAdminNoPermitidaException(
+                    "No se puede desactivar el último administrador activo");
         }
     }
 
@@ -204,6 +213,7 @@ public class UsuarioDAO {
             throw new IllegalStateException("No se pudo validar la sesión", error);
         }
     }
+
     public Optional<CredencialesUsuario> buscarPorCorreo(String correo) {
         String sql = """
                 SELECT id_usuario, nombre, correo, clave_hash, rol, activo, fecha_alta

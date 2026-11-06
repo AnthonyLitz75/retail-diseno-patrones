@@ -2,7 +2,6 @@ package com.grupo.retail.controller;
 
 import com.grupo.retail.dto.InicioSesion;
 import com.grupo.retail.dto.RegistroCliente;
-import com.grupo.retail.exception.CorreoYaRegistradoException;
 import com.grupo.retail.model.Usuario;
 import com.grupo.retail.service.UsuarioService;
 import com.grupo.retail.service.SesionAutenticada;
@@ -11,7 +10,6 @@ import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -76,6 +74,7 @@ public class AuthController {
                 "correo", sesion.getAttribute("usuarioCorreo"),
                 "rol", sesion.getAttribute("usuarioRol")));
     }
+
     @PostMapping("/logout")
     public ResponseEntity<Void> cerrarSesion(HttpServletRequest solicitud) {
         HttpSession sesion = solicitud.getSession(false);
@@ -85,12 +84,5 @@ public class AuthController {
         }
 
         return ResponseEntity.noContent().build();
-    }
-
-    @ExceptionHandler(CorreoYaRegistradoException.class)
-    public ResponseEntity<Map<String, String>> manejarCorreoDuplicado(
-            CorreoYaRegistradoException error) {
-        return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(Map.of("error", error.getMessage()));
     }
 }

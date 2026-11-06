@@ -2,15 +2,12 @@ package com.grupo.retail.controller;
 
 import com.grupo.retail.dto.ActualizarEstadoCategoria;
 import com.grupo.retail.dto.SolicitudCategoria;
-import com.grupo.retail.exception.CategoriaDuplicadaException;
 import com.grupo.retail.model.Categoria;
 import com.grupo.retail.service.CategoriaService;
 import com.grupo.retail.service.SesionEmpleado;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -22,8 +19,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
 import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
 
 @RestController
 @RequestMapping("/api/admin/categorias")
@@ -72,16 +67,5 @@ public class CategoriaAdminController {
         return categoriaService.actualizarEstado(id, solicitud.activa())
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
-    }
-
-    @ExceptionHandler(CategoriaDuplicadaException.class)
-    public ResponseEntity<Map<String, String>> manejarDuplicado(CategoriaDuplicadaException error) {
-        return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(Map.of("error", error.getMessage()));
-    }
-
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<Map<String, String>> manejarSolicitudInvalida(IllegalArgumentException error) {
-        return ResponseEntity.badRequest().body(Map.of("error", error.getMessage()));
     }
 }
