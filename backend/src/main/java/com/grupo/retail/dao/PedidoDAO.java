@@ -584,10 +584,6 @@ public class PedidoDAO {
                 claveConfirmacion, destinatario, direccionEnvio);
     }
 
-    private String normalizar(String valor) {
-        return valor != null && !valor.isBlank() ? valor.trim() : null;
-    }
-
     private Optional<PedidoConfirmado> buscarPorClaveConfirmacion(
             Connection conexion, Long usuarioId, String claveConfirmacion) throws SQLException {
         String sql = """

@@ -3,7 +3,6 @@ package com.grupo.retail;
 import com.grupo.retail.dao.PedidoDAO;
 import com.grupo.retail.dto.SolicitudConfirmarPedido;
 import com.grupo.retail.facade.CheckoutFacade;
-import com.grupo.retail.model.DetallePedido;
 import com.grupo.retail.model.PedidoConfirmado;
 import com.grupo.retail.patterns.pago.PuertoPago;
 import com.grupo.retail.model.ResultadoPago;

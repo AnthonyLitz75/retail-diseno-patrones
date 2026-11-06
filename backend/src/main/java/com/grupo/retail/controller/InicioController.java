@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -27,6 +28,7 @@ import java.util.Map;
 import java.util.Optional;
 
 @RestController
+@RequestMapping("/api")
 public class InicioController {
     private final ProductoService productoService;
     private final SesionEmpleado sesionEmpleado;
@@ -36,20 +38,20 @@ public class InicioController {
         this.sesionEmpleado = sesionEmpleado;
     }
 
-    @GetMapping("/api/hello")
+    @GetMapping("/hello")
     public String hello() { return "Backend de Retail funcionando"; }
 
-    @GetMapping("/api/categorias")
+    @GetMapping("/categorias")
     public List<Categoria> listarCategorias() { return productoService.listarCategorias(); }
 
-    @GetMapping("/api/categorias/arbol")
+    @GetMapping("/categorias/arbol")
     public List<CategoriaArbolDTO> listarArbolCategorias() {
         return productoService.listarArbolCategorias().stream()
                 .map(CategoriaArbolDTO::desdeComponente)
                 .toList();
     }
 
-    @GetMapping("/api/productos")
+    @GetMapping("/productos")
     public ResponseEntity<?> listarProductos(
             @RequestParam(required = false) String nombre,
             @RequestParam(required = false) String categoria,
@@ -63,14 +65,14 @@ public class InicioController {
                 productoService.listarProductos(nombre, categoria, precioMin, precioMax));
     }
 
-    @GetMapping("/api/productos/{id}")
+    @GetMapping("/productos/{id}")
     public ResponseEntity<Producto> obtenerProducto(@PathVariable Long id) {
         Optional<Producto> resultado = productoService.buscarPorId(id);
         return resultado.map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    @PostMapping("/api/productos")
+    @PostMapping("/productos")
     public ResponseEntity<?> crearProducto(
             @Valid @RequestBody NuevoProducto datos, HttpServletRequest solicitud) {
         Long responsableId = sesionEmpleado.exigirRol(solicitud, "ADMIN", "VENDEDOR");
@@ -83,7 +85,7 @@ public class InicioController {
         }
     }
 
-    @PutMapping("/api/productos/{id}/precio")
+    @PutMapping("/productos/{id}/precio")
     public ResponseEntity<Producto> actualizarPrecio(
             @PathVariable Long id, @Valid @RequestBody ActualizarPrecio datos,
             HttpServletRequest solicitud) {
@@ -93,7 +95,7 @@ public class InicioController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    @PutMapping("/api/productos/{id}/stock")
+    @PutMapping("/productos/{id}/stock")
     public ResponseEntity<Producto> actualizarStock(
             @PathVariable Long id, @Valid @RequestBody AjusteInventario datos,
             HttpServletRequest solicitud) {
@@ -105,7 +107,7 @@ public class InicioController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    @GetMapping("/api/productos/{id}/movimientos")
+    @GetMapping("/productos/{id}/movimientos")
     public List<MovimientoInventario> listarMovimientos(
             @PathVariable Long id, HttpServletRequest solicitud) {
         sesionEmpleado.exigirRol(solicitud, "ADMIN", "VENDEDOR", "ALMACEN");

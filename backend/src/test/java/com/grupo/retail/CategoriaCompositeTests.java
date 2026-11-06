@@ -82,6 +82,7 @@ class CategoriaCompositeTests {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     @DisplayName("construirArbol excluye categorías y subcategorías con cero productos")
     void construirArbolExcluyeCategoriasVacias() {
         List<Categoria> categorias = List.of(
@@ -116,6 +117,7 @@ class CategoriaCompositeTests {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     @DisplayName("construirArbol genera categoría virtual Otros si existen productos sin categoría")
     void construirArbolGeneraCategoriaOtrosSiExistenProductosHuérfanos() {
         List<Categoria> categorias = List.of(
