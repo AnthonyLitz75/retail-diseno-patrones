@@ -1,11 +1,7 @@
-import { Offcanvas } from 'bootstrap'
 import { apiRequest } from '../api/api.js'
 import { mostrarToast } from '../utilidades/notificaciones.js'
-import mouseImage from '../assets/mouse.png'
-import tecladoImage from '../assets/teclado.png'
-import cargadorImage from '../assets/cargador.png'
-import webcamImage from '../assets/webcam.png'
-import { resolverRutaImagenOficial } from '../catalogo/imagenes-productos.js'
+import { formatoPrecio } from '../utilidades/formato.js'
+import { resolverImagenProducto } from '../catalogo/imagen-producto.js'
 import { construirPayloadConfirmacion } from './checkout.js'
 import {
   obtenerCarritoInvitado,
@@ -28,6 +24,7 @@ let campoDestinatario
 let campoDireccion
 let compraEnProceso = false
 let offcanvasInstancia = null
+let OffcanvasClase = null
 let usuarioActual = null
 
 export function establecerUsuarioSesion(usuario) {
@@ -40,19 +37,31 @@ function esClienteAutenticado() {
 
 function obtenerOffcanvas() {
   if (!offcanvasInstancia && seccionCarrito) {
-    offcanvasInstancia = Offcanvas.getOrCreateInstance(seccionCarrito)
+    if (OffcanvasClase?.getOrCreateInstance) {
+      offcanvasInstancia = OffcanvasClase.getOrCreateInstance(seccionCarrito)
+    } else if (typeof window !== 'undefined' && window.bootstrap?.Offcanvas) {
+      offcanvasInstancia = window.bootstrap.Offcanvas.getOrCreateInstance(seccionCarrito)
+    }
   }
   return offcanvasInstancia
 }
 
 export function abrirCarrito() {
   const offcanvas = obtenerOffcanvas()
-  if (offcanvas) {
+  if (offcanvas?.show) {
     offcanvas.show()
   }
 }
 
-export function inicializarCarrito() {
+export function inicializarCarrito({ offcanvas = null, Offcanvas = null } = {}) {
+  if (offcanvas) {
+    offcanvasInstancia = offcanvas
+  }
+  if (Offcanvas) {
+    OffcanvasClase = Offcanvas
+  } else if (typeof window !== 'undefined' && window.bootstrap?.Offcanvas) {
+    OffcanvasClase = window.bootstrap.Offcanvas
+  }
   seccionCarrito = document.querySelector('#seccion-carrito')
   estadoCarrito = document.querySelector('#estado-carrito')
   listaCarrito = document.querySelector('#productos-carrito')
@@ -67,28 +76,10 @@ export function inicializarCarrito() {
   }
 }
 
-function formatoPrecio(valor) {
-  return Number(valor).toLocaleString('es-PE', {
-    style: 'currency',
-    currency: 'PEN'
-  })
-}
-
 function mostrarError(error) {
   if (!estadoCarrito) return
   estadoCarrito.className = 'alert alert-danger py-2 small mb-2'
   estadoCarrito.textContent = error.message
-}
-
-function obtenerImagenProducto(nombre = '') {
-  const oficial = resolverRutaImagenOficial(nombre)
-  if (oficial) return oficial
-  const norm = String(nombre || '').toLowerCase()
-  if (norm.includes('mouse') || norm.includes('ratón')) return mouseImage
-  if (norm.includes('teclado')) return tecladoImage
-  if (norm.includes('cargador') || norm.includes('adaptador') || norm.includes('fuente')) return cargadorImage
-  if (norm.includes('webcam') || norm.includes('cámara') || norm.includes('camara')) return webcamImage
-  return null
 }
 
 async function actualizarCantidadDirecta(productoId, nuevaCantidad) {
@@ -116,7 +107,7 @@ async function actualizarCantidadDirecta(productoId, nuevaCantidad) {
   }
 }
 
-function mostrarCarrito(carrito) {
+export function mostrarCarrito(carrito) {
   if (!listaCarrito || !totalCarrito) return
 
   listaCarrito.replaceChildren()
@@ -171,14 +162,15 @@ function mostrarCarrito(carrito) {
     fila.className = 'list-group-item px-0 py-3 d-flex align-items-center gap-3 cart-item'
 
     // Miniatura del producto
-    const imagenUrl = obtenerImagenProducto(producto.nombre)
+    const imagenUrl = resolverImagenProducto(producto)
     const contenedorThumb = document.createElement('div')
     contenedorThumb.className = 'cart-item-thumb flex-shrink-0'
     if (imagenUrl) {
       const img = document.createElement('img')
       img.src = imagenUrl
-      img.alt = producto.nombre
+      img.alt = producto.nombre || 'Producto'
       img.className = 'img-fluid'
+      img.loading = 'lazy'
       contenedorThumb.append(img)
     } else {
       contenedorThumb.classList.add('cart-item-thumb-generic')
@@ -281,7 +273,7 @@ export function ocultarCarrito() {
   const drawerCount = document.querySelector('#cart-drawer-count')
   if (drawerCount) drawerCount.textContent = '0 ítems'
   if (botonConfirmarCompra) botonConfirmarCompra.disabled = true
-  if (spinnerConfirmarCompra) spinnerConfirmarCompra.classList.add('d-none')
+  if (spinnerConfirmarCompra?.classList) spinnerConfirmarCompra.classList.add('d-none')
   if (textoConfirmarCompra) textoConfirmarCompra.textContent = 'Confirmar compra con pago simulado'
 }
 
@@ -334,7 +326,7 @@ async function confirmarCompra() {
     mostrarToast(`No se pudo procesar la compra: ${error.message}`, 'error')
   } finally {
     compraEnProceso = false
-    if (spinnerConfirmarCompra) spinnerConfirmarCompra.classList.add('d-none')
+    if (spinnerConfirmarCompra?.classList) spinnerConfirmarCompra.classList.add('d-none')
     if (textoConfirmarCompra) textoConfirmarCompra.textContent = 'Confirmar compra con pago simulado'
     if (botonConfirmarCompra) {
       botonConfirmarCompra.disabled = listaCarrito.children.length === 0

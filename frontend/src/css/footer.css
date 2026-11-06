@@ -110,3 +110,22 @@
   background: rgba(255, 255, 255, 0.1);
   border-color: rgba(0, 240, 255, 0.4);
 }
+
+
+/* ==========================================================================
+   Clases Semánticas del Footer Corporativo (Hito 1)
+   ========================================================================== */
+
+.footer-brand-mark {
+  width: 2.5rem;
+  height: 2.5rem;
+  display: grid;
+  place-items: center;
+}
+
+.site-brand-tagline {
+  color: #94a3b8;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}

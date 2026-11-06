@@ -46,6 +46,8 @@
 
 /* Bandeja Desplegable de Notificaciones en el Header */
 .notification-dropdown {
+  min-width: 320px;
+  max-width: 380px;
   border-radius: 14px !important;
   border: 1px solid #e2e8f0 !important;
   box-shadow: 0 16px 36px rgba(15, 23, 42, 0.14) !important;
@@ -54,6 +56,8 @@
 }
 
 .notification-list {
+  max-height: 360px;
+  overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: #cbd5e1 transparent;
 }

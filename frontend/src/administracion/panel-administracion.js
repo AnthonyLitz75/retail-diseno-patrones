@@ -15,6 +15,7 @@ import {
   mostrarConfirmacion,
   mostrarToast,
 } from "../utilidades/notificaciones.js";
+import plantillaAdministracion from "../layout/plantillas/administracion.html?raw";
 
 const ROLES_PERSONAL = ["CLIENTE", "ADMIN", "VENDEDOR", "ALMACEN", "SOPORTE"];
 
@@ -36,51 +37,7 @@ export function crearPanelAdministracion(apiRequest, alCambiarCategorias) {
   seccion.className = "card shadow-sm mb-4";
   seccion.setAttribute("aria-labelledby", "titulo-administracion");
   seccion.hidden = true;
-  seccion.innerHTML = `
-    <div class="card-body">
-      <h2 id="titulo-administracion" class="h4">Administración</h2>
-      <section aria-labelledby="titulo-cuentas-admin" class="mt-4">
-        <h3 id="titulo-cuentas-admin" class="h5">Cuentas y personal</h3>
-        <form id="form-personal-admin" class="row g-2 align-items-end">
-          <div class="col-12 col-md-3"><label class="form-label" for="personal-nombre">Nombre</label><input id="personal-nombre" class="form-control" maxlength="120" required></div>
-          <div class="col-12 col-md-3"><label class="form-label" for="personal-correo">Correo</label><input id="personal-correo" class="form-control" type="email" maxlength="180" required></div>
-          <div class="col-12 col-md-3"><label class="form-label" for="personal-clave">Contraseña temporal</label><input id="personal-clave" class="form-control" type="password" minlength="8" maxlength="72" autocomplete="new-password" required></div>
-          <div class="col-6 col-md-2"><label class="form-label" for="personal-rol">Rol inicial</label><select id="personal-rol" class="form-select" required><option value="">Selecciona</option><option value="CLIENTE">CLIENTE</option><option value="ADMIN">ADMIN</option><option value="VENDEDOR">VENDEDOR</option><option value="ALMACEN">ALMACEN</option><option value="SOPORTE">SOPORTE</option></select></div>
-          <div class="col-6 col-md-1 d-grid"><button class="btn btn-primary" type="submit">Crear</button></div>
-        </form>
-        <p id="estado-alta-personal" role="status" aria-live="polite"></p>
-        <div class="d-flex flex-wrap justify-content-between align-items-center mt-3 gap-2">
-          <p id="estado-cuentas-admin" class="small text-secondary mb-0" role="status" aria-live="polite"></p>
-          <div class="d-flex align-items-center gap-2">
-            <label class="form-label form-label-sm mb-0 text-nowrap small text-secondary" for="filtro-rol-cuentas">Filtrar por rol:</label>
-            <select id="filtro-rol-cuentas" class="form-select form-select-sm" style="width: auto;">
-              <option value="">Todos los roles</option>
-              <option value="CLIENTE">CLIENTE</option>
-              <option value="ADMIN">ADMIN</option>
-              <option value="VENDEDOR">VENDEDOR</option>
-              <option value="ALMACEN">ALMACEN</option>
-              <option value="SOPORTE">SOPORTE</option>
-            </select>
-            <button id="recargar-cuentas-admin" class="btn btn-outline-primary btn-sm" type="button">Actualizar cuentas</button>
-          </div>
-        </div>
-        <div class="table-responsive mt-2"><table class="table table-sm align-middle"><thead><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Alta</th><th>Estado</th><th>Acciones</th></tr></thead><tbody id="tabla-cuentas-admin"></tbody></table></div>
-      </section>
-      <hr>
-      <section aria-labelledby="titulo-categorias-admin" class="mt-4">
-        <h3 id="titulo-categorias-admin" class="h5">Categorías</h3>
-        <form id="form-categoria-admin" class="row g-2 align-items-end"><div class="col-12 col-md-9"><label class="form-label" for="nombre-categoria-admin">Nueva categoría</label><input id="nombre-categoria-admin" class="form-control" maxlength="80" required></div><div class="col-12 col-md-3 d-grid"><button class="btn btn-primary" type="submit">Crear categoría</button></div></form>
-        <p id="estado-categoria-admin" role="status" aria-live="polite"></p>
-        <div id="lista-categorias-admin" class="list-group"></div>
-      </section>
-      <hr>
-      <section aria-labelledby="titulo-reportes-admin" class="mt-4">
-        <h3 id="titulo-reportes-admin" class="h5">Reportes</h3>
-        <form id="form-reporte-admin" class="row g-2 align-items-end"><div class="col-6 col-md-4"><label class="form-label" for="reporte-desde">Desde</label><input id="reporte-desde" class="form-control" type="date"></div><div class="col-6 col-md-4"><label class="form-label" for="reporte-hasta">Hasta</label><input id="reporte-hasta" class="form-control" type="date"></div><div class="col-6 col-md-2 d-grid"><button class="btn btn-primary" type="submit">Consultar</button></div><div class="col-6 col-md-2 d-grid"><button id="descargar-reporte-admin" class="btn btn-outline-primary" type="button">Descargar CSV</button></div></form>
-        <p id="estado-reporte-admin" role="status" aria-live="polite"></p>
-        <div id="metricas-admin" class="row g-2" aria-live="polite"></div>
-      </section>
-    </div>`;
+  seccion.innerHTML = plantillaAdministracion;
 
   const tablaCuentas = seccion.querySelector("#tabla-cuentas-admin");
   const estadoCuentas = seccion.querySelector("#estado-cuentas-admin");

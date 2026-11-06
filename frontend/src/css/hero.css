@@ -326,3 +326,65 @@
     min-height: auto;
   }
 }
+
+
+/* ==========================================================================
+   Clases Semánticas para Componentes del Hero y Vitrina (Hito 1)
+   ========================================================================== */
+
+.hero-slide-img-banner {
+  max-height: 250px;
+  max-width: 360px;
+  object-fit: contain;
+  border-radius: 12px;
+  filter: drop-shadow(0 15px 30px rgba(0, 0, 0, 0.45));
+}
+
+.hero-slide-img-keyboard {
+  max-height: 240px;
+  max-width: 360px;
+  object-fit: contain;
+  filter: drop-shadow(0 16px 28px rgba(0, 0, 0, 0.55)) drop-shadow(0 0 30px rgba(0, 210, 255, 0.22));
+}
+
+.hero-slide-img-mouse {
+  max-height: 230px;
+  max-width: 260px;
+  object-fit: contain;
+  filter: drop-shadow(0 16px 28px rgba(0, 0, 0, 0.55)) drop-shadow(0 0 30px rgba(0, 210, 255, 0.22));
+}
+
+.hero-badge-student {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+}
+
+.trust-badge-icon {
+  width: 2.3rem;
+  height: 2.3rem;
+}
+
+.trust-badge-sub {
+  font-size: 0.85rem;
+  color: #475569;
+}
+
+.home-cta-banner {
+  background: linear-gradient(135deg, #0b1a30 0%, #0d3268 50%, #007bff 100%);
+  border-radius: 16px;
+}
+
+.home-cta-wrap {
+  max-width: 620px;
+}
+
+.home-cta-badge {
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  padding: 0.4rem 0.8rem;
+  border-radius: 999px;
+}

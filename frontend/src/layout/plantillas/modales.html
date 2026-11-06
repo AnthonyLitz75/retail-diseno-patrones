@@ -1,0 +1,210 @@
+<!-- Modal Libro de Reclamaciones Virtual -->
+<div class="modal fade" id="modal-libro-reclamaciones" tabindex="-1" aria-labelledby="modal-libro-titulo" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header border-bottom">
+        <div class="d-flex align-items-center gap-2">
+          <span class="fs-4" aria-hidden="true">📖</span>
+          <div>
+            <h5 class="modal-title h6 fw-bold mb-0" id="modal-libro-titulo">Libro de Reclamaciones Virtual</h5>
+            <small class="text-secondary">Píxel Andino S.A.C. · RUC 20601234567 · Conforme a Ley N° 29571</small>
+          </div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <form id="form-libro-reclamaciones">
+        <div class="modal-body p-4">
+          <div class="alert alert-secondary border-0 small py-2 px-3 mb-3">
+            Conforme a lo establecido en el Código de Protección y Defensa del Consumidor, esta institución cuenta con un Libro de Reclamaciones Virtual a su disposición. La respuesta será enviada en un plazo no mayor a quince (15) días hábiles.
+          </div>
+
+          <h6 class="fw-bold small text-uppercase text-secondary mb-3">1. Identificación del Consumidor Reclamante</h6>
+          <div class="row g-2 mb-3">
+            <div class="col-12 col-md-6">
+              <label for="libro-nombre" class="form-label small fw-semibold">Nombres y Apellidos</label>
+              <input type="text" class="form-control form-control-sm" id="libro-nombre" required placeholder="Ej. Juan Pérez">
+            </div>
+            <div class="col-12 col-md-6">
+              <label for="libro-documento" class="form-label small fw-semibold">DNI / CE</label>
+              <input type="text" class="form-control form-control-sm" id="libro-documento" required placeholder="Ej. 70123456">
+            </div>
+            <div class="col-12 col-md-6">
+              <label for="libro-telefono" class="form-label small fw-semibold">Teléfono / Celular</label>
+              <input type="tel" class="form-control form-control-sm" id="libro-telefono" required placeholder="Ej. 987654321">
+            </div>
+            <div class="col-12 col-md-6">
+              <label for="libro-correo" class="form-label small fw-semibold">Correo Electrónico</label>
+              <input type="email" class="form-control form-control-sm" id="libro-correo" required placeholder="nombre@correo.com">
+            </div>
+          </div>
+
+          <h6 class="fw-bold small text-uppercase text-secondary mb-3">2. Identificación del Bien Contratado</h6>
+          <div class="row g-2 mb-3">
+            <div class="col-12 col-md-6">
+              <label class="form-label small fw-semibold">Tipo de Bien</label>
+              <div class="d-flex gap-3">
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="libro-tipo-bien" id="bien-producto" value="Producto" checked>
+                  <label class="form-check-label small" for="bien-producto">Producto</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="libro-tipo-bien" id="bien-servicio" value="Servicio">
+                  <label class="form-check-label small" for="bien-servicio">Servicio</label>
+                </div>
+              </div>
+            </div>
+            <div class="col-12 col-md-6">
+              <label for="libro-monto" class="form-label small fw-semibold">Monto Reclamado (S/) opcional</label>
+              <input type="number" step="0.01" class="form-control form-control-sm" id="libro-monto" placeholder="0.00">
+            </div>
+          </div>
+
+          <h6 class="fw-bold small text-uppercase text-secondary mb-3">3. Detalle de la Reclamación</h6>
+          <div class="row g-2 mb-3">
+            <div class="col-12">
+              <div class="d-flex gap-4 mb-2">
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="libro-tipo-reclamo" id="tipo-queja" value="Queja">
+                  <label class="form-check-label small" for="tipo-queja">
+                    <strong>Queja:</strong> Malestar o descontento respecto a la atención al público.
+                  </label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="libro-tipo-reclamo" id="tipo-reclamo" value="Reclamo" checked>
+                  <label class="form-check-label small" for="tipo-reclamo">
+                    <strong>Reclamo:</strong> Disconformidad relacionada a los bienes o servicios.
+                  </label>
+                </div>
+              </div>
+            </div>
+            <div class="col-12">
+              <label for="libro-detalle" class="form-label small fw-semibold">Detalle del Reclamo / Queja</label>
+              <textarea class="form-control form-control-sm" id="libro-detalle" rows="3" required placeholder="Describe los hechos y tu solicitud de manera clara..."></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer py-2">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary btn-sm">Enviar Hoja de Reclamación</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Póliza de Garantía -->
+<div class="modal fade" id="modal-garantia" tabindex="-1" aria-labelledby="modal-garantia-titulo" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-bottom">
+        <div class="d-flex align-items-center gap-2">
+          <span class="fs-4" aria-hidden="true">🛡️</span>
+          <div>
+            <h5 class="modal-title h6 fw-bold mb-0" id="modal-garantia-titulo">Póliza de Garantía Oficial</h5>
+            <small class="text-secondary">Píxel Andino · 12 Meses de Cobertura</small>
+          </div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body p-4 small text-secondary">
+        <p class="text-dark">Todos nuestros periféricos y componentes cuentan con <strong>12 meses de garantía oficial</strong> contra defectos de fabricación a partir de la fecha de entrega de tu pedido.</p>
+        <ul class="d-flex flex-column gap-2 ps-3 mb-3">
+          <li><strong>Cobertura:</strong> Fallas técnicas de hardware, conectividad Bluetooth/2.4Ghz y defectos de componentes internos.</li>
+          <li><strong>Requisitos:</strong> Presentar el número de pedido o boleta/factura electrónica emitida.</li>
+          <li><strong>Proceso:</strong> Comunícate a través de nuestro soporte por WhatsApp o en la sección de consultas para gestionar el cambio o revisión técnica en Ica.</li>
+        </ul>
+        <p class="mb-0 text-muted text-terms-legal">* La garantía no cubre daños provocados por caídas, derrame de líquidos o modificaciones no autorizadas.</p>
+      </div>
+      <div class="modal-footer py-2">
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Entendido</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Ajuste de Stock -->
+<div class="modal fade" id="modal-ajuste-stock" tabindex="-1" aria-labelledby="modal-ajuste-stock-titulo" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title h6 fw-bold" id="modal-ajuste-stock-titulo">Ajustar stock</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <form id="form-modal-stock">
+        <div class="modal-body">
+          <p id="modal-stock-actual" class="small text-secondary mb-3"></p>
+          <div class="mb-3">
+            <label for="modal-stock-input" class="form-label small fw-semibold">Nuevo stock</label>
+            <input id="modal-stock-input" class="form-control" type="number" min="0" step="1" required>
+          </div>
+          <div class="mb-3">
+            <label for="modal-stock-motivo" class="form-label small fw-semibold">Motivo del ajuste</label>
+            <input id="modal-stock-motivo" class="form-control" type="text" maxlength="250" required placeholder="Ejemplo: Reposición de mercadería">
+          </div>
+          <p id="modal-stock-mensaje" class="small mb-0" role="status" aria-live="polite"></p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary btn-sm">Guardar ajuste</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Editar Precio -->
+<div class="modal fade" id="modal-editar-precio" tabindex="-1" aria-labelledby="modal-editar-precio-titulo" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title h6 fw-bold" id="modal-editar-precio-titulo">Editar precio</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <form id="form-modal-precio">
+        <div class="modal-body">
+          <p id="modal-precio-actual" class="small text-secondary mb-3"></p>
+          <div class="mb-3">
+            <label for="modal-precio-input" class="form-label small fw-semibold">Nuevo precio (S/)</label>
+            <input id="modal-precio-input" class="form-control" type="number" min="0.01" step="0.01" required>
+          </div>
+          <p id="modal-precio-mensaje" class="small mb-0" role="status" aria-live="polite"></p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary btn-sm">Guardar precio</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Preguntas y Respuestas del Producto -->
+<div class="modal fade" id="modal-preguntas-producto" tabindex="-1" aria-labelledby="modal-preguntas-titulo" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title h6 fw-bold" id="modal-preguntas-titulo">Preguntas sobre el producto</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <h6 class="small fw-bold text-uppercase text-secondary mb-2">Tus consultas anteriores</h6>
+        <div id="modal-preguntas-lista" class="mb-3"></div>
+        <hr class="my-3">
+        <h6 class="small fw-bold text-uppercase text-secondary mb-2">Nueva consulta</h6>
+        <form id="form-modal-pregunta">
+          <div class="mb-2">
+            <label for="modal-pregunta-input" class="form-label small fw-semibold visually-hidden">¿Tienes una consulta?</label>
+            <textarea id="modal-pregunta-input" class="form-control form-control-sm" rows="3" maxlength="1000" required placeholder="Escribe tu consulta sobre este producto..."></textarea>
+          </div>
+          <p id="modal-pregunta-mensaje" class="small mb-2" role="status" aria-live="polite"></p>
+          <div class="d-flex justify-content-end">
+            <button type="submit" class="btn btn-primary btn-sm">Enviar pregunta</button>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>

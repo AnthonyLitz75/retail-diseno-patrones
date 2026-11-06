@@ -284,6 +284,14 @@
   cursor: not-allowed;
 }
 
+.product-card-staff-btn {
+  font-size: 0.72rem;
+}
+
+.product-card-question-btn {
+  font-size: 0.75rem;
+}
+
 /* Barra Compacta de Filtros */
 .catalog-filters-bar {
   background: #ffffff;
@@ -725,3 +733,16 @@
 
 
 
+
+
+/* ==========================================================================
+   Clases Semánticas del Catálogo y Vista 404 (Hito 1)
+   ========================================================================== */
+
+.card-404-max {
+  max-width: 540px;
+}
+
+.catalog-price-input-group {
+  max-width: 120px;
+}
