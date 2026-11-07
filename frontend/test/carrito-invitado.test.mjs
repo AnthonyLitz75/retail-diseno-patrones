@@ -2,7 +2,6 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
   obtenerCarritoInvitado,
-  guardarCarritoInvitado,
   agregarProductoInvitado,
   actualizarCantidadInvitado,
   quitarProductoInvitado,
@@ -90,7 +89,7 @@ test('quitarProductoInvitado elimina el producto específico', () => {
   agregarProductoInvitado({ id: 1, nombre: 'Mouse', precio: 20.0, stock: 5 }, 1)
   agregarProductoInvitado({ id: 2, nombre: 'Teclado', precio: 80.0, stock: 5 }, 1)
 
-  let c = quitarProductoInvitado(1)
+  const c = quitarProductoInvitado(1)
   assert.equal(c.productos.length, 1)
   assert.equal(c.productos[0].productoId, 2)
   assert.equal(c.total, 80.0)

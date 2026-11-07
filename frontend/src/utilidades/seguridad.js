@@ -42,7 +42,38 @@ export function escaparHtml(valor) {
 }
 
 /**
- * Función tag para Template Literals que escapa automáticamente todas las variables interpoladas.
+ * Símbolo interno para identificar fragmentos de HTML previamente verificados o seguros.
+ */
+const SIMBOLO_HTML_SEGURO = Symbol('html_seguro');
+
+/**
+ * Envuelve una cadena de HTML confiable para indicar que no requiere escape al interpolarse en plantillas html.
+ * @param {*} valor
+ * @returns {{ valor: string, toString: () => string }}
+ */
+export function seguro(valor) {
+  const str = String(valor ?? '');
+  return {
+    [SIMBOLO_HTML_SEGURO]: true,
+    valor: str,
+    toString() {
+      return str;
+    }
+  };
+}
+
+/**
+ * Determina si un valor ha sido marcado explícitamente como HTML seguro.
+ * @param {*} valor
+ * @returns {boolean}
+ */
+export function esHtmlSeguro(valor) {
+  return Boolean(valor && typeof valor === 'object' && valor[SIMBOLO_HTML_SEGURO] === true);
+}
+
+/**
+ * Función tag para Template Literals que escapa automáticamente todas las variables interpoladas
+ * a menos que hayan sido explícitamente marcadas como HTML seguro mediante seguro().
  * Ejemplo de uso:
  *   const htmlSeguro = html`<div>Cliente: ${pedido.clienteNombre}</div>`;
  *
@@ -52,7 +83,11 @@ export function escaparHtml(valor) {
  */
 export function html(strings, ...valores) {
   return strings.reduce((acumulado, parteEstatica, indice) => {
-    const valor = indice < valores.length ? escaparHtml(valores[indice]) : '';
+    let valor = '';
+    if (indice < valores.length) {
+      const v = valores[indice];
+      valor = esHtmlSeguro(v) ? v.valor : escaparHtml(v);
+    }
     return acumulado + parteEstatica + valor;
   }, '');
 }

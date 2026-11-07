@@ -7,8 +7,7 @@ import {
   obtenerCarritoInvitado,
   agregarProductoInvitado,
   actualizarCantidadInvitado,
-  quitarProductoInvitado,
-  limpiarCarritoInvitado
+  quitarProductoInvitado
 } from './carrito-invitado.js'
 
 export { construirPayloadConfirmacion }
@@ -391,40 +390,6 @@ export async function agregarProductoAlCarrito(productoId, productoObj = null, c
     mostrarError(error)
     mostrarToast(`No se pudo agregar al carrito: ${error.message}`, 'error')
     abrirCarrito()
-  }
-}
-
-async function actualizarCantidad(productoId, campo) {
-  const cantidad = Number(campo.value)
-  const maximo = Number(campo.max)
-
-  if (!Number.isInteger(cantidad) || cantidad < 1 || cantidad > maximo) {
-    estadoCarrito.className = 'alert alert-danger py-2 small mb-2'
-    estadoCarrito.textContent = 'Ingresa una cantidad entre 1 y ' + maximo + '.'
-    await cargarCarrito()
-    return
-  }
-
-  if (!esClienteAutenticado()) {
-    const nuevoCarrito = actualizarCantidadInvitado(productoId, cantidad)
-    mostrarCarrito(nuevoCarrito)
-    return
-  }
-
-  estadoCarrito.className = 'small text-secondary mb-2'
-  estadoCarrito.textContent = 'Actualizando cantidad...'
-
-  try {
-    const respuesta = await apiRequest('/api/carrito/productos/' + productoId, {
-      method: 'PUT',
-      json: { cantidad }
-    })
-    mostrarCarrito(await respuesta.json())
-    estadoCarrito.className = 'alert alert-success py-2 small mb-2'
-    estadoCarrito.textContent = 'Cantidad actualizada.'
-  } catch (error) {
-    mostrarError(error)
-    await cargarCarrito()
   }
 }
 

@@ -120,7 +120,7 @@ function setupMockDOM() {
 }
 
 test('inicializarCarrito conecta elementos del DOM y soporta inyección de Offcanvas', () => {
-  const dom = setupMockDOM()
+  setupMockDOM()
   let showCalled = false
   const mockOffcanvas = {
     show: () => { showCalled = true },

@@ -1,9 +1,9 @@
-const heroBanner = new URL('../assets/banner-retail.png', import.meta.url).href;
-const tecladoImage = new URL('../assets/teclado.png', import.meta.url).href;
-const mouseImage = new URL('../assets/mouse.png', import.meta.url).href;
-const cargadorImage = new URL('../assets/cargador.png', import.meta.url).href;
-const mouseRazerImage = new URL('../assets/mouse-razer.png', import.meta.url).href;
-const tarjetaNvidiaImage = new URL('../assets/tarjeta-video-nvidia.png', import.meta.url).href;
+const heroBanner = new URL('../assets/banner-retail.webp', import.meta.url).href;
+const tecladoImage = new URL('../assets/teclado.webp', import.meta.url).href;
+const mouseImage = new URL('../assets/mouse.webp', import.meta.url).href;
+const cargadorImage = new URL('../assets/cargador.webp', import.meta.url).href;
+const mouseRazerImage = new URL('../assets/mouse-razer.webp', import.meta.url).href;
+const tarjetaNvidiaImage = new URL('../assets/tarjeta-video-nvidia.webp', import.meta.url).href;
 
 /**
  * Renderiza el bloque visual de portada comercial (Hero Bento Grid,

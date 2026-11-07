@@ -22,7 +22,7 @@ if (typeof document === "undefined") {
         getAttribute(k) {
           return this.attributes[k];
         },
-        querySelector(selector) {
+        querySelector(_selector) {
           return {
             addEventListener(ev, fn) {
               el.listeners[ev] = fn;

@@ -13,22 +13,22 @@ export const REGLAS_FALLBACK_IMAGEN = [
   {
     palabras: ["mouse", "ratón"],
     categorias: ["mouse"],
-    obtenerImagen: () => new URL("../assets/mouse.png", import.meta.url).href,
+    obtenerImagen: () => new URL("../assets/mouse.webp", import.meta.url).href,
   },
   {
     palabras: ["teclado"],
     categorias: ["teclados", "teclado"],
-    obtenerImagen: () => new URL("../assets/teclado.png", import.meta.url).href,
+    obtenerImagen: () => new URL("../assets/teclado.webp", import.meta.url).href,
   },
   {
     palabras: ["cargador", "cable", "adaptador"],
     categorias: ["cargador", "accesorios"],
-    obtenerImagen: () => new URL("../assets/cargador.png", import.meta.url).href,
+    obtenerImagen: () => new URL("../assets/cargador.webp", import.meta.url).href,
   },
   {
     palabras: ["webcam", "cámara", "camara"],
     categorias: ["cámaras", "camaras", "cámara", "camara"],
-    obtenerImagen: () => new URL("../assets/webcam.png", import.meta.url).href,
+    obtenerImagen: () => new URL("../assets/webcam.webp", import.meta.url).href,
   },
   {
     palabras: ["tarjeta", "video", "radeon", "geforce", "rtx", "rx"],

@@ -239,7 +239,7 @@ const uiCtrl = configurarControlesUI({
     estadoCatalogo: document.querySelector("#estado-catalogo"),
   },
   acciones: {
-    mostrarProductos: (prods) => catalogoCtrl.actualizarVistaCatalogo(),
+    mostrarProductos: () => catalogoCtrl.actualizarVistaCatalogo(),
     mostrarToast,
     manejarRutaHash: () => enrutadorSPA.manejarRutaHash(),
   },

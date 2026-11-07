@@ -5,7 +5,6 @@ import {
   CRITERIOS_ORDEN,
   obtenerChipsFiltrosActivos,
   paginarProductos,
-  PRODUCTOS_POR_PAGINA,
 } from '../src/catalogo/filtros-catalogo.js'
 
 const productosMuestra = [

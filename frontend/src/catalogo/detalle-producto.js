@@ -4,9 +4,9 @@
  * selector de cantidad y acciones de compra con garantías comerciales.
  */
 
-import { generarSlug } from "../utilidades/enrutador.js";
+import { generarSlug } from "../router/enrutador.js";
 import { obtenerBadgeStock } from "../utilidades/stock.js";
-import { escaparHtml } from "../utilidades/seguridad.js";
+import { html, seguro } from "../utilidades/seguridad.js";
 
 /**
  * Calcula el porcentaje y monto de ahorro si el producto tiene descuento.
@@ -48,17 +48,12 @@ export function renderizarVistaDetalleProducto(producto, {
   const stockInfo = obtenerBadgeStock(producto.stock);
   const ahorro = calcularAhorroProducto(producto.precio, producto.precioAnterior);
   const slugCat = generarSlug(producto.categoria || "catalogo");
-  // Todo dato proveniente del servidor se escapa antes de interpolarse en innerHTML.
-  const nombreSeguro = escaparHtml(producto.nombre);
-  const categoriaVolver = escaparHtml(producto.categoria || "Catálogo");
-  const categoriaBadge = escaparHtml(producto.categoria || "General");
-  const marcaSegura = escaparHtml(producto.marca);
-  const skuSeguro = escaparHtml(producto.sku || `PA-${producto.id}`);
-  const descripcionSegura = escaparHtml(
+  const categoriaVolver = producto.categoria || "Catálogo";
+  const categoriaBadge = producto.categoria || "General";
+  const skuProducto = producto.sku || `PA-${producto.id}`;
+  const descripcionProducto =
     producto.descripcion ||
-      "Producto con garantía oficial y especificaciones certificadas por el fabricante para alto rendimiento y durabilidad.",
-  );
-  const imagenSegura = escaparHtml(imagenUrl);
+    "Producto con garantía oficial y especificaciones certificadas por el fabricante para alto rendimiento y durabilidad.";
 
   const contenedor = document.createElement("section");
   contenedor.className = "product-detail-card card shadow-sm border-0 mb-5";
@@ -66,7 +61,7 @@ export function renderizarVistaDetalleProducto(producto, {
 
   let cantidadSeleccionada = producto.stock > 0 ? 1 : 0;
 
-  contenedor.innerHTML = `
+  contenedor.innerHTML = html`
     <div class="card-body p-3 p-md-4 p-lg-5">
       <!-- Navegación superior rápida -->
       <nav class="mb-4" aria-label="Navegación de retorno">
@@ -91,7 +86,7 @@ export function renderizarVistaDetalleProducto(producto, {
 
             <!-- Imagen Principal sin sobreposiciones -->
             <div class="product-detail-image-box">
-              <img id="detail-product-img" src="${imagenSegura}" alt="${nombreSeguro}" class="img-fluid product-detail-img" loading="eager" />
+              <img id="detail-product-img" src="${imagenUrl}" alt="${producto.nombre}" class="img-fluid product-detail-img" loading="eager" />
             </div>
           </div>
         </div>
@@ -102,25 +97,25 @@ export function renderizarVistaDetalleProducto(producto, {
             <!-- Badges de Marca, Categoría y Promoción Desacoplados -->
             <div class="d-flex flex-wrap align-items-center gap-2">
               <span class="badge bg-light text-primary border border-primary-subtle px-3 py-1 fw-bold text-uppercase">${categoriaBadge}</span>
-              ${producto.marca ? `<span class="badge bg-light text-secondary border px-3 py-1 fw-semibold">${marcaSegura}</span>` : ""}
+              ${producto.marca ? seguro(html`<span class="badge bg-light text-secondary border px-3 py-1 fw-semibold">${producto.marca}</span>`) : ""}
               ${
                 ahorro.tieneDescuento
-                  ? `<span class="badge bg-danger text-white border-0 px-2.5 py-1 fw-bold shadow-sm">-${ahorro.porcentaje}% OFF</span>`
+                  ? seguro(html`<span class="badge bg-danger text-white border-0 px-2.5 py-1 fw-bold shadow-sm">-${ahorro.porcentaje}% OFF</span>`)
                   : ""
               }
               ${
                 producto.nuevo
-                  ? `<span class="badge bg-primary text-white border-0 px-2.5 py-1 fw-bold shadow-sm">Nuevo lanzamiento</span>`
+                  ? seguro(html`<span class="badge bg-primary text-white border-0 px-2.5 py-1 fw-bold shadow-sm">Nuevo lanzamiento</span>`)
                   : ""
               }
             </div>
 
             <!-- Título Principal -->
-            <h1 class="product-detail-title h3 fw-bold text-dark mb-1">${nombreSeguro}</h1>
+            <h1 class="product-detail-title h3 fw-bold text-dark mb-1">${producto.nombre}</h1>
 
             <!-- SKU y Calificación -->
             <div class="d-flex flex-wrap align-items-center gap-3 text-secondary small pb-2 border-bottom">
-              <span>Ref / SKU: <strong class="text-dark">${skuSeguro}</strong></span>
+              <span>Ref / SKU: <strong class="text-dark">${skuProducto}</strong></span>
               <span class="text-muted">|</span>
               <span class="d-inline-flex align-items-center gap-1 text-warning fw-semibold">
                 ★★★★★ <span class="text-secondary ms-1">5.0 (48 opiniones verificadas)</span>
@@ -133,16 +128,16 @@ export function renderizarVistaDetalleProducto(producto, {
                 <span class="product-detail-price fs-2 fw-bold text-primary">S/ ${Number(producto.precio).toFixed(2)}</span>
                 ${
                   ahorro.tieneDescuento
-                    ? `<span class="product-detail-price-prev fs-5 text-secondary text-decoration-line-through">S/ ${Number(producto.precioAnterior).toFixed(2)}</span>
-                       <span class="badge bg-danger-subtle text-danger border border-danger-subtle fw-bold px-2 py-1 fs-7">-${ahorro.porcentaje}% OFF</span>`
+                    ? seguro(html`<span class="product-detail-price-prev fs-5 text-secondary text-decoration-line-through">S/ ${Number(producto.precioAnterior).toFixed(2)}</span>
+                       <span class="badge bg-danger-subtle text-danger border border-danger-subtle fw-bold px-2 py-1 fs-7">-${ahorro.porcentaje}% OFF</span>`)
                     : ""
                 }
               </div>
               ${
                 ahorro.tieneDescuento
-                  ? `<div class="mt-1 small text-success fw-bold">
+                  ? seguro(html`<div class="mt-1 small text-success fw-bold">
                       Ahorras S/ ${ahorro.montoAhorro.toFixed(2)} (${ahorro.porcentaje}% de descuento)
-                    </div>`
+                    </div>`)
                   : ""
               }
             </div>
@@ -154,22 +149,22 @@ export function renderizarVistaDetalleProducto(producto, {
               </span>
               ${
                 producto.stock > 0
-                  ? `<span class="small text-secondary">(${producto.stock} disponibles para entrega inmediata)</span>`
-                  : `<span class="small text-danger fw-semibold">Reabastecimiento en camino</span>`
+                  ? seguro(html`<span class="small text-secondary">(${producto.stock} disponibles para entrega inmediata)</span>`)
+                  : seguro(html`<span class="small text-danger fw-semibold">Reabastecimiento en camino</span>`)
               }
             </div>
 
             <!-- Descripción -->
             <div class="product-detail-description my-2">
               <h2 class="h6 fw-bold text-dark mb-2">Descripción del producto</h2>
-              <p class="text-secondary mb-0 leading-relaxed">${descripcionSegura}</p>
+              <p class="text-secondary mb-0 leading-relaxed">${descripcionProducto}</p>
             </div>
 
             <!-- Selector de Cantidad y Botones de Compra -->
             <div class="product-detail-actions pt-2 d-flex flex-column gap-3">
               ${
                 producto.stock > 0
-                  ? `
+                  ? seguro(html`
                 <div class="d-flex flex-wrap align-items-center gap-3">
                   <div class="quantity-selector-group d-flex align-items-center border rounded-3 bg-white">
                     <button type="button" class="btn btn-sm btn-outline-secondary border-0 px-3 py-2 btn-qty-minus" aria-label="Disminuir cantidad" ${cantidadSeleccionada <= 1 ? "disabled" : ""}>-</button>
@@ -184,12 +179,12 @@ export function renderizarVistaDetalleProducto(producto, {
                     <span>Agregar al carrito</span>
                   </button>
                 </div>
-                `
-                  : `
+                `)
+                  : seguro(html`
                 <button type="button" class="btn btn-secondary btn-lg w-100 fw-bold" disabled>
                   Producto actualmente agotado
                 </button>
-                `
+                `)
               }
 
               <!-- Botón Secundario de Preguntas (B6) -->
@@ -208,12 +203,12 @@ export function renderizarVistaDetalleProducto(producto, {
                 <span><strong>Garantía oficial:</strong> 12 meses de cobertura contra defectos de fábrica.</span>
               </div>
               <div class="d-flex align-items-center gap-2 small text-secondary">
-                <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#3b82f6" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                <span><strong>Envío rápido:</strong> Entrega asegurada a nivel nacional con código de rastreo.</span>
+                <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#3b82f6" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                <span><strong>Pago seguro:</strong> Transacciones cifradas mediante pasarelas protegidas.</span>
               </div>
               <div class="d-flex align-items-center gap-2 small text-secondary">
-                <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#8b5cf6" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-                <span><strong>Comprobante oficial:</strong> Emisión de boleta o factura electrónica.</span>
+                <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#f59e0b" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h2m-6 0a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"/></svg>
+                <span><strong>Envío garantizado:</strong> Despachos a todo el país con código de seguimiento en vivo.</span>
               </div>
             </div>
           </div>

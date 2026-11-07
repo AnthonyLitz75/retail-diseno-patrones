@@ -20,7 +20,6 @@ export function configurarBandejaVendedor({
   acciones = {},
 }) {
   const {
-    seccionPreguntasVendedor,
     estadoPreguntasVendedor,
     listaPreguntasVendedor,
     btnActualizarPreguntas,

@@ -39,7 +39,7 @@ export function alternarFavorito(productoId) {
 
   const favoritos = obtenerFavoritos()
   const index = favoritos.indexOf(id)
-  let activo = false
+  let activo
 
   if (index >= 0) {
     favoritos.splice(index, 1)

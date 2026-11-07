@@ -3,7 +3,6 @@ import assert from "node:assert/strict";
 import {
   claseEstadoPedido,
   crearTarjetaPedido,
-  mostrarPedidos,
   crearFormularioDespacho,
 } from "../src/pedidos/pedidos-vista.js";
 

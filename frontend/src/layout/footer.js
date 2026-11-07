@@ -1,8 +1,8 @@
 import { renderizarLogoSvg } from './componentes/logo.js';
 
-const pagoVisa = new URL('../assets/pago-visa.jpg', import.meta.url).href;
-const pagoMastercard = new URL('../assets/pago-mastercard.jpg', import.meta.url).href;
-const pagoYape = new URL('../assets/pago-yape.png', import.meta.url).href;
+const pagoVisa = new URL('../assets/pago-visa.webp', import.meta.url).href;
+const pagoMastercard = new URL('../assets/pago-mastercard.webp', import.meta.url).href;
+const pagoYape = new URL('../assets/pago-yape.webp', import.meta.url).href;
 const pagoPlin = new URL('../assets/pago-plin.avif', import.meta.url).href;
 
 /**

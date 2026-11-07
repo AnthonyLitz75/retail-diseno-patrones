@@ -4,7 +4,7 @@
  * miniaturas de productos, formulario de despacho y sanitización anti-XSS.
  */
 
-import { escaparHtml } from "../utilidades/seguridad.js";
+import { html, seguro } from "../utilidades/seguridad.js";
 import { formatoPrecio } from "../utilidades/formato.js";
 import { renderizarStepperPedido } from "./pedidos-stepper.js";
 import { resolverImagenProducto } from "../catalogo/imagen-producto.js";
@@ -49,13 +49,11 @@ export function crearTarjetaPedido(
 
   // 1. Cabecera estructurada
   const fecha = new Date(pedido.creadoEn).toLocaleString("es-PE");
-  const estadoLimpio = escaparHtml(
-    pedido.estado ? pedido.estado.replaceAll("_", " ") : "",
-  );
+  const estadoLimpio = pedido.estado ? pedido.estado.replaceAll("_", " ") : "";
   const cabecera = document.createElement("header");
   cabecera.className =
     "order-card-header d-flex flex-wrap justify-content-between align-items-center gap-3";
-  cabecera.innerHTML = `
+  cabecera.innerHTML = html`
     <div class="d-flex flex-wrap align-items-center gap-2">
       <span class="badge bg-dark-subtle text-dark border px-2.5 py-1.5 fw-bold">Pedido #${Number(pedido.idPedido)}</span>
       <span class="badge rounded-pill ${claseEstadoPedido(pedido.estado)} px-3 py-1.5 fw-semibold">${estadoLimpio}</span>
@@ -76,12 +74,12 @@ export function crearTarjetaPedido(
     const clienteInfo = document.createElement("div");
     clienteInfo.className =
       "p-2 mb-3 bg-light rounded-3 small text-secondary d-flex align-items-center gap-2 border";
-    clienteInfo.innerHTML = `
+    clienteInfo.innerHTML = html`
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-person-badge text-primary" viewBox="0 0 16 16">
         <path d="M6.5 2a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1h-3zM11 8a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/>
         <path d="M4.5 0A2.5 2.5 0 0 0 2 2.5V14a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V2.5A2.5 2.5 0 0 0 11.5 0h-7zM3 2.5A1.5 1.5 0 0 1 4.5 1h7A1.5 1.5 0 0 1 13 2.5V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2.5z"/>
       </svg>
-      <span>Cliente: <strong class="text-dark">${escaparHtml(pedido.clienteNombre)}</strong> (${escaparHtml(pedido.clienteCorreo || "")})</span>
+      <span>Cliente: <strong class="text-dark">${pedido.clienteNombre}</strong> (${pedido.clienteCorreo || ""})</span>
     `;
     cuerpo.append(clienteInfo);
   }
@@ -95,14 +93,14 @@ export function crearTarjetaPedido(
   if (pedido.envio) {
     const envioBox = document.createElement("div");
     envioBox.className = "order-shipping-box";
-    envioBox.innerHTML = `
+    envioBox.innerHTML = html`
       <div class="d-flex align-items-center gap-2">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-truck flex-shrink-0" viewBox="0 0 16 16">
           <path d="M0 3.5A1.5 1.5 0 0 1 1.5 2h9A1.5 1.5 0 0 1 12 3.5V5h1.02a1.5 1.5 0 0 1 1.17.563l1.481 1.85a1.5 1.5 0 0 1 .329.938V10.5a1.5 1.5 0 0 1-1.5 1.5H14a2 2 0 1 1-4 0H5a2 2 0 1 1-4 0 1 1 0 0 1-1-1V3.5zM1.5 3a.5.5 0 0 0-.5.5v7c0 .179.094.336.236.425a2 2 0 0 1 2.528 0 .5.5 0 0 0 .236-.425V3.5a.5.5 0 0 0-.5-.5h-2zm9.5 0H2v8.075a2 2 0 0 1 1 .925h6a2 2 0 0 1 1-.925V3zm1 3v2h2.55l-1.6-2H12zm2.55 3H12v2h2.5a.5.5 0 0 0 .5-.5V9.5a.5.5 0 0 0-.45-.5zM3 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm9 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
         </svg>
         <div>
-          <span class="small fw-bold d-block text-success-emphasis">Envío en camino con ${escaparHtml(pedido.envio.transportista || "")}</span>
-          <span class="small text-secondary">Código de seguimiento: <strong class="font-monospace text-dark">${escaparHtml(pedido.envio.codigoSeguimiento || "")}</strong></span>
+          <span class="small fw-bold d-block text-success-emphasis">Envío en camino con ${pedido.envio.transportista || ""}</span>
+          <span class="small text-secondary">Código de seguimiento: <strong class="font-monospace text-dark">${pedido.envio.codigoSeguimiento || ""}</strong></span>
         </div>
       </div>
       <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">Despachado</span>
@@ -145,8 +143,8 @@ export function crearTarjetaPedido(
       const datosProd = document.createElement("div");
       datosProd.className = "flex-grow-1 min-w-0";
       const cantidad = Number(producto.cantidad) || 1;
-      datosProd.innerHTML = `
-        <div class="fw-semibold small text-dark text-truncate">${escaparHtml(producto.nombreProducto || "")}</div>
+      datosProd.innerHTML = html`
+        <div class="fw-semibold small text-dark text-truncate">${producto.nombreProducto || ""}</div>
         <div class="small text-muted">${cantidad} unidad${cantidad > 1 ? "es" : ""} × ${formatoPrecio(producto.precioUnitario)}</div>
       `;
 
@@ -165,7 +163,7 @@ export function crearTarjetaPedido(
     const historial = document.createElement("details");
     historial.className = "order-timeline-details";
     const resumenHistorial = document.createElement("summary");
-    resumenHistorial.innerHTML = `<span>Historial de estados y auditoría (${pedido.historial.length} eventos)</span>`;
+    resumenHistorial.innerHTML = html`<span>Historial de estados y auditoría (${pedido.historial.length} eventos)</span>`;
 
     const listaEventos = document.createElement("ul");
     listaEventos.className = "order-timeline-list";
@@ -173,13 +171,11 @@ export function crearTarjetaPedido(
       const fechaEvento = new Date(evento.fecha).toLocaleString("es-PE");
       const itemEvento = document.createElement("li");
       itemEvento.className = "order-timeline-item";
-      const estadoEv = escaparHtml(
-        evento.estado ? evento.estado.replaceAll("_", " ") : "",
-      );
-      itemEvento.innerHTML = `
+      const estadoEv = evento.estado ? evento.estado.replaceAll("_", " ") : "";
+      itemEvento.innerHTML = html`
         <div class="fw-semibold text-dark">${estadoEv}</div>
-        <div class="text-secondary">${escaparHtml(evento.comentario || "")}</div>
-        <div class="text-muted small">${escaparHtml(evento.responsable || "")} · ${fechaEvento}</div>
+        <div class="text-secondary">${evento.comentario || ""}</div>
+        <div class="text-muted small">${evento.responsable || ""} · ${fechaEvento}</div>
       `;
       listaEventos.append(itemEvento);
     }
@@ -278,7 +274,12 @@ export function mostrarPedidos(
     const rol = usuarioSesion?.rol;
     const vacio = document.createElement("div");
     vacio.className = "text-center py-5 px-3 bg-light rounded-4 border my-3";
-    vacio.innerHTML = `
+    const botonExplorar = esCliente
+      ? seguro(
+          '<button type="button" class="btn btn-primary rounded-pill px-4 shadow-sm" id="btn-ir-tienda-pedidos-vacio">Explorar catálogo</button>',
+        )
+      : "";
+    vacio.innerHTML = html`
       <div class="empty-state-icon mx-auto mb-3">
         <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
           <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
@@ -298,11 +299,7 @@ export function mostrarPedidos(
             ? "Como vendedor, aquí atiendes los pedidos nuevos en estado PENDIENTE para soporte o cancelación comercial. Actualmente todos los pedidos de la tienda ya fueron atendidos o no hay compras pendientes."
             : "Los pedidos de los clientes aparecerán en este panel según su estado de despacho."
       }</p>
-      ${
-        esCliente
-          ? `<button type="button" class="btn btn-primary rounded-pill px-4 shadow-sm" id="btn-ir-tienda-pedidos-vacio">Explorar catálogo</button>`
-          : ""
-      }
+      ${botonExplorar}
     `;
 
     if (esCliente && typeof onExplorarCatalogo === "function") {

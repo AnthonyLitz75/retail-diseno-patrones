@@ -5,7 +5,7 @@ import {
   parsearRuta,
   buscarCategoriaPorSlug,
   construirBreadcrumbs,
-} from "../src/utilidades/enrutador.js";
+} from "../src/router/enrutador.js";
 
 const arbolPrueba = [
   { id: 1, nombre: "Teclados", subcategorias: [] },

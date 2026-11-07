@@ -118,7 +118,6 @@ test("configurarSesionYVistas - mostrarSesionActiva y mostrarSesionCerrada gesti
   const botonCerrar = global.document.createElement("button");
 
   let carritoCargado = false;
-  let carritoOculto = false;
   let carritoSincronizado = false;
 
   const sesion = configurarSesionYVistas({
@@ -138,9 +137,7 @@ test("configurarSesionYVistas - mostrarSesionActiva y mostrarSesionCerrada gesti
       cargarCarrito: () => {
         carritoCargado = true;
       },
-      ocultarCarrito: () => {
-        carritoOculto = true;
-      },
+      ocultarCarrito: () => {},
       mostrarToast: () => {},
     },
   });

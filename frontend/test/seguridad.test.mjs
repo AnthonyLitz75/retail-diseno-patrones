@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { escaparHtml, html } from '../src/utilidades/seguridad.js';
+import { escaparHtml, html, seguro } from '../src/utilidades/seguridad.js';
 
 test('escaparHtml maneja valores nulos, indefinidos y vacíos de forma segura', () => {
   assert.equal(escaparHtml(null), '');
@@ -47,4 +47,14 @@ test('html tag template escapa variables interpoladas y conserva el HTML estáti
   assert.ok(resultado.includes('&lt;script&gt;evil()&lt;&#x2F;script&gt;'));
   assert.ok(resultado.includes('admin&quot;onfocus=&quot;alert(1)'));
   assert.ok(!resultado.includes('<script>evil()</script>'));
+});
+
+test('seguro permite componer fragmentos HTML confiables sin doble escape', () => {
+  const datoPeligroso = '<script>bad()</script>';
+  const insigniaSegura = seguro(html`<span class="badge">${datoPeligroso}</span>`);
+  const contenedor = html`<div>${insigniaSegura}</div>`;
+
+  assert.equal(typeof contenedor, 'string');
+  assert.ok(contenedor.includes('<span class="badge">&lt;script&gt;bad()&lt;&#x2F;script&gt;</span>'));
+  assert.doesNotMatch(contenedor, /<script>bad\(\)<\/script>/);
 });

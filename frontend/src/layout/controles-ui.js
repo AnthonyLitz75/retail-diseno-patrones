@@ -3,7 +3,7 @@
  * Manejador de interacciones de interfaz: menú flyout de categorías, carruseles horizontales, atajos de teclado y docks.
  */
 
-import { generarSlug } from "../utilidades/enrutador.js";
+import { generarSlug } from "../router/enrutador.js";
 import { esFavorito } from "../catalogo/favoritos.js";
 
 /**
