@@ -22,7 +22,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.function.Function;
@@ -119,32 +121,109 @@ public class PedidoDAO {
         return listarPedidos(sql, null);
     }
 
+    /**
+     * Lista pedidos con sus productos e historial usando 3 consultas en total
+     * (cabeceras, detalles de todos los pedidos e historial de todos los pedidos),
+     * en lugar de 1 + 2 consultas por cada pedido.
+     */
     private List<PedidoVista> listarPedidos(String sql, Long clienteId) {
-        List<PedidoVista> pedidos = new ArrayList<>();
         try (Connection conexion = proveedorConexiones.obtenerConexion();
                 PreparedStatement consulta = conexion.prepareStatement(sql)) {
             if (clienteId != null) {
                 consulta.setLong(1, clienteId);
             }
+            List<CabeceraPedido> cabeceras = new ArrayList<>();
             try (ResultSet resultado = consulta.executeQuery()) {
                 while (resultado.next()) {
-                    long pedidoId = resultado.getLong("id_pedido");
-                    pedidos.add(new PedidoVista(
-                            pedidoId,
+                    cabeceras.add(new CabeceraPedido(
+                            resultado.getLong("id_pedido"),
                             resultado.getString("cliente_nombre"),
                             resultado.getString("cliente_correo"),
                             resultado.getString("estado"),
                             resultado.getBigDecimal("total"),
                             resultado.getObject("creado_en", OffsetDateTime.class),
-                            mapearEnvio(resultado),
-                            listarDetalles(conexion, pedidoId),
-                            listarHistorial(conexion, pedidoId)));
+                            mapearEnvio(resultado)));
                 }
+            }
+            if (cabeceras.isEmpty()) {
+                return new ArrayList<>();
+            }
+
+            Long[] pedidoIds = cabeceras.stream().map(CabeceraPedido::id).toArray(Long[]::new);
+            Map<Long, List<DetallePedido>> detalles = listarDetallesPorPedidos(conexion, pedidoIds);
+            Map<Long, List<EventoEstadoPedido>> historiales = listarHistorialPorPedidos(conexion, pedidoIds);
+
+            List<PedidoVista> pedidos = new ArrayList<>(cabeceras.size());
+            for (CabeceraPedido cabecera : cabeceras) {
+                pedidos.add(new PedidoVista(
+                        cabecera.id(),
+                        cabecera.clienteNombre(),
+                        cabecera.clienteCorreo(),
+                        cabecera.estado(),
+                        cabecera.total(),
+                        cabecera.creadoEn(),
+                        cabecera.envio(),
+                        List.copyOf(detalles.getOrDefault(cabecera.id(), List.of())),
+                        List.copyOf(historiales.getOrDefault(cabecera.id(), List.of()))));
             }
             return pedidos;
         } catch (SQLException error) {
             throw new ErrorAccesoDatosException("No se pudieron consultar los pedidos", error);
         }
+    }
+
+    private Map<Long, List<DetallePedido>> listarDetallesPorPedidos(
+            Connection conexion, Long[] pedidoIds) throws SQLException {
+        String sql = """
+                SELECT pedido_id, producto_id, nombre_producto, precio_unitario, cantidad, subtotal
+                FROM pedido_detalle
+                WHERE pedido_id = ANY (?)
+                ORDER BY pedido_id, id_detalle
+                """;
+        Map<Long, List<DetallePedido>> detallesPorPedido = new HashMap<>();
+        try (PreparedStatement consulta = conexion.prepareStatement(sql)) {
+            consulta.setArray(1, conexion.createArrayOf("bigint", pedidoIds));
+            try (ResultSet resultado = consulta.executeQuery()) {
+                while (resultado.next()) {
+                    detallesPorPedido
+                            .computeIfAbsent(resultado.getLong("pedido_id"), id -> new ArrayList<>())
+                            .add(new DetallePedido(
+                                    resultado.getLong("producto_id"),
+                                    resultado.getString("nombre_producto"),
+                                    resultado.getBigDecimal("precio_unitario"),
+                                    resultado.getInt("cantidad"),
+                                    resultado.getBigDecimal("subtotal")));
+                }
+            }
+        }
+        return detallesPorPedido;
+    }
+
+    private Map<Long, List<EventoEstadoPedido>> listarHistorialPorPedidos(
+            Connection conexion, Long[] pedidoIds) throws SQLException {
+        String sql = """
+                SELECT h.pedido_id, h.estado, u.nombre AS responsable, h.comentario, h.fecha
+                FROM pedido_historial_estado h
+                JOIN usuario u ON u.id_usuario = h.responsable_id
+                WHERE h.pedido_id = ANY (?)
+                ORDER BY h.pedido_id, h.fecha, h.id_historial
+                """;
+        Map<Long, List<EventoEstadoPedido>> historialPorPedido = new HashMap<>();
+        try (PreparedStatement consulta = conexion.prepareStatement(sql)) {
+            consulta.setArray(1, conexion.createArrayOf("bigint", pedidoIds));
+            try (ResultSet resultado = consulta.executeQuery()) {
+                while (resultado.next()) {
+                    historialPorPedido
+                            .computeIfAbsent(resultado.getLong("pedido_id"), id -> new ArrayList<>())
+                            .add(new EventoEstadoPedido(
+                                    resultado.getString("estado"),
+                                    resultado.getString("responsable"),
+                                    resultado.getString("comentario"),
+                                    resultado.getObject("fecha", OffsetDateTime.class)));
+                }
+            }
+        }
+        return historialPorPedido;
     }
 
     private EnvioPedido mapearEnvio(ResultSet resultado) throws SQLException {
@@ -439,6 +518,11 @@ public class PedidoDAO {
     }
 
     private record LineaParaReponer(long productoId, int cantidad) {
+    }
+
+    private record CabeceraPedido(
+            long id, String clienteNombre, String clienteCorreo, String estado,
+            BigDecimal total, OffsetDateTime creadoEn, EnvioPedido envio) {
     }
 
     public Optional<PedidoConfirmado> buscarPorClaveConfirmacion(
