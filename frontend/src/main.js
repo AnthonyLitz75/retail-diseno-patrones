@@ -289,10 +289,10 @@ const sesionCtrl = configurarSesionYVistas({
     hayCarritoInvitado,
     onCambioVista: (vista, rol) => {
       if (estado.usuarioSesion) {
-        if (vista === "pedidos") pedidosCtrl.cargarPedidos();
-        else if (vista === "inventario" && ["ADMIN", "VENDEDOR", "ALMACEN"].includes(rol)) inventarioCtrl.iniciarPanelInventario();
-        else if (vista === "consultas" && rol === "VENDEDOR") vendedorCtrl.cargarPreguntasVendedor();
-        else if (vista === "administracion" && rol === "ADMIN") panelAdministracion.cargar();
+        if (vista === "pedidos") void pedidosCtrl.cargarPedidos();
+        else if (vista === "inventario" && ["ADMIN", "VENDEDOR", "ALMACEN"].includes(rol)) void inventarioCtrl.iniciarPanelInventario();
+        else if (vista === "consultas" && rol === "VENDEDOR") void vendedorCtrl.cargarPreguntasVendedor();
+        else if (vista === "administracion" && rol === "ADMIN") void panelAdministracion.cargar();
       }
     },
   },
@@ -320,12 +320,12 @@ async function inicializarTienda() {
       document.querySelector("#btn-reintentar-inicio")?.addEventListener("click", () => {
         estadoCatalogo.textContent = "Reconectando con el servidor...";
         estadoCatalogo.className = "text-secondary small";
-        inicializarTienda();
+        void void inicializarTienda();
       });
     }
   }
 }
 
 // Arranque de aplicación
-sesionCtrl.consultarSesion();
-inicializarTienda();
+void sesionCtrl.consultarSesion();
+void inicializarTienda();

@@ -304,7 +304,7 @@ export function configurarEnrutadorSPA({
   // Escuchar cambios de hash en la ventana
   if (typeof window !== "undefined") {
     window.addEventListener("hashchange", () => {
-      manejarRutaHash();
+      void manejarRutaHash();
     });
   }
 
@@ -320,7 +320,7 @@ export function configurarEnrutadorSPA({
           window.location.hash === href
         ) {
           e.preventDefault();
-          manejarRutaHash();
+          void manejarRutaHash();
         }
       });
     });

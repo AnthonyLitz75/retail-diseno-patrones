@@ -165,7 +165,7 @@ export function configurarControladorPedidos({
 
   if (typeof document !== "undefined") {
     document.addEventListener("retail:pedido-confirmado", () => {
-      cargarPedidos();
+      void cargarPedidos();
       if (typeof cambiarVista === "function") cambiarVista("pedidos");
     });
   }

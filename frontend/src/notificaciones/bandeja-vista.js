@@ -236,7 +236,7 @@ export function configurarBandejaNotificaciones({
       }
       const usuario = obtenerUsuarioSesion ? obtenerUsuarioSesion() : null;
       if (usuario?.rol === "CLIENTE") {
-        cargarNotificacionesCliente();
+        void cargarNotificacionesCliente();
       }
     }, intervaloMs);
   }
@@ -248,7 +248,7 @@ export function configurarBandejaNotificaciones({
       const usuario = obtenerUsuarioSesion ? obtenerUsuarioSesion() : null;
       if (usuario?.rol === "CLIENTE") {
         // Al regresar a la pestaña, refrescar de inmediato y asegurar polling
-        cargarNotificacionesCliente();
+        void cargarNotificacionesCliente();
       }
     }
   }
@@ -271,7 +271,7 @@ export function configurarBandejaNotificaciones({
         abrirMenu();
         const usuario = obtenerUsuarioSesion ? obtenerUsuarioSesion() : null;
         if (usuario?.rol === "CLIENTE") {
-          cargarNotificacionesCliente();
+          void cargarNotificacionesCliente();
         }
       }
     });
@@ -301,7 +301,7 @@ export function configurarBandejaNotificaciones({
     btnRefrescarNotificaciones.addEventListener("click", (evento) => {
       evento.stopPropagation();
       btnRefrescarNotificaciones.classList.add("opacity-50");
-      cargarNotificacionesCliente().finally(() => {
+      void cargarNotificacionesCliente().finally(() => {
         btnRefrescarNotificaciones.classList.remove("opacity-50");
       });
     });

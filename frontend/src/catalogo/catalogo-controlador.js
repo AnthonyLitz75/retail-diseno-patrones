@@ -102,7 +102,7 @@ export function configurarControladorCatalogo({
           elemento.classList.toggle("is-active", seleccionado);
           elemento.setAttribute("aria-pressed", String(seleccionado));
         });
-        cargarProductos();
+        void cargarProductos();
       });
       return boton;
     };
@@ -120,20 +120,20 @@ export function configurarControladorCatalogo({
       case "busqueda":
         if (campoBusquedaPrincipal) campoBusquedaPrincipal.value = "";
         if (campoBusqueda) campoBusqueda.value = "";
-        cargarProductos();
+        void cargarProductos();
         break;
       case "categoria":
         if (filtroCategoria) filtroCategoria.value = "";
         sincronizarCategoriaDestacada();
-        cargarProductos();
+        void cargarProductos();
         break;
       case "precioMin":
         if (precioMinimo) precioMinimo.value = "";
-        cargarProductos();
+        void cargarProductos();
         break;
       case "precioMax":
         if (precioMaximo) precioMaximo.value = "";
-        cargarProductos();
+        void cargarProductos();
         break;
       case "soloEnStock":
         if (switchSoloStock) switchSoloStock.checked = false;
@@ -175,7 +175,7 @@ export function configurarControladorCatalogo({
     if (precioMaximo) precioMaximo.value = "";
     if (selectorOrden) selectorOrden.value = CRITERIOS_ORDEN.DEFECTO;
     if (switchSoloStock) switchSoloStock.checked = false;
-    cargarProductos();
+    void cargarProductos();
   }
 
   function poblarVitrinaInicio(productos) {

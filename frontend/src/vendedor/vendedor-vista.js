@@ -171,7 +171,7 @@ export function configurarBandejaVendedor({
 
   if (btnActualizarPreguntas) {
     btnActualizarPreguntas.addEventListener("click", () => {
-      cargarPreguntasVendedor();
+      void cargarPreguntasVendedor();
     });
   }
 

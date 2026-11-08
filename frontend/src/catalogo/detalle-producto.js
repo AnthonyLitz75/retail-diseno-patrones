@@ -18,7 +18,7 @@ import { html, seguro } from "../utilidades/seguridad.js";
 export function calcularAhorroProducto(precioActual, precioAnterior) {
   const actual = Number(precioActual);
   const anterior = Number(precioAnterior);
-  if (!anterior || isNaN(anterior) || anterior <= actual || isNaN(actual)) {
+  if (!anterior || Number.isNaN(anterior) || anterior <= actual || Number.isNaN(actual)) {
     return { tieneDescuento: false, porcentaje: 0, montoAhorro: 0 };
   }
   const montoAhorro = Number((anterior - actual).toFixed(2));

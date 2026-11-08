@@ -58,7 +58,6 @@ export function parsearRuta(hash) {
 
   // Segmentar ruta (limpiando barras iniciales/finales)
   const segmentos = rutaCompleta
-    .replace(/^\/+|\/+$/g, "")
     .split("/")
     .filter(Boolean);
 

@@ -19,7 +19,10 @@ RUN chmod +x ./mvnw && ./mvnw -B -DskipTests package
 # Ejecuta el backend con el puerto asignado por el proveedor.
 FROM eclipse-temurin:25-jre
 WORKDIR /app
-COPY --from=backend-build /workspace/backend/target/retail-0.0.1-SNAPSHOT.jar ./app.jar
+RUN groupadd -r appgroup && useradd -r -g appgroup appuser \
+    && chown -R appuser:appgroup /app
+COPY --from=backend-build --chown=appuser:appgroup /workspace/backend/target/retail-0.0.1-SNAPSHOT.jar ./app.jar
+USER appuser
 ENV PORT=8081
 # El despliegue se sirve por HTTPS: la cookie de sesión debe viajar solo por canal seguro.
 ENV SESSION_COOKIE_SECURE=true

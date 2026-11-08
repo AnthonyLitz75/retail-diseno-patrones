@@ -312,7 +312,7 @@ export function configurarPanelInventario({
   if (formularioFiltrosMovimientos) {
     formularioFiltrosMovimientos.addEventListener("submit", (evento) => {
       evento.preventDefault();
-      cargarMovimientosInventario();
+      void cargarMovimientosInventario();
     });
   }
 
