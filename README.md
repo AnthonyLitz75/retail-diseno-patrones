@@ -139,11 +139,6 @@ La aplicación se abrirá en `http://localhost:5173`. Vite redirige las peticion
 
 ### Cuentas de demostración
 
-> [!WARNING]
-> Estas credenciales son solo para desarrollo local. No las uses en un entorno real.
-
-Todas las cuentas comparten la contraseña `PixelAndino2026!`.
-
 | Rol           | Correo                        |
 | :------------ | :---------------------------- |
 | Cliente       | `registro.web@example.com`    |
