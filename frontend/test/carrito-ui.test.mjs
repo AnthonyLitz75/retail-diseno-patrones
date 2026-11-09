@@ -77,6 +77,30 @@ class MockDOMElement {
     }
     return null
   }
+
+  querySelectorAll(selector) {
+    const results = []
+    if (!selector) return results
+    if (selector.startsWith('.')) {
+      const cls = selector.slice(1)
+      this._findAllChildren(el => el.className && el.className.includes(cls), results)
+    } else if (selector.startsWith('#')) {
+      const targetId = selector.slice(1)
+      this._findAllChildren(el => el.id === targetId, results)
+    } else {
+      this._findAllChildren(el => el.tagName && el.tagName.toLowerCase() === selector.toLowerCase(), results)
+    }
+    return results
+  }
+
+  _findAllChildren(predicate, results) {
+    for (const child of this.children) {
+      if (predicate(child)) results.push(child)
+      if (child._findAllChildren) {
+        child._findAllChildren(predicate, results)
+      }
+    }
+  }
 }
 
 function setupMockDOM() {
@@ -94,7 +118,12 @@ function setupMockDOM() {
     drawerCount: new MockDOMElement('span', 'cart-drawer-count')
   }
 
+  const bodyElement = new MockDOMElement('body')
+  bodyElement.contains = () => true
+
   global.document = {
+    body: bodyElement,
+    dispatchEvent: () => {},
     createElement(tag) {
       return new MockDOMElement(tag)
     },
@@ -252,4 +281,52 @@ test('ocultarCarrito resetea el DOM y llama a hide() en el offcanvas', () => {
   assert.equal(dom.drawerCount.textContent, '0 ítems')
   assert.equal(dom.totalCarrito.textContent, 'S/ 0.00')
   assert.ok(dom.botonConfirmarCompra.disabled)
+})
+
+test('confirmarCompra mantiene deshabilitado el botonConfirmarCompra cuando el carrito queda vacío tras el checkout', async () => {
+  const dom = setupMockDOM()
+  inicializarCarrito()
+  establecerUsuarioSesion({ id: 10, nombre: 'Carlos', rol: 'CLIENTE' })
+
+  // Preparar carrito inicial con 1 producto para que el botón esté habilitado
+  mostrarCarrito({
+    total: 100,
+    productos: [{ productoId: 1, nombre: 'Item 1', cantidad: 1, stockDisponible: 5, precio: 100, subtotal: 100 }]
+  })
+  assert.equal(dom.botonConfirmarCompra.disabled, false)
+
+  const originalFetch = globalThis.fetch
+  globalThis.fetch = async (url) => {
+    if (url.includes('/api/pedidos/confirmar')) {
+      return {
+        ok: true,
+        status: 200,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: async () => ({ idPedido: 42 })
+      }
+    }
+    if (url.includes('/api/carrito')) {
+      return {
+        ok: true,
+        status: 200,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: async () => ({ total: 0, productos: [] })
+      }
+    }
+    throw new Error('URL no mockeada: ' + url)
+  }
+
+  try {
+    const clickHandler = dom.botonConfirmarCompra.eventListeners['click']?.[0]
+    assert.ok(clickHandler, 'Debe haber listener click en botonConfirmarCompra')
+    await clickHandler()
+
+    // El carrito debe tener el empty state
+    assert.equal(dom.listaCarrito.querySelectorAll('.cart-item').length, 0)
+    assert.equal(dom.listaCarrito.children.length, 1)
+    // El botón de confirmar compra debe quedar DESHABILITADO porque el carrito está vacío
+    assert.equal(dom.botonConfirmarCompra.disabled, true, 'El botón de compra debe estar deshabilitado al quedar el carrito vacío')
+  } finally {
+    globalThis.fetch = originalFetch
+  }
 })

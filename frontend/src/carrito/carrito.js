@@ -328,7 +328,7 @@ async function confirmarCompra() {
     if (spinnerConfirmarCompra?.classList) spinnerConfirmarCompra.classList.add('d-none')
     if (textoConfirmarCompra) textoConfirmarCompra.textContent = 'Confirmar compra con pago simulado'
     if (botonConfirmarCompra) {
-      botonConfirmarCompra.disabled = listaCarrito.children.length === 0
+      botonConfirmarCompra.disabled = !listaCarrito || listaCarrito.querySelectorAll('.cart-item').length === 0
     }
   }
 }

@@ -151,6 +151,8 @@ CREATE INDEX IF NOT EXISTS ix_producto_nuevo
     ON producto(nuevo);
 CREATE INDEX IF NOT EXISTS ix_movimiento_inventario_producto_fecha
     ON movimiento_inventario(producto_id, fecha DESC);
+CREATE INDEX IF NOT EXISTS ix_movimiento_inventario_fecha
+    ON movimiento_inventario(fecha, id);
 CREATE INDEX IF NOT EXISTS ix_movimiento_inventario_responsable
     ON movimiento_inventario(usuario_responsable_id);
 CREATE INDEX IF NOT EXISTS ix_carrito_usuario

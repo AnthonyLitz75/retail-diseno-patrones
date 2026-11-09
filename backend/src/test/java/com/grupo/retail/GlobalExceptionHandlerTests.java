@@ -10,11 +10,14 @@ import com.grupo.retail.exception.PagoRechazadoException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.MethodParameter;
+import org.springframework.http.HttpInputMessage;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.lang.reflect.Method;
@@ -23,6 +26,7 @@ import java.util.NoSuchElementException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.Mockito.mock;
 
 class GlobalExceptionHandlerTests {
 
@@ -150,6 +154,28 @@ class GlobalExceptionHandlerTests {
         assertEquals(HttpStatus.FORBIDDEN, respuesta.getStatusCode());
         assertNotNull(respuesta.getBody());
         assertEquals("Tu rol no puede realizar esta operación", respuesta.getBody().get("error"));
+    }
+
+    @Test
+    void manejarHttpMessageNotReadableRetorna400BadRequest() {
+        HttpInputMessage mockInput = mock(HttpInputMessage.class);
+        HttpMessageNotReadableException ex = new HttpMessageNotReadableException("JSON parse error: Unexpected end-of-input", mockInput);
+        ResponseEntity<Map<String, String>> respuesta = handler.manejarMensajeNoLegible(ex);
+
+        assertEquals(HttpStatus.BAD_REQUEST, respuesta.getStatusCode());
+        assertNotNull(respuesta.getBody());
+        assertEquals("El cuerpo de la solicitud no es un JSON válido o contiene tipos incompatibles", respuesta.getBody().get("error"));
+    }
+
+    @Test
+    void manejarMethodArgumentTypeMismatchRetorna400BadRequest() {
+        MethodArgumentTypeMismatchException ex = new MethodArgumentTypeMismatchException(
+                "abc", Long.class, "id", null, new IllegalArgumentException("For input string: \"abc\""));
+        ResponseEntity<Map<String, String>> respuesta = handler.manejarTipoParametroInvalido(ex);
+
+        assertEquals(HttpStatus.BAD_REQUEST, respuesta.getStatusCode());
+        assertNotNull(respuesta.getBody());
+        assertEquals("El parámetro 'id' contiene un formato o tipo de dato inválido", respuesta.getBody().get("error"));
     }
 
     @Test

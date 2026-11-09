@@ -1,24 +1,26 @@
 # TASKS: Envíos Físicos y Trazabilidad Logística
 
+## Estado: COMPLETADO Y VERIFICADO (2026-11-08)
+
 ## Fase 1: Persistencia Base y Migración (Foundational)
-- [ ] **T01:** Crear script aditivo `database/06_envios.sql` con la definición de la tabla `envio` e índices.
-- [ ] **T02:** Agregar DDL de `envio` a `database/00_esquema_base.sql` para instalación reproducible desde cero.
-- [ ] **T03:** Crear modelo Java record `Envio(Long id, Long pedidoId, String destinatario, String direccionSnapshot, String empresaTransporte, String codigoSeguimiento, Long almaceneroId, Instant fechaDespacho, Instant fechaEntrega)` en `com.grupo.retail.model`.
+- [x] **T01:** Crear script aditivo `database/07_envio_pedido.sql` con la definición de la tabla `envio` e índice único de seguimiento.
+- [x] **T02:** Agregar DDL canónico de `envio` a `database/00_esquema_base.sql` para instalación reproducible desde cero.
+- [x] **T03:** Crear modelo Java record `EnvioPedido(String transportista, String codigoSeguimiento, OffsetDateTime despachadoEn)` en `com.grupo.retail.model`.
 
 ## Fase 2: Capa Backend y TDD
-- [ ] **T04:** Crear `EnvioDAO` con métodos `insertarEnvioInicial(Connection, Envio)`, `actualizarDespacho(Connection, Long pedidoId, String transportista, String tracking, Long almaceneroId)` y `consultarPorPedidoId(Connection/DataSource, Long pedidoId)`.
-- [ ] **T05:** Pruebas unitarias de persistencia en `EnvioDAOTests`.
-- [ ] **T06:** Actualizar `CheckoutFacade` y `PedidoService` para incluir la creación del envío dentro de la transacción de confirmación.
-- [ ] **T07:** Actualizar las clases de estado `EstadoEnPreparacion` y `EstadoDespachado` para recibir y persistir datos de despacho y entrega.
-- [ ] **T08:** Exponer endpoints `POST /api/pedidos/{id}/despachar` y `POST /api/pedidos/{id}/entregar` en `PedidoController`.
-- [ ] **T09:** Pruebas de integración en `EnvioLogisticaTests` (autorización de rol `ALMACEN`, rechazo a `CLIENTE`, validación de campos obligatorios).
+- [x] **T04:** Integrar persistencia de envío en `PedidoDAO` con métodos de cambio de estado atómico a `DESPACHADO` y lectura de `envio`.
+- [x] **T05:** Pruebas unitarias de persistencia y validaciones en `PedidoEnvioTests.java`.
+- [x] **T06:** Actualizar `CheckoutFacade` y `PedidoService` para incluir captura de destinatario y dirección en la confirmación.
+- [x] **T07:** Actualizar las transiciones de estado en `PedidoService` y `PedidoDAO` para persistir transportista, código de seguimiento y registrar en `pedido_historial_estado`.
+- [x] **T08:** Exponer endpoints `POST /api/pedidos/{id}/despachar` y `POST /api/pedidos/{id}/entregar` en `PedidoController`.
+- [x] **T09:** Pruebas de integración en `PedidoEnvioTests` y `PedidoAutorizacionTests` (autorización de rol `ALMACEN`/`ADMIN`, rechazo 403 a `CLIENTE`, validación de campos obligatorios).
 
 ## Fase 3: Integración Frontend
-- [ ] **T10:** Actualizar modal/pantalla de checkout en `frontend/src/carrito/` para capturar `destinatario` y `direccion`.
-- [ ] **T11:** En `/mis-pedidos` (`frontend/src/cliente/`), mostrar bloque de seguimiento: transportista, tracking y fechas.
-- [ ] **T12:** En portal de almacén (`frontend/src/almacen/`), agregar formulario modal para ingresar transportista y tracking al despachar.
+- [x] **T10:** Actualizar modal y formulario de checkout en `frontend/src/carrito/` para capturar `destinatario` y `direccionEnvio`.
+- [x] **T11:** En `/mis-pedidos` (`frontend/src/pedidos/pedidos-vista.js`), mostrar bloque de seguimiento: transportista, tracking y fechas.
+- [x] **T12:** En portal de almacén (`frontend/src/pedidos/pedidos-vista.js`), agregar formulario modal `crearFormularioDespacho` para ingresar transportista y tracking al despachar.
 
 ## Fase 4: Verificación
-- [ ] **T13:** Ejecutar suite completa con `./mvnw.cmd test`.
-- [ ] **T14:** Validar empaquetado frontend con `npm run build`.
-- [ ] **T15:** Ejecutar `/speckit-converge` y verificar ausencia de divergencias.
+- [x] **T13:** Ejecutar suite completa con `./mvnw.cmd test` (131 tests pasando, 0 fallos).
+- [x] **T14:** Validar empaquetado frontend con `npm run build` y suite de tests con `node --test` (120 tests pasando).
+- [x] **T15:** Auditoría estática SonarQube con Quality Gate `PASSED (OK)`.

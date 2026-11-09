@@ -100,9 +100,11 @@ public class PedidoController {
     public ResponseEntity<Void> cancelarPedido(
             @PathVariable Long id, HttpServletRequest peticion) {
         SesionAutenticada.UsuarioSesion actor = sesionAutenticada.exigirRol(
-                peticion, "CLIENTE", "VENDEDOR");
+                peticion, "CLIENTE", "VENDEDOR", "ADMIN");
         if ("CLIENTE".equals(actor.rol())) {
             pedidoService.cancelarPedidoComoCliente(id, actor.usuarioId());
+        } else if ("ADMIN".equals(actor.rol())) {
+            pedidoService.cancelarPedidoComoAdmin(id, actor.usuarioId());
         } else {
             pedidoService.cancelarPedidoComoVendedor(id, actor.usuarioId());
         }

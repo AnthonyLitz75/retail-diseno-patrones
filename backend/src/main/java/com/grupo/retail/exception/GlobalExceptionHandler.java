@@ -2,9 +2,11 @@ package com.grupo.retail.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Map;
@@ -43,6 +45,19 @@ public class GlobalExceptionHandler {
                 .findFirst()
                 .orElse("Datos de solicitud inválidos");
         return ResponseEntity.badRequest().body(Map.of("error", mensaje));
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<Map<String, String>> manejarMensajeNoLegible(HttpMessageNotReadableException error) {
+        return ResponseEntity.badRequest()
+                .body(Map.of("error", "El cuerpo de la solicitud no es un JSON válido o contiene tipos incompatibles"));
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<Map<String, String>> manejarTipoParametroInvalido(MethodArgumentTypeMismatchException error) {
+        String parametro = error.getName() != null ? error.getName() : "solicitado";
+        return ResponseEntity.badRequest()
+                .body(Map.of("error", "El parámetro '" + parametro + "' contiene un formato o tipo de dato inválido"));
     }
 
     @ExceptionHandler(CorreoYaRegistradoException.class)

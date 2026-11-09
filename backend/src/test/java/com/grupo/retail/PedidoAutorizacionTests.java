@@ -105,8 +105,15 @@ class PedidoAutorizacionTests {
     }
 
     @Test
+    void adminPuedeCancelarPedidoYQuedaIdentificadoComoActor() {
+        controller.cancelarPedido(91L, solicitud(99L, "ADMIN"));
+
+        verify(pedidoService).cancelarPedidoComoAdmin(91L, 99L);
+    }
+
+    @Test
     void rolesDistintosDeClienteOVendedorNoPuedenCancelar() {
-        for (String rol : new String[] { "ADMIN", "ALMACEN", "SOPORTE" }) {
+        for (String rol : new String[] { "ALMACEN", "SOPORTE" }) {
             ResponseStatusException error = assertThrows(ResponseStatusException.class,
                     () -> controller.cancelarPedido(91L, solicitud(84L, rol)));
             assertEquals(403, error.getStatusCode().value(), rol);
@@ -114,6 +121,7 @@ class PedidoAutorizacionTests {
 
         verify(pedidoService, never()).cancelarPedidoComoCliente(91L, 84L);
         verify(pedidoService, never()).cancelarPedidoComoVendedor(91L, 84L);
+        verify(pedidoService, never()).cancelarPedidoComoAdmin(91L, 84L);
     }
 
     @Test

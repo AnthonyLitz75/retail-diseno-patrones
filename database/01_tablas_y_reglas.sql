@@ -286,6 +286,9 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_pedido_clave_confirmacion
     ON pedido(clave_confirmacion)
     WHERE clave_confirmacion IS NOT NULL;
 
+CREATE INDEX IF NOT EXISTS ix_movimiento_inventario_fecha
+    ON movimiento_inventario(fecha, id);
+
 COMMIT;
 
 -- Verificar que la regla del tipo de movimiento permite ENTRADA, SALIDA, AJUSTE y CANCELACION.

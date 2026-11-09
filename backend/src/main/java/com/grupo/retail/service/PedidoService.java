@@ -67,6 +67,10 @@ public class PedidoService {
         cancelarPedido(pedidoId, null, vendedorId);
     }
 
+    public void cancelarPedidoComoAdmin(Long pedidoId, Long adminId) {
+        cancelarPedido(pedidoId, null, adminId);
+    }
+
     private void cancelarPedido(Long pedidoId, Long clienteId, Long responsableId) {
         String estadoCancelado = EstadoPedido.desde("PENDIENTE").cancelar().nombre();
         try {

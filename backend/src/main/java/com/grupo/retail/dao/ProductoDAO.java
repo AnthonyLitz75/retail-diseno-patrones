@@ -190,11 +190,22 @@ public class ProductoDAO {
     }
 
     public Optional<Producto> actualizarPrecio(Long id, BigDecimal precio) {
-        String sql = "UPDATE producto SET precio = ? WHERE id = ? AND activo = TRUE";
+        String sql = """
+                UPDATE producto
+                SET precio_anterior = CASE
+                        WHEN ? < precio THEN COALESCE(precio_anterior, precio)
+                        WHEN ? >= COALESCE(precio_anterior, precio) THEN NULL
+                        ELSE precio_anterior
+                    END,
+                    precio = ?
+                WHERE id = ? AND activo = TRUE
+                """;
         try (Connection conexion = proveedorConexiones.obtenerConexion();
                 PreparedStatement consulta = conexion.prepareStatement(sql)) {
             consulta.setBigDecimal(1, precio);
-            consulta.setLong(2, id);
+            consulta.setBigDecimal(2, precio);
+            consulta.setBigDecimal(3, precio);
+            consulta.setLong(4, id);
             if (consulta.executeUpdate() == 0) {
                 return Optional.empty();
             }

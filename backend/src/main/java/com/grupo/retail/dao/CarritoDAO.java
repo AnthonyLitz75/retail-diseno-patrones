@@ -198,11 +198,11 @@ public class CarritoDAO {
 
     private Carrito leerCarrito(Connection conexion, long carritoId) throws SQLException {
         String sql = """
-                SELECT p.id AS producto_id, p.nombre, c.nombre AS categoria,
+                SELECT p.id AS producto_id, p.nombre, COALESCE(c.nombre, p.categoria, 'Otros') AS categoria,
                        p.precio, cd.cantidad, p.precio * cd.cantidad AS subtotal, p.stock
                 FROM carrito_detalle cd
                 JOIN producto p ON p.id = cd.producto_id
-                JOIN categoria c ON c.id_categoria = p.categoria_id
+                LEFT JOIN categoria c ON c.id_categoria = p.categoria_id
                 WHERE cd.carrito_id = ?
                 ORDER BY p.nombre
                 """;

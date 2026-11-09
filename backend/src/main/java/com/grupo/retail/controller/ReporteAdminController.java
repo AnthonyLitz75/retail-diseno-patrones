@@ -62,6 +62,17 @@ public class ReporteAdminController {
     }
 
     private static String celda(String valor) {
-        return "\"" + valor.replace("\"", "\"\"") + "\"";
+        if (valor == null) {
+            return "\"\"";
+        }
+        String texto = valor.replace("\"", "\"\"");
+        if (!texto.isEmpty()) {
+            char primerCaracter = texto.charAt(0);
+            if (primerCaracter == '=' || primerCaracter == '+' || primerCaracter == '-'
+                    || primerCaracter == '@' || primerCaracter == '\t' || primerCaracter == '\r') {
+                texto = "'" + texto;
+            }
+        }
+        return "\"" + texto + "\"";
     }
 }

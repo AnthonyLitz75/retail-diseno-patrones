@@ -19,9 +19,10 @@ public record NuevoProducto(
         @NotNull(message = "El stock es obligatorio") @PositiveOrZero(message = "El stock no puede ser negativo") Integer stock) {
 
     public NuevoProducto {
-        if (categoria == null || categoria.isBlank()) {
-            categoria = "General";
-        } else {
+        if (nombre != null) {
+            nombre = nombre.trim();
+        }
+        if (categoria != null) {
             categoria = categoria.trim();
         }
     }

@@ -96,11 +96,13 @@ export function mostrarToast(mensaje, tipo = 'exito', duracion = 3500) {
   toastElemento.append(flex)
   contenedor.append(toastElemento)
 
-  const instancia = Toast.getOrCreateInstance(toastElemento, {
-    autohide: true,
-    delay: duracion
-  })
-  instancia.show()
+  if (Toast?.getOrCreateInstance) {
+    const instancia = Toast.getOrCreateInstance(toastElemento, {
+      autohide: true,
+      delay: duracion
+    })
+    instancia.show()
+  }
 
   toastElemento.addEventListener('hidden.bs.toast', () => {
     toastElemento.remove()
