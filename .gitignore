@@ -37,6 +37,11 @@ scratch/
 docs/*
 !docs/img/
 
+# Spec-driven development and local agent artifacts
+.agents/
+.specify/
+specs/
+
 # Local environment files
 .env
 .env.*
