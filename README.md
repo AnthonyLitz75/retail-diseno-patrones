@@ -69,26 +69,25 @@ Las notificaciones in-app muestran un contador de alertas no leídas y pausan el
 - Node.js 20+ y npm
 - PostgreSQL 15+
 
-### 1. Base de datos
+### 1. Base de datos y Migraciones con Flyway
 
-Crea la base de datos:
+El sistema utiliza **Flyway** para gestionar de forma automática y reproducible el ciclo de vida del esquema de base de datos desde una instalación vacía.
+
+Crea la base de datos vacía en PostgreSQL:
 
 ```sql
 CREATE DATABASE retail_diseno_patrones;
 ```
 
-Ejecuta los scripts de la carpeta `database/` en este orden:
+**Ya no es necesario ejecutar scripts SQL manualmente.** Al iniciar el backend, Flyway migra automáticamente la base de datos aplicando las migraciones versionadas:
+- `db/migration/V1__esquema_base.sql`: 13 tablas canónicas, índices y restricciones.
+- `db/migration/V2__reclamos_devoluciones_y_revision.sql`: Tablas de atención (`reclamo`, `devolucion`, `detalle_devolucion`), control optimista (`revision` en `carrito`), fecha de entrega (`entregado_en` en `envio`) y unicidad de pago aprobado.
 
-| Script                             | Contenido                                                                  |
-| :--------------------------------- | :------------------------------------------------------------------------- |
-| `00_esquema_base.sql`              | Estructura DDL completa: tablas, índices, roles y restricciones.           |
-| `02_datos_prueba.sql`              | Cuentas de los 5 roles con hash BCrypt y carrito inicial de prueba.        |
-| `11_datos_demo_pixel_andino.sql`   | Catálogo oficial: los 32 productos tecnológicos con stock e inventario.    |
-| `12_perifericos_subcategorias.sql` | Jerarquía del patrón Composite: subcategorías vinculadas para Periféricos. |
+> Los scripts manuales antiguos se conservan como referencia histórica en `database/legado/`.
 
 ### 2. Backend
 
-Define las credenciales de la base de datos:
+Define las credenciales de la base de datos mediante variables de entorno:
 
 | Variable      | Descripción                                      |
 | :------------ | :----------------------------------------------- |
@@ -97,7 +96,10 @@ Define las credenciales de la base de datos:
 
 En despliegues con HTTPS define también `SESSION_COOKIE_SECURE=true`.
 
-<details>
+#### Ejecución con datos de prueba (Perfil `dev`)
+Para cargar automáticamente los datos semilla de desarrollo (5 cuentas de demostración, 32 productos con fotos e inventario y jerarquía Composite de periféricos):
+
+<details open>
 <summary><b>Windows (PowerShell)</b></summary>
 
 ```powershell
@@ -105,7 +107,7 @@ $env:DB_USER = "postgres"
 $env:DB_PASSWORD = "tu-contraseña-local"
 
 cd backend
-.\mvnw.cmd spring-boot:run
+.\mvnw.cmd spring-boot:run -Dspring-boot.run.profiles=dev
 ```
 
 </details>
@@ -118,7 +120,7 @@ export DB_USER="postgres"
 export DB_PASSWORD="tu-contraseña-local"
 
 cd backend
-./mvnw spring-boot:run
+./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
 ```
 
 </details>
@@ -203,11 +205,18 @@ El backend sigue una arquitectura en capas (controller, service, DAO) con acceso
 
 ## Pruebas
 
-**Backend** (JUnit 5 y Mockito):
+**Pruebas unitarias de Backend** (JUnit 5 y Mockito - Rápidas sin Docker):
 
 ```bash
 cd backend
 ./mvnw clean test
+```
+
+**Pruebas de integración de Backend** (Testcontainers con PostgreSQL 15 real en contenedor efímero y Failsafe):
+
+```bash
+cd backend
+./mvnw clean verify
 ```
 
 **Frontend** (Node.js Test Runner):

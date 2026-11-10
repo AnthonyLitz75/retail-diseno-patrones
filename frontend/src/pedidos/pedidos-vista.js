@@ -93,17 +93,24 @@ export function crearTarjetaPedido(
   if (pedido.envio) {
     const envioBox = document.createElement("div");
     envioBox.className = "order-shipping-box";
+    const esEntregado = pedido.estado === "ENTREGADO";
+    const estadoTexto = esEntregado ? "Entregado" : "Despachado";
+    const estadoBadgeClass = esEntregado ? "bg-primary-subtle text-primary border-primary-subtle" : "bg-success-subtle text-success border-success-subtle";
+    const fechaTexto = esEntregado && pedido.envio.entregadoEn
+      ? html`<span class="small text-secondary d-block">Entregado el: ${new Date(pedido.envio.entregadoEn).toLocaleString("es-PE")}</span>`
+      : "";
     envioBox.innerHTML = html`
       <div class="d-flex align-items-center gap-2">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-truck flex-shrink-0" viewBox="0 0 16 16">
           <path d="M0 3.5A1.5 1.5 0 0 1 1.5 2h9A1.5 1.5 0 0 1 12 3.5V5h1.02a1.5 1.5 0 0 1 1.17.563l1.481 1.85a1.5 1.5 0 0 1 .329.938V10.5a1.5 1.5 0 0 1-1.5 1.5H14a2 2 0 1 1-4 0H5a2 2 0 1 1-4 0 1 1 0 0 1-1-1V3.5zM1.5 3a.5.5 0 0 0-.5.5v7c0 .179.094.336.236.425a2 2 0 0 1 2.528 0 .5.5 0 0 0 .236-.425V3.5a.5.5 0 0 0-.5-.5h-2zm9.5 0H2v8.075a2 2 0 0 1 1 .925h6a2 2 0 0 1 1-.925V3zm1 3v2h2.55l-1.6-2H12zm2.55 3H12v2h2.5a.5.5 0 0 0 .5-.5V9.5a.5.5 0 0 0-.45-.5zM3 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm9 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
         </svg>
         <div>
-          <span class="small fw-bold d-block text-success-emphasis">Envío en camino con ${pedido.envio.transportista || ""}</span>
+          <span class="small fw-bold d-block text-success-emphasis">${esEntregado ? "Envío entregado con " : "Envío en camino con "} ${pedido.envio.transportista || ""}</span>
           <span class="small text-secondary">Código de seguimiento: <strong class="font-monospace text-dark">${pedido.envio.codigoSeguimiento || ""}</strong></span>
+          ${fechaTexto}
         </div>
       </div>
-      <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">Despachado</span>
+      <span class="badge ${estadoBadgeClass} border px-2 py-1">${estadoTexto}</span>
     `;
     cuerpo.append(envioBox);
   }

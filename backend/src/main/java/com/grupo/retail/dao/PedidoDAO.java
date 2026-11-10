@@ -49,7 +49,7 @@ public class PedidoDAO {
         String sql = """
                 SELECT p.id_pedido, u.nombre AS cliente_nombre, u.correo AS cliente_correo,
                        p.estado, p.total, p.creado_en,
-                       e.transportista, e.codigo_seguimiento, e.despachado_en
+                       e.transportista, e.codigo_seguimiento, e.despachado_en, e.entregado_en
                 FROM pedido p
                 JOIN usuario u ON u.id_usuario = p.usuario_id
                 LEFT JOIN envio e ON e.pedido_id = p.id_pedido
@@ -63,7 +63,7 @@ public class PedidoDAO {
         String sql = """
                 SELECT p.id_pedido, u.nombre AS cliente_nombre, u.correo AS cliente_correo,
                        p.estado, p.total, p.creado_en,
-                       e.transportista, e.codigo_seguimiento, e.despachado_en
+                       e.transportista, e.codigo_seguimiento, e.despachado_en, e.entregado_en
                 FROM pedido p
                 JOIN usuario u ON u.id_usuario = p.usuario_id
                 LEFT JOIN envio e ON e.pedido_id = p.id_pedido
@@ -97,7 +97,7 @@ public class PedidoDAO {
         String sql = """
                 SELECT p.id_pedido, u.nombre AS cliente_nombre, u.correo AS cliente_correo,
                        p.estado, p.total, p.creado_en,
-                       e.transportista, e.codigo_seguimiento, e.despachado_en
+                       e.transportista, e.codigo_seguimiento, e.despachado_en, e.entregado_en
                 FROM pedido p
                 JOIN usuario u ON u.id_usuario = p.usuario_id
                 LEFT JOIN envio e ON e.pedido_id = p.id_pedido
@@ -111,7 +111,7 @@ public class PedidoDAO {
         String sql = """
                 SELECT p.id_pedido, u.nombre AS cliente_nombre, u.correo AS cliente_correo,
                        p.estado, p.total, p.creado_en,
-                       e.transportista, e.codigo_seguimiento, e.despachado_en
+                       e.transportista, e.codigo_seguimiento, e.despachado_en, e.entregado_en
                 FROM pedido p
                 JOIN usuario u ON u.id_usuario = p.usuario_id
                 LEFT JOIN envio e ON e.pedido_id = p.id_pedido
@@ -234,7 +234,8 @@ public class PedidoDAO {
         return new EnvioPedido(
                 transportista,
                 resultado.getString("codigo_seguimiento"),
-                resultado.getObject("despachado_en", OffsetDateTime.class));
+                resultado.getObject("despachado_en", OffsetDateTime.class),
+                resultado.getObject("entregado_en", OffsetDateTime.class));
     }
 
     private List<DetallePedido> listarDetalles(Connection conexion, long pedidoId)
@@ -344,6 +345,17 @@ public class PedidoDAO {
                         insertarEnvio.setString(2, envio.transportista());
                         insertarEnvio.setString(3, envio.codigoSeguimiento());
                         insertarEnvio.executeUpdate();
+                    }
+                }
+                if ("ENTREGADO".equals(nuevoEstado)) {
+                    String updateEnvioSql = """
+                            UPDATE envio
+                            SET entregado_en = CURRENT_TIMESTAMP
+                            WHERE pedido_id = ? AND entregado_en IS NULL
+                            """;
+                    try (PreparedStatement updateEnvio = conexion.prepareStatement(updateEnvioSql)) {
+                        updateEnvio.setLong(1, pedidoId);
+                        updateEnvio.executeUpdate();
                     }
                 }
                 Long clienteId = buscarClienteEnTransaccion(conexion, pedidoId);
