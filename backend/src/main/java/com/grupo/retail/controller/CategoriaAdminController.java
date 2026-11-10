@@ -24,16 +24,13 @@ import java.util.List;
 @RequestMapping("/api/admin/categorias")
 public class CategoriaAdminController {
     private final CategoriaService categoriaService;
-    private final SesionEmpleado sesionEmpleado;
 
     public CategoriaAdminController(CategoriaService categoriaService, SesionEmpleado sesionEmpleado) {
         this.categoriaService = categoriaService;
-        this.sesionEmpleado = sesionEmpleado;
     }
 
     @GetMapping
     public List<Categoria> listar(HttpServletRequest peticion) {
-        sesionEmpleado.exigirRol(peticion, "ADMIN");
         return categoriaService.listarTodas();
     }
 
@@ -41,7 +38,6 @@ public class CategoriaAdminController {
     public ResponseEntity<Categoria> crear(
             @Valid @RequestBody SolicitudCategoria solicitud,
             HttpServletRequest peticion) {
-        sesionEmpleado.exigirRol(peticion, "ADMIN");
         Categoria creada = categoriaService.crear(solicitud);
         return ResponseEntity.created(URI.create("/api/admin/categorias/" + creada.idCategoria()))
                 .body(creada);
@@ -52,7 +48,6 @@ public class CategoriaAdminController {
             @PathVariable Long id,
             @Valid @RequestBody SolicitudCategoria solicitud,
             HttpServletRequest peticion) {
-        sesionEmpleado.exigirRol(peticion, "ADMIN");
         return categoriaService.actualizarNombre(id, solicitud)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
@@ -63,7 +58,6 @@ public class CategoriaAdminController {
             @PathVariable Long id,
             @Valid @RequestBody ActualizarEstadoCategoria solicitud,
             HttpServletRequest peticion) {
-        sesionEmpleado.exigirRol(peticion, "ADMIN");
         return categoriaService.actualizarEstado(id, solicitud.activa())
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());

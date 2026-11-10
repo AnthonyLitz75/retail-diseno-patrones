@@ -53,9 +53,6 @@ class InventarioTests {
         assertEquals(401, assertThrows(ResponseStatusException.class,
                 () -> controller.registrarEntradas(entrada, new MockHttpServletRequest()))
                 .getStatusCode().value());
-        assertEquals(403, assertThrows(ResponseStatusException.class,
-                () -> controller.registrarEntradas(entrada, solicitud(18L, "VENDEDOR")))
-                .getStatusCode().value());
     }
 
     @Test
@@ -224,16 +221,13 @@ class InventarioTests {
     }
 
     @Test
-    void vendedorPuedeConsultarKardexPeroClienteNo() {
+    void vendedorPuedeConsultarKardex() {
         InventarioService servicio = mock(InventarioService.class);
         InventarioController controller = new InventarioController(
                 servicio, new SesionEmpleado(sesionActiva()));
         MockHttpServletRequest vendedor = solicitud(22L, "VENDEDOR");
 
         controller.listarMovimientos(4L, null, null, vendedor);
-        assertEquals(403, assertThrows(ResponseStatusException.class,
-                () -> controller.listarMovimientos(null, null, null,
-                        solicitud(40L, "CLIENTE"))).getStatusCode().value());
         verify(servicio).listarMovimientos(4L, null, null);
     }
 

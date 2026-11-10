@@ -1,0 +1,118 @@
+package com.grupo.retail.config;
+
+import com.grupo.retail.security.FiltroRevalidacionSesion;
+import com.grupo.retail.security.ManejadorErrores;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.intercept.AuthorizationFilter;
+import org.springframework.security.web.authentication.HttpStatusEntryPoint;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
+import org.springframework.security.web.csrf.HttpSessionCsrfTokenRepository;
+
+@Configuration
+@EnableWebSecurity
+public class SecurityConfig {
+
+    private final FiltroRevalidacionSesion filtroRevalidacionSesion;
+    private final ManejadorErrores manejadorErrores;
+
+    public SecurityConfig(FiltroRevalidacionSesion filtroRevalidacionSesion, ManejadorErrores manejadorErrores) {
+        this.filtroRevalidacionSesion = filtroRevalidacionSesion;
+        this.manejadorErrores = manejadorErrores;
+    }
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        HttpSessionCsrfTokenRepository csrfTokenRepository = new HttpSessionCsrfTokenRepository();
+        csrfTokenRepository.setHeaderName("X-XSRF-TOKEN");
+
+        CsrfTokenRequestAttributeHandler requestHandler = new CsrfTokenRequestAttributeHandler();
+        requestHandler.setCsrfRequestAttributeName(null);
+
+        http
+                .csrf(csrf -> csrf
+                        .csrfTokenRepository(csrfTokenRepository)
+                        .csrfTokenRequestHandler(requestHandler)
+                )
+                .formLogin(AbstractHttpConfigurer::disable)
+                .httpBasic(AbstractHttpConfigurer::disable)
+                .addFilterBefore(filtroRevalidacionSesion, AuthorizationFilter.class)
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(manejadorErrores)
+                        .accessDeniedHandler(manejadorErrores)
+                )
+                .authorizeHttpRequests(auth -> auth
+                        // 1. Rutas públicas de catálogo, auth y bienvenida
+                        .requestMatchers(org.springframework.http.HttpMethod.GET,
+                                "/api/hello",
+                                "/api/categorias",
+                                "/api/categorias/**",
+                                "/api/productos",
+                                "/api/productos/{id:[0-9]+}",
+                                "/api/auth/csrf"
+                        ).permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.POST,
+                                "/api/auth/login",
+                                "/api/auth/registro"
+                        ).permitAll()
+
+                        // 2. Módulo de Administración (exclusivo ADMIN)
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+
+                        // 3. Consultas de Vendedor (exclusivo VENDEDOR)
+                        .requestMatchers("/api/vendedor/**").hasRole("VENDEDOR")
+
+                        // 4. Operaciones de Almacén y Logística (ADMIN y ALMACEN)
+                        .requestMatchers(
+                                "/api/pedidos/operativos",
+                                "/api/pedidos/{id:[0-9]+}/preparar",
+                                "/api/pedidos/{id:[0-9]+}/despachar",
+                                "/api/pedidos/{id:[0-9]+}/entregar",
+                                "/api/inventario/entradas"
+                        ).hasAnyRole("ADMIN", "ALMACEN")
+
+                        // 5. Gestión de Catálogo y Precios (ADMIN y VENDEDOR)
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/productos").hasAnyRole("ADMIN", "VENDEDOR")
+                        .requestMatchers(org.springframework.http.HttpMethod.PUT, "/api/productos/{id:[0-9]+}/precio").hasAnyRole("ADMIN", "VENDEDOR")
+
+                        // 6. Inventario y Pedidos Pendientes (ADMIN, VENDEDOR y ALMACEN)
+                        .requestMatchers(
+                                "/api/pedidos/pendientes",
+                                "/api/inventario/movimientos",
+                                "/api/productos/{id:[0-9]+}/movimientos"
+                        ).hasAnyRole("ADMIN", "VENDEDOR", "ALMACEN")
+                        .requestMatchers(org.springframework.http.HttpMethod.PUT, "/api/productos/{id:[0-9]+}/stock").hasAnyRole("ADMIN", "VENDEDOR", "ALMACEN")
+
+                        // 7. Cancelación de Pedidos (CLIENTE, VENDEDOR y ADMIN)
+                        .requestMatchers(org.springframework.http.HttpMethod.PUT, "/api/pedidos/{id:[0-9]+}/cancelar").hasAnyRole("CLIENTE", "VENDEDOR", "ADMIN")
+
+                        // 8. Rutas exclusivas de CLIENTE
+                        .requestMatchers(
+                                "/api/carrito",
+                                "/api/carrito/**",
+                                "/api/pedidos/mis-pedidos",
+                                "/api/pedidos/confirmar",
+                                "/api/preguntas/mis-preguntas",
+                                "/api/productos/{id:[0-9]+}/preguntas"
+                        ).hasRole("CLIENTE")
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/pedidos/{id:[0-9]+}").hasRole("CLIENTE")
+
+                        // 9. Resto de peticiones requieren autenticación
+                        .anyRequest().authenticated()
+                );
+
+        return http.build();
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
+        return configuration.getAuthenticationManager();
+    }
+}

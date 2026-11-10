@@ -7,8 +7,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.Set;
-
 @Component
 public class SesionAutenticada {
     private final UsuarioDAO usuarioDAO;
@@ -31,14 +29,6 @@ public class SesionAutenticada {
                     HttpStatus.UNAUTHORIZED, "La cuenta o el rol cambiaron; inicia sesión nuevamente");
         }
         return new UsuarioSesion(usuarioId, rol);
-    }
-
-    public UsuarioSesion exigirRol(HttpServletRequest solicitud, String... rolesPermitidos) {
-        UsuarioSesion usuario = exigirUsuario(solicitud);
-        if (!Set.of(rolesPermitidos).contains(usuario.rol())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Tu rol no puede realizar esta operación");
-        }
-        return usuario;
     }
 
     public record UsuarioSesion(Long usuarioId, String rol) {

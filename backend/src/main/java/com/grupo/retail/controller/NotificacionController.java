@@ -2,6 +2,7 @@ package com.grupo.retail.controller;
 
 import com.grupo.retail.model.Notificacion;
 import com.grupo.retail.service.NotificacionService;
+import com.grupo.retail.service.SesionAutenticada;
 import com.grupo.retail.service.SesionCliente;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,17 +15,24 @@ import java.util.List;
 @RequestMapping("/api/notificaciones")
 public class NotificacionController {
     private final NotificacionService notificacionService;
-    private final SesionCliente sesionCliente;
-    public NotificacionController(NotificacionService notificacionService, SesionCliente sesionCliente) {
+    private final SesionAutenticada sesionAutenticada;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public NotificacionController(NotificacionService notificacionService, SesionAutenticada sesionAutenticada) {
         this.notificacionService = notificacionService;
-        this.sesionCliente = sesionCliente;
+        this.sesionAutenticada = sesionAutenticada;
     }
+
+    public NotificacionController(NotificacionService notificacionService, SesionCliente sesionCliente) {
+        this(notificacionService, sesionCliente.getSesionAutenticada());
+    }
+
     @GetMapping("/mias")
     public List<Notificacion> listarMias(
             @RequestParam(required = false) Long antesDeId,
             @RequestParam(defaultValue = "50") int limite,
             HttpServletRequest request) {
-        Long clienteId = sesionCliente.obtenerId(request);
-        return notificacionService.listar(clienteId, antesDeId, limite);
+        Long usuarioId = sesionAutenticada.exigirUsuario(request).usuarioId();
+        return notificacionService.listar(usuarioId, antesDeId, limite);
     }
 }

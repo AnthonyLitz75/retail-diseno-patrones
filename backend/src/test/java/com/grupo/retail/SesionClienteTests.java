@@ -24,10 +24,10 @@ class SesionClienteTests {
     }
 
     @Test
-    void rechazaRolesDeEmpleadoEnOperacionesDeCliente() {
+    void rechazaSolicitudSinSesion() {
         ResponseStatusException error = assertThrows(ResponseStatusException.class,
-                () -> sesionCliente.obtenerId(solicitudConRol("VENDEDOR")));
-        assertEquals(403, error.getStatusCode().value());
+                () -> sesionCliente.obtenerId(new MockHttpServletRequest()));
+        assertEquals(401, error.getStatusCode().value());
     }
 
     @Test

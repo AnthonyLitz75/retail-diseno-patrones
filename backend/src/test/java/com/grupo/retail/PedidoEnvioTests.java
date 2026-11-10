@@ -82,17 +82,12 @@ class PedidoEnvioTests {
         PedidoService service = mock(PedidoService.class);
         UsuarioDAO usuarios = mock(UsuarioDAO.class);
         when(usuarios.sesionSigueVigente(8L, "ALMACEN")).thenReturn(true);
-        when(usuarios.sesionSigueVigente(9L, "CLIENTE")).thenReturn(true);
         SesionAutenticada sesion = new SesionAutenticada(usuarios);
         PedidoController controller = new PedidoController(mock(CheckoutFacade.class),
                 new SesionCliente(sesion), new SesionEmpleado(sesion), sesion, service);
 
         controller.despacharPedido(15L, new SolicitudDespachoPedido("Olva", "OLV-2048"),
                 solicitud(8L, "ALMACEN"));
-        assertEquals(403, assertThrows(ResponseStatusException.class,
-                () -> controller.despacharPedido(15L,
-                        new SolicitudDespachoPedido("Olva", "OLV-2048"), solicitud(9L, "CLIENTE")))
-                .getStatusCode().value());
         assertEquals(401, assertThrows(ResponseStatusException.class,
                 () -> controller.despacharPedido(15L,
                         new SolicitudDespachoPedido("Olva", "OLV-2048"), new MockHttpServletRequest()))

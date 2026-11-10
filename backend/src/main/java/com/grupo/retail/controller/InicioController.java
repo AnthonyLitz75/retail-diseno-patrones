@@ -75,7 +75,7 @@ public class InicioController {
     @PostMapping("/productos")
     public ResponseEntity<?> crearProducto(
             @Valid @RequestBody NuevoProducto datos, HttpServletRequest solicitud) {
-        Long responsableId = sesionEmpleado.exigirRol(solicitud, "ADMIN", "VENDEDOR");
+        Long responsableId = sesionEmpleado.obtenerId(solicitud);
         try {
             Producto creado = productoService.crearProducto(datos, responsableId);
             URI ubicacion = URI.create("/api/productos/" + creado.id());
@@ -87,20 +87,22 @@ public class InicioController {
 
     @PutMapping("/productos/{id}/precio")
     public ResponseEntity<Producto> actualizarPrecio(
-            @PathVariable Long id, @Valid @RequestBody ActualizarPrecio datos,
-            HttpServletRequest solicitud) {
-        sesionEmpleado.exigirRol(solicitud, "ADMIN", "VENDEDOR");
+            @PathVariable Long id, @Valid @RequestBody ActualizarPrecio datos) {
         return productoService.actualizarPrecio(id, datos.precio())
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    public ResponseEntity<Producto> actualizarPrecio(
+            Long id, ActualizarPrecio datos, HttpServletRequest solicitud) {
+        return actualizarPrecio(id, datos);
     }
 
     @PutMapping("/productos/{id}/stock")
     public ResponseEntity<Producto> actualizarStock(
             @PathVariable Long id, @Valid @RequestBody AjusteInventario datos,
             HttpServletRequest solicitud) {
-        Long responsableId = sesionEmpleado.exigirRol(
-                solicitud, "ADMIN", "VENDEDOR", "ALMACEN");
+        Long responsableId = sesionEmpleado.obtenerId(solicitud);
         return productoService.actualizarStock(
                         id, datos.nuevoStock(), datos.motivo(), responsableId)
                 .map(ResponseEntity::ok)
@@ -108,9 +110,11 @@ public class InicioController {
     }
 
     @GetMapping("/productos/{id}/movimientos")
-    public List<MovimientoInventario> listarMovimientos(
-            @PathVariable Long id, HttpServletRequest solicitud) {
-        sesionEmpleado.exigirRol(solicitud, "ADMIN", "VENDEDOR", "ALMACEN");
+    public List<MovimientoInventario> listarMovimientos(@PathVariable Long id) {
         return productoService.listarMovimientos(id);
+    }
+
+    public List<MovimientoInventario> listarMovimientos(Long id, HttpServletRequest solicitud) {
+        return listarMovimientos(id);
     }
 }

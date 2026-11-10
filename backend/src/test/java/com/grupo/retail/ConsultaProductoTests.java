@@ -63,27 +63,11 @@ class ConsultaProductoTests {
     }
 
     @Test
-    void sesionClienteNoPuedeUsarRutasDeVendedor() {
-        MockHttpServletRequest peticion = solicitud(42L, "CLIENTE");
-
-        assertEquals(403, assertThrows(ResponseStatusException.class,
-                () -> controller.listarPendientes(peticion)).getStatusCode().value());
-        assertEquals(403, assertThrows(ResponseStatusException.class,
-                () -> controller.responderPregunta(15L,
-                        new SolicitudRespuestaPregunta("Respuesta"), peticion))
-                .getStatusCode().value());
-        verify(dao, never()).listarPendientes();
-        verify(dao, never()).responder(15L, 42L, "Respuesta");
-    }
-
-    @Test
     void rutasPrivadasRechazanSesionAusente() {
         MockHttpServletRequest peticion = new MockHttpServletRequest();
 
         assertEquals(401, assertThrows(ResponseStatusException.class,
                 () -> controller.listarMisPreguntas(peticion)).getStatusCode().value());
-        assertEquals(401, assertThrows(ResponseStatusException.class,
-                () -> controller.listarPendientes(peticion)).getStatusCode().value());
     }
 
     @Test

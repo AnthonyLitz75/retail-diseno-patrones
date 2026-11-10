@@ -13,7 +13,7 @@ public class SesionEmpleado {
         this.sesionAutenticada = sesionAutenticada;
     }
 
-    public Long exigirRol(HttpServletRequest solicitud, String... rolesPermitidos) {
-        return sesionAutenticada.exigirRol(solicitud, rolesPermitidos).usuarioId();
+    public Long obtenerId(HttpServletRequest solicitud) {
+        return sesionAutenticada.exigirUsuario(solicitud).usuarioId();
     }
 }

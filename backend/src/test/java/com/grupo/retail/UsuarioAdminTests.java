@@ -36,17 +36,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class UsuarioAdminTests {
-    @Test
-    void rutasAdminRechazanSesionAusenteYOtrosRoles() {
-        UsuarioService servicio = mock(UsuarioService.class);
-        UsuarioAdminController controller = controller(servicio);
-
-        assertEquals(401, assertThrows(ResponseStatusException.class,
-                () -> controller.listar(new MockHttpServletRequest())).getStatusCode().value());
-        assertEquals(403, assertThrows(ResponseStatusException.class,
-                () -> controller.listar(solicitud(8L, "VENDEDOR"))).getStatusCode().value());
-        verify(servicio, never()).listarUsuarios();
-    }
 
     @Test
     void adminPuedeListarCuentasConModeloPublico() {

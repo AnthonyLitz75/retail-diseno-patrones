@@ -21,18 +21,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class ReporteAdminTests {
-    @Test
-    void rutasExigenAdminAntesDeConsultar() {
-        ReporteService service = mock(ReporteService.class);
-        var controller = controller(service);
-        assertEquals(401, assertThrows(ResponseStatusException.class,
-                () -> controller.resumen(null, null, new MockHttpServletRequest()))
-                .getStatusCode().value());
-        assertEquals(403, assertThrows(ResponseStatusException.class,
-                () -> controller.resumen(null, null, solicitud("VENDEDOR")))
-                .getStatusCode().value());
-        verifyNoInteractions(service);
-    }
 
     @Test
     void resumenPasaFechasYDevuelveMetricas() {

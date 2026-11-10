@@ -65,13 +65,7 @@ class PedidoAutorizacionTests {
     }
 
     @Test
-    void detalleDePedidoRechazaOtrosRolesYSesionAusente() {
-        for (String rol : new String[] { "ADMIN", "VENDEDOR", "ALMACEN", "SOPORTE" }) {
-            ResponseStatusException error = assertThrows(ResponseStatusException.class,
-                    () -> controller.obtenerPedido(91L, solicitud(84L, rol)));
-            assertEquals(403, error.getStatusCode().value(), rol);
-        }
-
+    void detalleDePedidoRechazaSesionAusente() {
         ResponseStatusException error = assertThrows(ResponseStatusException.class,
                 () -> controller.obtenerPedido(91L, new MockHttpServletRequest()));
         assertEquals(401, error.getStatusCode().value());

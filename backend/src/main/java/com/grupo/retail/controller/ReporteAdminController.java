@@ -20,11 +20,9 @@ import java.util.List;
 @RequestMapping("/api/admin/reportes")
 public class ReporteAdminController {
     private final ReporteService reporteService;
-    private final SesionEmpleado sesionEmpleado;
 
     public ReporteAdminController(ReporteService reporteService, SesionEmpleado sesionEmpleado) {
         this.reporteService = reporteService;
-        this.sesionEmpleado = sesionEmpleado;
     }
 
     @GetMapping("/resumen")
@@ -32,7 +30,6 @@ public class ReporteAdminController {
             @RequestParam(required = false) String desde,
             @RequestParam(required = false) String hasta,
             HttpServletRequest request) {
-        sesionEmpleado.exigirRol(request, "ADMIN");
         return reporteService.obtenerResumen(desde, hasta);
     }
 
@@ -41,7 +38,6 @@ public class ReporteAdminController {
             @RequestParam(required = false) String desde,
             @RequestParam(required = false) String hasta,
             HttpServletRequest request) {
-        sesionEmpleado.exigirRol(request, "ADMIN");
         String csv = generarCsv(reporteService.listarVentas(desde, hasta));
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=ventas.csv")

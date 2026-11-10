@@ -13,6 +13,10 @@ public class SesionCliente {
     }
 
     public Long obtenerId(HttpServletRequest solicitud) {
-        return sesionAutenticada.exigirRol(solicitud, "CLIENTE").usuarioId();
+        return sesionAutenticada.exigirUsuario(solicitud).usuarioId();
+    }
+
+    public SesionAutenticada getSesionAutenticada() {
+        return sesionAutenticada;
     }
 }

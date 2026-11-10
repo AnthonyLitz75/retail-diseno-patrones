@@ -21,28 +21,30 @@ class SesionEmpleadoTests {
     @Test
     void rechazaOperacionesSinSesion() {
         var error = assertThrows(ResponseStatusException.class,
-                () -> sesionEmpleado.exigirRol(new MockHttpServletRequest(), "VENDEDOR"));
+                () -> sesionEmpleado.obtenerId(new MockHttpServletRequest()));
         assertEquals(401, error.getStatusCode().value());
     }
 
     @Test
-    void permiteElRolIncluidoEnLaRegla() {
+    void obtieneIdDeEmpleadoConSesionValida() {
         var solicitud = solicitudConRol("ALMACEN");
-        assertEquals(42L, sesionEmpleado.exigirRol(solicitud, "VENDEDOR", "ALMACEN"));
+        assertEquals(42L, sesionEmpleado.obtenerId(solicitud));
     }
 
     @Test
-    void permiteLosTresRolesDePersonalImplementados() {
+    void obtieneIdParaCualquierRolAutenticado() {
         for (String rol : new String[] { "ADMIN", "VENDEDOR", "ALMACEN" }) {
-            assertEquals(42L, sesionEmpleado.exigirRol(solicitudConRol(rol), rol));
+            assertEquals(42L, sesionEmpleado.obtenerId(solicitudConRol(rol)));
         }
     }
 
     @Test
-    void rechazaUnRolQueNoEstaAutorizado() {
+    void rechazaSesionInvalidaSinUsuarioId() {
+        MockHttpServletRequest solicitud = new MockHttpServletRequest();
+        solicitud.getSession().setAttribute("usuarioRol", "ADMIN");
         var error = assertThrows(ResponseStatusException.class,
-                () -> sesionEmpleado.exigirRol(solicitudConRol("CLIENTE"), "VENDEDOR"));
-        assertEquals(403, error.getStatusCode().value());
+                () -> sesionEmpleado.obtenerId(solicitud));
+        assertEquals(401, error.getStatusCode().value());
     }
 
     private MockHttpServletRequest solicitudConRol(String rol) {

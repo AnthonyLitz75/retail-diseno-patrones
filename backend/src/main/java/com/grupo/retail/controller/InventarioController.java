@@ -33,7 +33,7 @@ public class InventarioController {
     public ResponseEntity<List<MovimientoInventario>> registrarEntradas(
             @Valid @RequestBody SolicitudEntradaInventario solicitud,
             HttpServletRequest peticion) {
-        Long responsableId = sesionEmpleado.exigirRol(peticion, "ADMIN", "ALMACEN");
+        Long responsableId = sesionEmpleado.obtenerId(peticion);
         List<MovimientoInventario> movimientos = inventarioService.registrarEntradas(
                 solicitud.productos(), solicitud.motivo(), responsableId);
         return ResponseEntity.created(URI.create("/api/inventario/movimientos"))
@@ -44,9 +44,15 @@ public class InventarioController {
     public List<MovimientoInventario> listarMovimientos(
             @RequestParam(required = false) Long productoId,
             @RequestParam(required = false) OffsetDateTime desde,
-            @RequestParam(required = false) OffsetDateTime hasta,
-            HttpServletRequest peticion) {
-        sesionEmpleado.exigirRol(peticion, "ADMIN", "VENDEDOR", "ALMACEN");
+            @RequestParam(required = false) OffsetDateTime hasta) {
         return inventarioService.listarMovimientos(productoId, desde, hasta);
+    }
+
+    public List<MovimientoInventario> listarMovimientos(
+            Long productoId,
+            OffsetDateTime desde,
+            OffsetDateTime hasta,
+            HttpServletRequest peticion) {
+        return listarMovimientos(productoId, desde, hasta);
     }
 }

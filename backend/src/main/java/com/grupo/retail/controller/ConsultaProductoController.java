@@ -52,9 +52,12 @@ public class ConsultaProductoController {
     }
 
     @GetMapping("/vendedor/preguntas")
-    public List<ConsultaProducto> listarPendientes(HttpServletRequest peticion) {
-        sesionEmpleado.exigirRol(peticion, "VENDEDOR");
+    public List<ConsultaProducto> listarPendientes() {
         return consultaProductoService.listarPendientes();
+    }
+
+    public List<ConsultaProducto> listarPendientes(HttpServletRequest peticion) {
+        return listarPendientes();
     }
 
     @PostMapping("/vendedor/preguntas/{id}/responder")
@@ -62,7 +65,7 @@ public class ConsultaProductoController {
             @PathVariable Long id,
             @Valid @RequestBody SolicitudRespuestaPregunta solicitud,
             HttpServletRequest peticion) {
-        Long vendedorId = sesionEmpleado.exigirRol(peticion, "VENDEDOR");
+        Long vendedorId = sesionEmpleado.obtenerId(peticion);
         consultaProductoService.responder(id, vendedorId, solicitud.respuesta());
         return ResponseEntity.noContent().build();
     }

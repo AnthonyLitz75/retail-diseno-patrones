@@ -33,7 +33,6 @@ public class UsuarioAdminController {
 
     @GetMapping
     public List<Usuario> listar(HttpServletRequest peticion) {
-        sesionEmpleado.exigirRol(peticion, "ADMIN");
         return usuarioService.listarUsuarios();
     }
 
@@ -41,7 +40,6 @@ public class UsuarioAdminController {
     public ResponseEntity<Usuario> crear(
             @Valid @RequestBody RegistroPersonal solicitud,
             HttpServletRequest peticion) {
-        sesionEmpleado.exigirRol(peticion, "ADMIN");
         Usuario creado = usuarioService.registrarPersonal(solicitud);
         return ResponseEntity.created(URI.create("/api/admin/usuarios/" + creado.idUsuario()))
                 .body(creado);
@@ -52,14 +50,14 @@ public class UsuarioAdminController {
             @PathVariable Long id,
             @Valid @RequestBody ActualizarRolUsuario solicitud,
             HttpServletRequest peticion) {
-        Long administradorId = sesionEmpleado.exigirRol(peticion, "ADMIN");
+        Long administradorId = sesionEmpleado.obtenerId(peticion);
         return ResponseEntity.ok(usuarioService.actualizarRol(id, administradorId, solicitud));
     }
 
     @PutMapping("/{id}/desactivar")
     public ResponseEntity<Void> desactivar(
             @PathVariable Long id, HttpServletRequest peticion) {
-        Long administradorId = sesionEmpleado.exigirRol(peticion, "ADMIN");
+        Long administradorId = sesionEmpleado.obtenerId(peticion);
         usuarioService.desactivar(id, administradorId);
         return ResponseEntity.noContent().build();
     }

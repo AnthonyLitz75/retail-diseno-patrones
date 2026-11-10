@@ -58,21 +58,27 @@ public class PedidoController {
     }
 
     @GetMapping("/pendientes")
-    public List<PedidoVista> listarPendientes(HttpServletRequest peticion) {
-        sesionEmpleado.exigirRol(peticion, "ADMIN", "VENDEDOR", "ALMACEN");
+    public List<PedidoVista> listarPendientes() {
         return pedidoService.listarPendientes();
     }
 
+    public List<PedidoVista> listarPendientes(HttpServletRequest peticion) {
+        return listarPendientes();
+    }
+
     @GetMapping("/operativos")
-    public List<PedidoVista> listarOperativos(HttpServletRequest peticion) {
-        sesionEmpleado.exigirRol(peticion, "ADMIN", "ALMACEN");
+    public List<PedidoVista> listarOperativos() {
         return pedidoService.listarOperativos();
+    }
+
+    public List<PedidoVista> listarOperativos(HttpServletRequest peticion) {
+        return listarOperativos();
     }
 
     @PutMapping("/{id}/preparar")
     public ResponseEntity<Void> prepararPedido(
             @PathVariable Long id, HttpServletRequest peticion) {
-        Long responsableId = sesionEmpleado.exigirRol(peticion, "ADMIN", "ALMACEN");
+        Long responsableId = sesionEmpleado.obtenerId(peticion);
         pedidoService.prepararPedido(id, responsableId);
         return ResponseEntity.noContent().build();
     }
@@ -82,7 +88,7 @@ public class PedidoController {
             @PathVariable Long id,
             @Valid @RequestBody SolicitudDespachoPedido solicitud,
             HttpServletRequest peticion) {
-        Long responsableId = sesionEmpleado.exigirRol(peticion, "ADMIN", "ALMACEN");
+        Long responsableId = sesionEmpleado.obtenerId(peticion);
         pedidoService.despacharPedido(
                 id, responsableId, solicitud.transportista(), solicitud.codigoSeguimiento());
         return ResponseEntity.noContent().build();
@@ -91,7 +97,7 @@ public class PedidoController {
     @PutMapping("/{id}/entregar")
     public ResponseEntity<Void> entregarPedido(
             @PathVariable Long id, HttpServletRequest peticion) {
-        Long responsableId = sesionEmpleado.exigirRol(peticion, "ADMIN", "ALMACEN");
+        Long responsableId = sesionEmpleado.obtenerId(peticion);
         pedidoService.entregarPedido(id, responsableId);
         return ResponseEntity.noContent().build();
     }
@@ -99,14 +105,16 @@ public class PedidoController {
     @PutMapping("/{id}/cancelar")
     public ResponseEntity<Void> cancelarPedido(
             @PathVariable Long id, HttpServletRequest peticion) {
-        SesionAutenticada.UsuarioSesion actor = sesionAutenticada.exigirRol(
-                peticion, "CLIENTE", "VENDEDOR", "ADMIN");
+        SesionAutenticada.UsuarioSesion actor = sesionAutenticada.exigirUsuario(peticion);
         if ("CLIENTE".equals(actor.rol())) {
             pedidoService.cancelarPedidoComoCliente(id, actor.usuarioId());
         } else if ("ADMIN".equals(actor.rol())) {
             pedidoService.cancelarPedidoComoAdmin(id, actor.usuarioId());
-        } else {
+        } else if ("VENDEDOR".equals(actor.rol())) {
             pedidoService.cancelarPedidoComoVendedor(id, actor.usuarioId());
+        } else {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    HttpStatus.FORBIDDEN, "Tu rol no puede realizar esta operación");
         }
         return ResponseEntity.noContent().build();
     }

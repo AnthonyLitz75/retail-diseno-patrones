@@ -136,13 +136,11 @@ class FactoryNotificacionesTests {
         var controller = new NotificacionController(service, sesionCliente());
 
         assertEquals(List.of(nota), controller.listarMias(null, 50, solicitud(7L, "CLIENTE")));
+        assertEquals(List.of(nota), controller.listarMias(null, 50, solicitud(7L, "ALMACEN")));
         assertEquals(401, assertThrows(ResponseStatusException.class,
                 () -> controller.listarMias(null, 50, new MockHttpServletRequest()))
                 .getStatusCode().value());
-        assertEquals(403, assertThrows(ResponseStatusException.class,
-                () -> controller.listarMias(null, 50, solicitud(7L, "ALMACEN")))
-                .getStatusCode().value());
-        verify(service).listar(7L, null, 50);
+        verify(service, times(2)).listar(7L, null, 50);
         verify(service, never()).listar(7L, null, 100);
     }
 

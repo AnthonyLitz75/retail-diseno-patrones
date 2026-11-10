@@ -36,17 +36,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class CategoriaAdminTests {
-    @Test
-    void rutasDeCategoriaExigenAdmin() {
-        CategoriaService service = mock(CategoriaService.class);
-        CategoriaAdminController controller = controller(service);
-
-        assertEquals(401, assertThrows(ResponseStatusException.class,
-                () -> controller.listar(new MockHttpServletRequest())).getStatusCode().value());
-        assertEquals(403, assertThrows(ResponseStatusException.class,
-                () -> controller.listar(solicitud(4L, "ALMACEN"))).getStatusCode().value());
-        verify(service, never()).listarTodas();
-    }
 
     @Test
     void administradorPuedeListarTodasIncluidasInactivas() {

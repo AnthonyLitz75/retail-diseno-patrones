@@ -7,6 +7,40 @@ const MENSAJES_HTTP = {
   500: 'Ocurrió un error en el servidor.'
 }
 
+let datosCsrf = null
+let promesaCsrf = null
+
+export function reiniciarTokenCsrf() {
+  datosCsrf = null
+  promesaCsrf = null
+}
+
+export async function obtenerTokenCsrf(forzarRenovacion = false) {
+  if (datosCsrf && !forzarRenovacion) return datosCsrf
+  if (promesaCsrf) return promesaCsrf
+
+  promesaCsrf = (async () => {
+    try {
+      const resp = await fetch('/api/auth/csrf', { credentials: 'same-origin' })
+      if (resp.ok) {
+        const json = await resp.json()
+        datosCsrf = {
+          token: json.token || '',
+          cabecera: json.cabecera || 'X-XSRF-TOKEN'
+        }
+        return datosCsrf
+      }
+    } catch {
+      // Si la llamada falla, se devolverá null
+    } finally {
+      promesaCsrf = null
+    }
+    return null
+  })()
+
+  return promesaCsrf
+}
+
 export class ApiError extends Error {
   constructor(message, status = 0, options = {}) {
     super(message, options)
@@ -15,11 +49,22 @@ export class ApiError extends Error {
   }
 }
 
-export async function apiRequest(url, options = {}) {
+export async function apiRequest(url, options = {}, esReintento = false) {
   const { json, headers: headersIniciales, ...opcionesFetch } = options
   const headers = new Headers(headersIniciales)
+  const metodo = (options.method || 'GET').toUpperCase()
+  const esMutacion = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(metodo)
+
+  if (esMutacion) {
+    const csrf = await obtenerTokenCsrf()
+    if (csrf && csrf.token) {
+      headers.set(csrf.cabecera, csrf.token)
+    }
+  }
+
   const opciones = {
     ...opcionesFetch,
+    method: metodo,
     headers,
     credentials: opcionesFetch.credentials ?? 'same-origin'
   }
@@ -40,6 +85,10 @@ export async function apiRequest(url, options = {}) {
   }
 
   if (!respuesta.ok) {
+    if (respuesta.status === 403 && esMutacion && !esReintento) {
+      await obtenerTokenCsrf(true)
+      return apiRequest(url, options, true)
+    }
     throw await crearErrorHttp(respuesta)
   }
   return respuesta
