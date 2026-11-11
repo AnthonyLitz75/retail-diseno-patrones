@@ -10,6 +10,7 @@ import com.grupo.retail.model.EnvioPedido;
 import com.grupo.retail.patterns.singleton.ProveedorConexiones;
 import com.grupo.retail.patterns.factory.FabricaNotificador;
 import com.grupo.retail.service.PedidoService;
+import com.grupo.retail.transaccion.EjecutorTransaccion;
 import com.grupo.retail.service.SesionAutenticada;
 import com.grupo.retail.service.SesionCliente;
 import com.grupo.retail.service.SesionEmpleado;
@@ -44,7 +45,7 @@ class PedidoEnvioTests {
         when(dao.cambiarEstado(eq(15L), eq("EN_PREPARACION"), eq("DESPACHADO"), eq(8L),
                 anyString(), any(EnvioPedido.class))).thenReturn(true);
 
-        new PedidoService(dao).despacharPedido(15L, 8L, "Olva", "OLV-2048");
+        new PedidoService(dao, mock(EjecutorTransaccion.class)).despacharPedido(15L, 8L, "Olva", "OLV-2048");
 
         verify(dao).cambiarEstado(eq(15L), eq("EN_PREPARACION"), eq("DESPACHADO"), eq(8L),
                 eq("Pedido despachado por almacén"),
@@ -54,7 +55,7 @@ class PedidoEnvioTests {
     @Test
     void despachoExigeDatosYEstadoEnPreparacion() {
         PedidoDAO dao = mock(PedidoDAO.class);
-        PedidoService service = new PedidoService(dao);
+        PedidoService service = new PedidoService(dao, mock(EjecutorTransaccion.class));
         assertThrows(IllegalArgumentException.class,
                 () -> service.despacharPedido(15L, 8L, "  ", "OLV-2048"));
         when(dao.buscarEstado(15L)).thenReturn(Optional.of("PENDIENTE"));
@@ -73,7 +74,7 @@ class PedidoEnvioTests {
                 .thenThrow(new CodigoSeguimientoDuplicadoException(new java.sql.SQLException()));
 
         assertEquals(409, assertThrows(ResponseStatusException.class,
-                () -> new PedidoService(dao).despacharPedido(15L, 8L, "Olva", "OLV-2048"))
+                () -> new PedidoService(dao, mock(EjecutorTransaccion.class)).despacharPedido(15L, 8L, "Olva", "OLV-2048"))
                 .getStatusCode().value());
     }
 
