@@ -90,6 +90,22 @@ public final class DatosIntegracion {
         ejecutar("UPDATE producto SET activo = FALSE WHERE id = ?", productoId);
     }
 
+    public String estadoReclamo(long idReclamo) {
+        return texto("SELECT estado FROM reclamo WHERE id_reclamo = ?", idReclamo);
+    }
+
+    /** Responsable de soporte o administrador del reclamo (0 si no hay). */
+    public long responsableReclamo(long idReclamo, String columna) {
+        if (!columna.equals("soporte_id") && !columna.equals("admin_id")) {
+            throw new IllegalArgumentException("Columna no permitida: " + columna);
+        }
+        return contar("SELECT COALESCE(" + columna + ", 0) FROM reclamo WHERE id_reclamo = ?", idReclamo);
+    }
+
+    public int notificacionesDeEstado(long usuarioId, long pedidoId, String estado) {
+        return notificacionesDe(usuarioId, pedidoId, estado);
+    }
+
     public int enviosDe(long pedidoId) {
         return contar("SELECT COUNT(*) FROM envio WHERE pedido_id = ?", pedidoId);
     }
