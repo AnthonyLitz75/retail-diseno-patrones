@@ -39,43 +39,59 @@ class PedidoEnvioTests {
     }
 
     @Test
-    void despachoValidoPersisteTransportistaYCodigoEnTransicion() {
+    void despachoValidoBloqueaElPedidoYRegistraTransportistaYCodigoEnLaMismaTransaccion() throws Exception {
         PedidoDAO dao = mock(PedidoDAO.class);
-        when(dao.buscarEstado(15L)).thenReturn(Optional.of("EN_PREPARACION"));
-        when(dao.cambiarEstado(eq(15L), eq("EN_PREPARACION"), eq("DESPACHADO"), eq(8L),
-                anyString(), any(EnvioPedido.class))).thenReturn(true);
+        Connection conexion = mock(Connection.class);
+        when(dao.bloquearEstadoPedido(conexion, 15L, null)).thenReturn(Optional.of("EN_PREPARACION"));
 
-        new PedidoService(dao, mock(EjecutorTransaccion.class)).despacharPedido(15L, 8L, "Olva", "OLV-2048");
+        new PedidoService(dao, ejecutorSobre(conexion)).despacharPedido(15L, 8L, "Olva", "OLV-2048");
 
-        verify(dao).cambiarEstado(eq(15L), eq("EN_PREPARACION"), eq("DESPACHADO"), eq(8L),
-                eq("Pedido despachado por almacén"),
-                eq(new EnvioPedido("Olva", "OLV-2048", null)));
+        verify(dao).registrarTransicion(conexion, 15L, "DESPACHADO", 8L,
+                "Pedido despachado por almacén", new EnvioPedido("Olva", "OLV-2048", null));
+        verify(conexion).commit();
     }
 
     @Test
-    void despachoExigeDatosYEstadoEnPreparacion() {
+    void despachoExigeDatosYQueStateAutoriceLaTransicion() throws Exception {
         PedidoDAO dao = mock(PedidoDAO.class);
-        PedidoService service = new PedidoService(dao, mock(EjecutorTransaccion.class));
+        Connection conexion = mock(Connection.class);
+        PedidoService service = new PedidoService(dao, ejecutorSobre(conexion));
         assertThrows(IllegalArgumentException.class,
                 () -> service.despacharPedido(15L, 8L, "  ", "OLV-2048"));
-        when(dao.buscarEstado(15L)).thenReturn(Optional.of("PENDIENTE"));
-        assertEquals(409, assertThrows(ResponseStatusException.class,
-                () -> service.despacharPedido(15L, 8L, "Olva", "OLV-2048"))
-                .getStatusCode().value());
-        verify(dao, never()).cambiarEstado(anyLong(), anyString(), anyString(), anyLong(),
-                anyString(), any());
+        verifyNoInteractions(conexion);
+
+        // State: un pedido PENDIENTE debe prepararse antes del despacho (409).
+        when(dao.bloquearEstadoPedido(conexion, 15L, null)).thenReturn(Optional.of("PENDIENTE"));
+        assertThrows(IllegalStateException.class,
+                () -> service.despacharPedido(15L, 8L, "Olva", "OLV-2048"));
+        verify(dao, never()).registrarTransicion(any(), anyLong(), anyString(), anyLong(), anyString(), any());
+        verify(conexion).rollback();
     }
 
     @Test
-    void codigoDuplicadoSeExponeComoConflicto() {
+    void pedidoInexistenteResponde404SinRegistrarNada() throws Exception {
         PedidoDAO dao = mock(PedidoDAO.class);
-        when(dao.buscarEstado(15L)).thenReturn(Optional.of("EN_PREPARACION"));
-        when(dao.cambiarEstado(anyLong(), anyString(), anyString(), anyLong(), anyString(), any()))
-                .thenThrow(new CodigoSeguimientoDuplicadoException(new java.sql.SQLException()));
+        Connection conexion = mock(Connection.class);
+        when(dao.bloquearEstadoPedido(conexion, 15L, null)).thenReturn(Optional.empty());
 
-        assertEquals(409, assertThrows(ResponseStatusException.class,
-                () -> new PedidoService(dao, mock(EjecutorTransaccion.class)).despacharPedido(15L, 8L, "Olva", "OLV-2048"))
-                .getStatusCode().value());
+        assertThrows(java.util.NoSuchElementException.class,
+                () -> new PedidoService(dao, ejecutorSobre(conexion)).prepararPedido(15L, 8L));
+        verify(dao, never()).registrarTransicion(any(), anyLong(), anyString(), anyLong(), anyString(), any());
+    }
+
+    @Test
+    void codigoDuplicadoSePropagaYRevierteLaTransaccion() throws Exception {
+        PedidoDAO dao = mock(PedidoDAO.class);
+        Connection conexion = mock(Connection.class);
+        when(dao.bloquearEstadoPedido(conexion, 15L, null)).thenReturn(Optional.of("EN_PREPARACION"));
+        doThrow(new CodigoSeguimientoDuplicadoException(new java.sql.SQLException()))
+                .when(dao).registrarTransicion(any(), anyLong(), anyString(), anyLong(), anyString(), any());
+
+        // GlobalExceptionHandler responde 409 a esta excepción.
+        assertThrows(CodigoSeguimientoDuplicadoException.class,
+                () -> new PedidoService(dao, ejecutorSobre(conexion)).despacharPedido(15L, 8L, "Olva", "OLV-2048"));
+        verify(conexion).rollback();
+        verify(conexion, never()).commit();
     }
 
     @Test
@@ -98,8 +114,7 @@ class PedidoEnvioTests {
     }
 
     @Test
-    void insercionDeEnvioOcurreEnLaTransaccionDelEstado() throws Exception {
-        ProveedorConexiones proveedor = mock(ProveedorConexiones.class);
+    void insercionDeEnvioOcurreEnLaConexionRecibidaSinCerrarlaNiConfirmarla() throws Exception {
         Connection conexion = mock(Connection.class);
         FabricaNotificador fabrica = mock(FabricaNotificador.class);
         var notificador = mock(com.grupo.retail.patterns.factory.Notificador.class);
@@ -108,7 +123,6 @@ class PedidoEnvioTests {
         PreparedStatement cliente = mock(PreparedStatement.class);
         PreparedStatement historial = mock(PreparedStatement.class);
         ResultSet resultado = mock(ResultSet.class);
-        when(proveedor.obtenerConexion()).thenReturn(conexion);
         when(fabrica.crearNotificador()).thenReturn(notificador);
         when(conexion.prepareStatement(contains("UPDATE pedido"))).thenReturn(actualizar);
         when(conexion.prepareStatement(contains("INSERT INTO envio"))).thenReturn(envio);
@@ -121,36 +135,40 @@ class PedidoEnvioTests {
         when(resultado.next()).thenReturn(true);
         when(resultado.getLong("usuario_id")).thenReturn(7L);
 
-        assertTrue(new PedidoDAO(proveedor, fabrica).cambiarEstado(15L, "EN_PREPARACION",
-                "DESPACHADO", 8L, "Despachado", new EnvioPedido("Olva", "OLV-2048", null)));
+        new PedidoDAO(mock(ProveedorConexiones.class), fabrica).registrarTransicion(conexion, 15L,
+                "DESPACHADO", 8L, "Despachado", new EnvioPedido("Olva", "OLV-2048", null));
 
-        verify(conexion).prepareStatement(contains("INSERT INTO envio"));
         verify(envio).setLong(1, 15L);
         verify(envio).setString(2, "Olva");
         verify(envio).setString(3, "OLV-2048");
         verify(envio).executeUpdate();
-        verify(conexion).commit();
+        verify(historial).executeUpdate();
+        // La transacción es del servicio: el DAO no confirma, no revierte ni cierra.
+        verify(conexion, never()).commit();
         verify(conexion, never()).rollback();
+        verify(conexion, never()).close();
     }
 
     @Test
-    void codigoDuplicadoRevierteLaTransicionYNoGuardaHistorial() throws Exception {
-        ProveedorConexiones proveedor = mock(ProveedorConexiones.class);
+    void codigoDuplicadoSeTraduceYNoGuardaHistorial() throws Exception {
         Connection conexion = mock(Connection.class);
         PreparedStatement actualizar = mock(PreparedStatement.class);
         PreparedStatement envio = mock(PreparedStatement.class);
-        when(proveedor.obtenerConexion()).thenReturn(conexion);
         when(conexion.prepareStatement(contains("UPDATE pedido"))).thenReturn(actualizar);
         when(conexion.prepareStatement(contains("INSERT INTO envio"))).thenReturn(envio);
         when(actualizar.executeUpdate()).thenReturn(1);
         when(envio.executeUpdate()).thenThrow(new java.sql.SQLException("duplicate", "23505"));
 
         assertThrows(CodigoSeguimientoDuplicadoException.class,
-                () -> new PedidoDAO(proveedor).cambiarEstado(15L, "EN_PREPARACION",
+                () -> new PedidoDAO(mock(ProveedorConexiones.class)).registrarTransicion(conexion, 15L,
                         "DESPACHADO", 8L, "Despachado", new EnvioPedido("Olva", "OLV-2048", null)));
-        verify(conexion).rollback();
-        verify(conexion, never()).commit();
         verify(conexion, never()).prepareStatement(contains("INSERT INTO pedido_historial_estado"));
+    }
+
+    private static EjecutorTransaccion ejecutorSobre(Connection conexion) throws Exception {
+        ProveedorConexiones proveedor = mock(ProveedorConexiones.class);
+        when(proveedor.obtenerConexion()).thenReturn(conexion);
+        return new EjecutorTransaccion(proveedor);
     }
 
     private MockHttpServletRequest solicitud(Long id, String rol) {

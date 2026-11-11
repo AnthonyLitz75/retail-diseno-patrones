@@ -7,8 +7,10 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import javax.sql.DataSource;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -45,6 +47,21 @@ abstract class BaseCompraIntegracion extends BaseIntegracionPostgres {
 
     protected ClienteHttp sesionDe(DatosIntegracion.Cliente cliente) {
         return new ClienteHttp(puerto).iniciarSesion(cliente.correo(), DatosIntegracion.CLAVE_PRUEBA);
+    }
+
+    /** Pedido PENDIENTE confirmado por la API: cliente, producto comprado e id del pedido. */
+    protected record Compra(DatosIntegracion.Cliente cliente, long producto, long pedido) {
+    }
+
+    protected Compra comprar(BigDecimal precio, int stockInicial, int cantidad) {
+        long producto = datos.crearProducto(precio, stockInicial);
+        DatosIntegracion.Cliente cliente = datos.crearCliente();
+        datos.crearCarritoActivo(cliente.id(), Map.of(producto, cantidad));
+        ClienteHttp.Respuesta compra = sesionDe(cliente).confirmarCompra("PRUEBA_APROBADA", null);
+        if (compra.estado() != 201) {
+            throw new IllegalStateException("No se pudo preparar la compra: " + compra);
+        }
+        return new Compra(cliente, producto, compra.idPedido());
     }
 
     /**
