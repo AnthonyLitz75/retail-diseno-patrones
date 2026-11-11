@@ -9,6 +9,7 @@ import {
   contarNotificacionesNoLeidas,
   formatearFechaNotificacion,
   consultarMisNotificaciones,
+  registrarLectura,
 } from "./bandeja-notificaciones.js";
 
 /**
@@ -155,7 +156,25 @@ export function configurarBandejaNotificaciones({
     }
   }
 
+  function pintarBandeja() {
+    renderizarBandejaNotificaciones(
+      cacheNotificaciones,
+      {
+        badgeContador: badgeContadorNotificaciones,
+        listaContenedor: listaNotificaciones,
+      },
+      alSeleccionarNotificacion,
+    );
+  }
+
   function alSeleccionarNotificacion(notif) {
+    // RF02: abrir una alerta la marca como leída y el contador baja sin recargar todo.
+    void registrarLectura(apiRequest, cacheNotificaciones, notif).then((lista) => {
+      if (lista !== cacheNotificaciones) {
+        cacheNotificaciones = lista;
+        pintarBandeja();
+      }
+    });
     cerrarMenu();
     if (typeof cambiarVista === "function") {
       cambiarVista("pedidos");
@@ -198,14 +217,7 @@ export function configurarBandejaNotificaciones({
     try {
       const datos = await consultarMisNotificaciones(apiRequest, 50);
       cacheNotificaciones = Array.isArray(datos) ? datos : [];
-      renderizarBandejaNotificaciones(
-        cacheNotificaciones,
-        {
-          badgeContador: badgeContadorNotificaciones,
-          listaContenedor: listaNotificaciones,
-        },
-        alSeleccionarNotificacion,
-      );
+      pintarBandeja();
       return cacheNotificaciones;
     } catch {
       if (listaNotificaciones) {

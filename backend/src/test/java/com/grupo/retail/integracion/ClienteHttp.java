@@ -65,6 +65,18 @@ public final class ClienteHttp {
                 .PUT(HttpRequest.BodyPublishers.noBody()));
     }
 
+    /** Descarta el token CSRF para comprobar que el servidor rechaza la escritura. */
+    public ClienteHttp sinCsrf() {
+        tokenCsrf = "token-invalido";
+        return this;
+    }
+
+    public Respuesta patch(String ruta) {
+        return enviar(HttpRequest.newBuilder(URI.create(base + ruta))
+                .header("X-XSRF-TOKEN", tokenCsrf)
+                .method("PATCH", HttpRequest.BodyPublishers.noBody()));
+    }
+
     public Respuesta get(String ruta) {
         return enviar(HttpRequest.newBuilder(URI.create(base + ruta)).GET());
     }

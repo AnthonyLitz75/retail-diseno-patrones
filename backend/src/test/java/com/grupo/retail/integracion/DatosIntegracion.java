@@ -63,6 +63,16 @@ public final class DatosIntegracion {
                 usuarioId, pedidoId, estado);
     }
 
+    /** Id de la alerta de ese estado para el pedido (la crea el observador in-app). */
+    public long idNotificacion(long pedidoId, String estado) {
+        return contar("SELECT id_notificacion FROM notificacion WHERE pedido_id = ? AND estado = ?",
+                pedidoId, estado);
+    }
+
+    public boolean notificacionLeida(long idNotificacion) {
+        return "t".equals(texto("SELECT leida FROM notificacion WHERE id_notificacion = ?", idNotificacion));
+    }
+
     public int enviosDe(long pedidoId) {
         return contar("SELECT COUNT(*) FROM envio WHERE pedido_id = ?", pedidoId);
     }

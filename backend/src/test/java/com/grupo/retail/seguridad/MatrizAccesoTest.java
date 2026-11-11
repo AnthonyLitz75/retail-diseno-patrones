@@ -128,6 +128,7 @@ public class MatrizAccesoTest {
                 new DefinicionRuta("GET", "/api/auth/sesion", false, true, Set.of(), null),
                 new DefinicionRuta("POST", "/api/auth/logout", false, true, Set.of(), null),
                 new DefinicionRuta("GET", "/api/notificaciones/mias", false, true, Set.of(), null),
+                new DefinicionRuta("PATCH", "/api/notificaciones/1/leida", false, true, Set.of(), null),
 
                 // 3. Rutas exclusivas de CLIENTE
                 new DefinicionRuta("GET", "/api/carrito", false, false, Set.of("CLIENTE"), null),

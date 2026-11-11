@@ -8,6 +8,12 @@ import { apiRequest } from '../api/api.js'
 export function obtenerBadgeEstadoNotificacion(estado) {
   const normalizado = typeof estado === 'string' ? estado.trim().toUpperCase() : ''
   switch (normalizado) {
+    case 'PENDIENTE':
+      return {
+        texto: 'Confirmado',
+        clase: 'badge bg-info-subtle text-info-emphasis border border-info-subtle',
+        estado: 'confirmado'
+      }
     case 'EN_PREPARACION':
       return {
         texto: 'En preparación',
@@ -89,3 +95,42 @@ export async function consultarMisNotificaciones(request = apiRequest, limite = 
   return respuesta
 }
 
+
+/**
+ * Marca una notificación propia como leída (PATCH /api/notificaciones/{id}/leida).
+ * El servidor responde 404 si la notificación es de otro usuario.
+ * @param {Function} request
+ * @param {number} idNotificacion
+ * @returns {Promise<Object>} la notificación actualizada
+ */
+export async function marcarNotificacionLeida(request = apiRequest, idNotificacion) {
+  if (!Number.isInteger(idNotificacion) || idNotificacion <= 0) {
+    throw new Error('El identificador de la notificación no es válido')
+  }
+  const respuesta = await request(`/api/notificaciones/${idNotificacion}/leida`, {
+    method: 'PATCH'
+  })
+  if (respuesta && typeof respuesta.json === 'function') {
+    return await respuesta.json()
+  }
+  return respuesta
+}
+
+/**
+ * Registra la lectura de una notificación y devuelve la lista actualizada sin modificar la
+ * original. Si ya estaba leída no consulta al servidor; si el servidor rechaza la operación,
+ * conserva la lista tal cual para que el contador no mienta.
+ * @param {Function} request
+ * @param {Array<{ id: number, leida?: boolean }>} notificaciones
+ * @param {{ id: number, leida?: boolean }} notificacion
+ * @returns {Promise<Array>}
+ */
+export async function registrarLectura(request, notificaciones, notificacion) {
+  if (!notificacion || notificacion.leida) return notificaciones
+  try {
+    await marcarNotificacionLeida(request, notificacion.id)
+  } catch {
+    return notificaciones
+  }
+  return notificaciones.map(item => (item.id === notificacion.id ? { ...item, leida: true } : item))
+}
