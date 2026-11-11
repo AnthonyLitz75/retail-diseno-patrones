@@ -8,8 +8,10 @@ import com.grupo.retail.model.EnvioPedido;
 import com.grupo.retail.exception.CodigoSeguimientoDuplicadoException;
 import com.grupo.retail.model.PedidoConfirmado;
 import com.grupo.retail.model.PedidoVista;
+import com.grupo.retail.model.ProductoEnCompra;
 import com.grupo.retail.model.ResultadoPago;
-import com.grupo.retail.exception.PagoRechazadoException;
+import com.grupo.retail.exception.ClaveConfirmacionEnUsoException;
+import com.grupo.retail.exception.StockInsuficienteException;
 import com.grupo.retail.patterns.singleton.ProveedorConexiones;
 import com.grupo.retail.patterns.factory.FabricaNotificador;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,10 +29,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
-import java.util.function.Function;
 
 @Repository
 public class PedidoDAO {
+
+    /** SQLState de PostgreSQL para unique_violation. */
+    private static final String VIOLACION_UNICA = "23505";
+    private static final String INDICE_CLAVE_CONFIRMACION = "uq_pedido_clave_confirmacion";
 
     private final ProveedorConexiones proveedorConexiones;
     private final FabricaNotificador fabricaNotificador;
@@ -537,137 +542,55 @@ public class PedidoDAO {
             BigDecimal total, OffsetDateTime creadoEn, EnvioPedido envio) {
     }
 
-    public Optional<PedidoConfirmado> buscarPorClaveConfirmacion(
-            Long usuarioId, String claveConfirmacion) {
-        if (claveConfirmacion == null || claveConfirmacion.isBlank() || usuarioId == null) {
-            return Optional.empty();
-        }
-        try (Connection conexion = proveedorConexiones.obtenerConexion()) {
-            return buscarPorClaveConfirmacion(conexion, usuarioId, claveConfirmacion.trim());
-        } catch (SQLException error) {
-            throw new ErrorAccesoDatosException("No se pudo verificar la clave de confirmación", error);
-        }
-    }
+    // ---------------------------------------------------------------------------------
+    // Pasos SQL de la confirmación de compra. Todos reciben la conexión de la transacción
+    // que abre CheckoutFacade mediante EjecutorTransaccion y nunca la cierran (spec 004).
+    // ---------------------------------------------------------------------------------
 
-    public PedidoConfirmado confirmarCompra(
-            Long usuarioId, Function<BigDecimal, ResultadoPago> procesarPago) {
-        return confirmarCompra(usuarioId, procesarPago, null, null, null);
-    }
-
-    public PedidoConfirmado confirmarCompra(
-            Long usuarioId,
-            Function<BigDecimal, ResultadoPago> procesarPago,
-            String claveConfirmacion,
-            String destinatario,
-            String direccionEnvio) {
-        String claveLimpia = claveConfirmacion != null && !claveConfirmacion.isBlank()
-                ? claveConfirmacion.trim()
-                : null;
-        String destLimpio = destinatario != null && !destinatario.isBlank()
-                ? destinatario.trim()
-                : null;
-        String dirLimpia = direccionEnvio != null && !direccionEnvio.isBlank()
-                ? direccionEnvio.trim()
-                : null;
-
-        try (Connection conexion = proveedorConexiones.obtenerConexion()) {
-            conexion.setAutoCommit(false);
-            try {
-                if (claveLimpia != null) {
-                    Optional<PedidoConfirmado> existente = buscarPorClaveConfirmacion(
-                            conexion, usuarioId, claveLimpia);
-                    if (existente.isPresent()) {
-                        conexion.commit();
-                        return existente.get();
-                    }
+    /**
+     * Serializa las confirmaciones de un mismo cliente: mientras una compra está en curso,
+     * otra del mismo cliente espera aquí y después ve el pedido ya confirmado. Así la
+     * idempotencia por clave no necesita una segunda conexión. FOR NO KEY UPDATE no choca
+     * con las claves foráneas que otras tablas toman sobre el usuario.
+     */
+    public void bloquearClienteParaCompra(Connection conexion, long usuarioId) throws SQLException {
+        try (PreparedStatement consulta = conexion.prepareStatement(
+                "SELECT id_usuario FROM usuario WHERE id_usuario = ? FOR NO KEY UPDATE")) {
+            consulta.setLong(1, usuarioId);
+            try (ResultSet resultado = consulta.executeQuery()) {
+                if (!resultado.next()) {
+                    throw new NoSuchElementException("No existe el cliente de la compra");
                 }
-
-                long carritoId = bloquearCarritoActivo(conexion, usuarioId);
-                List<ProductoDelCarrito> productos = leerYBloquearProductos(conexion, carritoId);
-                validarProductosParaCompra(productos);
-                BigDecimal total = calcularTotal(productos);
-
-                ResultadoPago resultadoPago = procesarPago.apply(total);
-                validarResultadoPago(resultadoPago);
-
-                PedidoConfirmado confirmado = registrarCompraEnTransaccion(
-                        conexion, usuarioId, total, resultadoPago, productos,
-                        carritoId, claveLimpia, destLimpio, dirLimpia);
-
-                conexion.commit();
-                return confirmado;
-            } catch (SQLException | RuntimeException error) {
-                conexion.rollback();
-                if (claveLimpia != null) {
-                    try (Connection connCheck = proveedorConexiones.obtenerConexion()) {
-                        Optional<PedidoConfirmado> creado = buscarPorClaveConfirmacion(
-                                connCheck, usuarioId, claveLimpia);
-                        if (creado.isPresent()) {
-                            return creado.get();
-                        }
-                    } catch (SQLException ignored) {
-                    }
-                }
-                throw error;
-            }
-        } catch (SQLException error) {
-            throw new ErrorAccesoDatosException("No se pudo confirmar la compra", error);
-        }
-    }
-
-    private void validarProductosParaCompra(List<ProductoDelCarrito> productos) {
-        if (productos.isEmpty()) {
-            throw new IllegalArgumentException("Tu carrito está vacío");
-        }
-        for (ProductoDelCarrito producto : productos) {
-            if (!producto.activo()) {
-                throw new IllegalArgumentException(
-                        "El producto " + producto.nombre() + " ya no está disponible");
-            }
-            if (producto.precio().signum() <= 0) {
-                throw new IllegalArgumentException(
-                        "El precio de " + producto.nombre() + " debe ser mayor que cero");
-            }
-            if (producto.cantidad() > producto.stock()) {
-                throw new IllegalArgumentException(
-                        "Stock insuficiente para " + producto.nombre()
-                                + ". Disponible: " + producto.stock());
             }
         }
     }
 
-    private BigDecimal calcularTotal(List<ProductoDelCarrito> productos) {
-        BigDecimal total = BigDecimal.ZERO;
-        for (ProductoDelCarrito producto : productos) {
-            total = total.add(
-                    producto.precio().multiply(BigDecimal.valueOf(producto.cantidad())));
-        }
-        return total;
-    }
-
-    private void validarResultadoPago(ResultadoPago resultadoPago) {
-        if (resultadoPago == null || !resultadoPago.aprobado()) {
-            String mensaje = resultadoPago != null ? resultadoPago.mensaje() : "Pago rechazado";
-            throw new PagoRechazadoException(mensaje);
+    /** Indica si la clave ya pertenece a algún pedido, de cualquier cliente. */
+    public boolean claveConfirmacionRegistrada(Connection conexion, String claveConfirmacion)
+            throws SQLException {
+        try (PreparedStatement consulta = conexion.prepareStatement(
+                "SELECT 1 FROM pedido WHERE clave_confirmacion = ?")) {
+            consulta.setString(1, claveConfirmacion);
+            try (ResultSet resultado = consulta.executeQuery()) {
+                return resultado.next();
+            }
         }
     }
 
-    private PedidoConfirmado registrarCompraEnTransaccion(
+    public PedidoConfirmado registrarCompra(
             Connection conexion, Long usuarioId, BigDecimal total, ResultadoPago resultadoPago,
-            List<ProductoDelCarrito> productos, long carritoId,
+            List<ProductoEnCompra> productos, long carritoId,
             String claveConfirmacion, String destinatario, String direccionEnvio) throws SQLException {
         PedidoCreado pedido = insertarPedido(
                 conexion, usuarioId, total, claveConfirmacion, destinatario, direccionEnvio);
         List<DetallePedido> detalles = new ArrayList<>();
 
-        for (ProductoDelCarrito producto : productos) {
+        for (ProductoEnCompra producto : productos) {
             insertarDetalle(conexion, pedido.id(), producto);
             descontarStock(conexion, pedido.id(), usuarioId, producto);
-            BigDecimal subtotal = producto.precio()
-                    .multiply(BigDecimal.valueOf(producto.cantidad()));
             detalles.add(new DetallePedido(
                     producto.id(), producto.nombre(), producto.precio(),
-                    producto.cantidad(), subtotal));
+                    producto.cantidad(), producto.subtotal()));
         }
 
         insertarPago(conexion, pedido.id(), total, resultadoPago);
@@ -681,7 +604,7 @@ public class PedidoDAO {
                 claveConfirmacion, destinatario, direccionEnvio);
     }
 
-    private Optional<PedidoConfirmado> buscarPorClaveConfirmacion(
+    public Optional<PedidoConfirmado> buscarPorClaveConfirmacion(
             Connection conexion, Long usuarioId, String claveConfirmacion) throws SQLException {
         String sql = """
                 SELECT p.id_pedido, p.estado, p.total, p.creado_en, p.destinatario, p.direccion_envio,
@@ -746,7 +669,7 @@ public class PedidoDAO {
                 claveConfirmacion, destinatario, direccionEnvio));
     }
 
-    private long bloquearCarritoActivo(Connection conexion, Long usuarioId) throws SQLException {
+    public long bloquearCarritoActivo(Connection conexion, Long usuarioId) throws SQLException {
         String sql = """
                 SELECT id_carrito
                 FROM carrito
@@ -764,7 +687,7 @@ public class PedidoDAO {
         }
     }
 
-    private List<ProductoDelCarrito> leerYBloquearProductos(
+    public List<ProductoEnCompra> leerYBloquearProductos(
             Connection conexion, long carritoId) throws SQLException {
         String sql = """
                 SELECT p.id, p.nombre, p.precio, p.stock, p.activo, cd.cantidad
@@ -774,12 +697,12 @@ public class PedidoDAO {
                 ORDER BY p.id
                 FOR UPDATE OF p
                 """;
-        List<ProductoDelCarrito> productos = new ArrayList<>();
+        List<ProductoEnCompra> productos = new ArrayList<>();
         try (PreparedStatement consulta = conexion.prepareStatement(sql)) {
             consulta.setLong(1, carritoId);
             try (ResultSet resultado = consulta.executeQuery()) {
                 while (resultado.next()) {
-                    productos.add(new ProductoDelCarrito(
+                    productos.add(new ProductoEnCompra(
                             resultado.getLong("id"),
                             resultado.getString("nombre"),
                             resultado.getBigDecimal("precio"),
@@ -814,11 +737,24 @@ public class PedidoDAO {
                         resultado.getLong("id_pedido"),
                         resultado.getObject("creado_en", OffsetDateTime.class));
             }
+        } catch (SQLException error) {
+            // Carrera entre dos clientes distintos con la misma clave: el índice único
+            // decide quién la obtiene y el otro recibe un conflicto (409), no un 500.
+            if (esViolacionUnica(error, INDICE_CLAVE_CONFIRMACION)) {
+                throw new ClaveConfirmacionEnUsoException();
+            }
+            throw error;
         }
     }
 
+    private static boolean esViolacionUnica(SQLException error, String indice) {
+        return VIOLACION_UNICA.equals(error.getSQLState())
+                && error.getMessage() != null
+                && error.getMessage().contains(indice);
+    }
+
     private void insertarDetalle(
-            Connection conexion, long pedidoId, ProductoDelCarrito producto) throws SQLException {
+            Connection conexion, long pedidoId, ProductoEnCompra producto) throws SQLException {
         String sql = """
                 INSERT INTO pedido_detalle
                     (pedido_id, producto_id, nombre_producto, precio_unitario, cantidad)
@@ -836,7 +772,7 @@ public class PedidoDAO {
 
     private void descontarStock(
             Connection conexion, long pedidoId, Long usuarioId,
-            ProductoDelCarrito producto) throws SQLException {
+            ProductoEnCompra producto) throws SQLException {
         String sql = """
                 UPDATE producto
                 SET stock = stock - ?
@@ -847,7 +783,7 @@ public class PedidoDAO {
             consulta.setLong(2, producto.id());
             consulta.setInt(3, producto.cantidad());
             if (consulta.executeUpdate() == 0) {
-                throw new IllegalArgumentException(
+                throw new StockInsuficienteException(
                         "El stock de " + producto.nombre() + " cambió; actualiza el carrito");
             }
         }
@@ -915,10 +851,6 @@ public class PedidoDAO {
                 throw new IllegalArgumentException("El carrito ya fue procesado");
             }
         }
-    }
-
-    private record ProductoDelCarrito(
-            long id, String nombre, BigDecimal precio, int stock, boolean activo, int cantidad) {
     }
 
     private record PedidoCreado(long id, OffsetDateTime creadoEn) {
