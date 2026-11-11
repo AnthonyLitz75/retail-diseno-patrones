@@ -12,6 +12,7 @@ test('determinarVistasPorRol asigna vistas específicas según privilegios del r
   assert.deepEqual(determinarVistasPorRol('ALMACEN'), ['pedidos', 'inventario', 'tienda'])
   assert.deepEqual(determinarVistasPorRol('VENDEDOR'), ['tienda', 'consultas', 'pedidos', 'inventario'])
   assert.deepEqual(determinarVistasPorRol('CLIENTE'), ['tienda', 'pedidos'])
+  assert.deepEqual(determinarVistasPorRol('SOPORTE'), ['soporte', 'tienda'])
   assert.deepEqual(determinarVistasPorRol(null), ['tienda'])
   assert.deepEqual(determinarVistasPorRol('DESCONOCIDO'), ['tienda'])
 })
@@ -19,6 +20,7 @@ test('determinarVistasPorRol asigna vistas específicas según privilegios del r
 test('obtenerVistaPorDefecto selecciona la vista más relevante al iniciar sesión', () => {
   assert.equal(obtenerVistaPorDefecto('ADMIN'), 'administracion')
   assert.equal(obtenerVistaPorDefecto('ALMACEN'), 'pedidos')
+  assert.equal(obtenerVistaPorDefecto('SOPORTE'), 'soporte')
   assert.equal(obtenerVistaPorDefecto('VENDEDOR'), 'tienda')
   assert.equal(obtenerVistaPorDefecto('CLIENTE'), 'tienda')
   assert.equal(obtenerVistaPorDefecto(null), 'tienda')
@@ -33,6 +35,7 @@ test('obtenerEtiquetaPestaña adapta el texto según el rol del usuario', () => 
   assert.equal(obtenerEtiquetaPestaña('inventario', 'ADMIN'), 'Inventario y kardex')
   assert.equal(obtenerEtiquetaPestaña('administracion', 'ADMIN'), 'Administración')
   assert.equal(obtenerEtiquetaPestaña('consultas', 'VENDEDOR'), 'Consultas de clientes')
+  assert.equal(obtenerEtiquetaPestaña('soporte', 'SOPORTE'), 'Atención al cliente')
 })
 
 test('esVistaPermitida valida correctamente el acceso a cada módulo', () => {

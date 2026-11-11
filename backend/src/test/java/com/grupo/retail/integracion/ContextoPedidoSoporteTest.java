@@ -37,6 +37,7 @@ class ContextoPedidoSoporteTest extends BaseCompraIntegracion {
         assertTrue(cuerpo.contains("\"idPedido\":" + compra.pedido()), cuerpo);
         assertTrue(cuerpo.contains("\"estado\":\"ENTREGADO\""), cuerpo);
         assertTrue(cuerpo.contains("\"productos\":[{"), "Incluye las líneas");
+        assertTrue(cuerpo.contains("\"idDetalle\":" + detalle), "La línea expone su id para devolver");
         assertTrue(cuerpo.contains("\"historial\":["), "Incluye el historial");
         assertTrue(cuerpo.contains("\"pago\":{"), "Incluye el pago");
         assertTrue(cuerpo.contains("\"montoReembolsado\":"), cuerpo);

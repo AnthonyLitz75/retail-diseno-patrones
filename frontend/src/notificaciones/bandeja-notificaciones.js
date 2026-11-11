@@ -1,5 +1,17 @@
 import { apiRequest } from '../api/api.js'
 
+/** Spec 006: avisos de reclamos y devoluciones -> [texto, color Bootstrap, estado]. */
+const BADGES_ATENCION = {
+  RECLAMO_REGISTRADO: ['Reclamo registrado', 'info', 'reclamo'],
+  RECLAMO_RESPONDIDO: ['Reclamo respondido', 'primary', 'reclamo'],
+  RECLAMO_ESCALADO: ['Reclamo escalado', 'warning', 'reclamo'],
+  RECLAMO_RESUELTO: ['Reclamo resuelto', 'success', 'reclamo'],
+  DEVOLUCION_SOLICITADA: ['Devolución solicitada', 'info', 'devolucion'],
+  DEVOLUCION_APROBADA: ['Devolución aprobada', 'primary', 'devolucion'],
+  DEVOLUCION_RECHAZADA: ['Devolución rechazada', 'danger', 'devolucion'],
+  DEVOLUCION_CERRADA: ['Devolución reembolsada', 'success', 'devolucion']
+}
+
 /**
  * Obtiene la configuración semántica de badge para un estado de notificación.
  * @param {string} estado
@@ -39,6 +51,14 @@ export function obtenerBadgeEstadoNotificacion(estado) {
         estado: 'cancelado'
       }
     default:
+      if (BADGES_ATENCION[normalizado]) {
+        const [texto, color, estadoBadge] = BADGES_ATENCION[normalizado]
+        return {
+          texto,
+          clase: `badge bg-${color}-subtle text-${color}-emphasis border border-${color}-subtle`,
+          estado: estadoBadge
+        }
+      }
       return {
         texto: normalizado || 'Actualización',
         clase: 'badge bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle',

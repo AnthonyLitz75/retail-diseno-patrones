@@ -57,8 +57,10 @@ test("configurarControladorPedidos consulta endpoint correspondiente según rol 
   const lista = global.document.createElement("div");
 
   let rutaConsultada = null;
+  let rutas = [];
   const apiMock = async (ruta) => {
-    rutaConsultada = ruta;
+    rutas.push(ruta);
+    rutaConsultada = rutas[0];
     return { json: async () => [] };
   };
 
@@ -79,11 +81,15 @@ test("configurarControladorPedidos consulta endpoint correspondiente según rol 
   await ctrl.cargarPedidos();
   assert.equal(seccion.hidden, false);
   assert.equal(rutaConsultada, "/api/pedidos/mis-pedidos");
+  assert.deepEqual(rutas.slice(1).sort(), ["/api/devoluciones/mis-devoluciones", "/api/reclamos/mis-reclamos"],
+    "El cliente también carga sus reclamos y devoluciones");
   assert.equal(titulo.textContent, "Mis pedidos");
 
   // Rol ALMACEN
   rolActual = "ALMACEN";
+  rutas = [];
   await ctrl.cargarPedidos();
   assert.equal(rutaConsultada, "/api/pedidos/operativos");
+  assert.equal(rutas.length, 1, "El personal no consulta atenciones de cliente");
   assert.equal(titulo.textContent, "Gestión operativa de pedidos");
 });

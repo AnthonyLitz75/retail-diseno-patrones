@@ -18,6 +18,7 @@ export function renderizarCatalogoLayout({ heroHtml = '' } = {}) {
       <button class="nav-link" id="tab-inventario" type="button" role="tab" data-vista="inventario" aria-selected="false" hidden>Inventario</button>
       <button class="nav-link" id="tab-administracion" type="button" role="tab" data-vista="administracion" aria-selected="false" hidden>Administración</button>
       <button class="nav-link" id="tab-consultas" type="button" role="tab" data-vista="consultas" aria-selected="false" hidden>Consultas</button>
+      <button class="nav-link" id="tab-soporte" type="button" role="tab" data-vista="soporte" aria-selected="false" hidden>Atención</button>
     </nav>
 
     <!-- Migas de Pan (Breadcrumbs) SPA (RF-02, RF-07) -->
@@ -360,6 +361,9 @@ export function renderizarCatalogoLayout({ heroHtml = '' } = {}) {
         </div>
       </section>
     </div>
+
+    <!-- Vista Soporte (spec 006): bandejas de reclamos y devoluciones -->
+    <div id="vista-soporte" class="modulo-vista" hidden></div>
 
     <!-- Offcanvas Lateral: Carrito de Compras -->
     <div id="seccion-carrito" class="offcanvas offcanvas-end" tabindex="-1" aria-labelledby="titulo-carrito">

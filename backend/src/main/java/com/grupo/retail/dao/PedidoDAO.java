@@ -207,7 +207,7 @@ public class PedidoDAO {
     private Map<Long, List<DetallePedido>> listarDetallesPorPedidos(
             Connection conexion, Long[] pedidoIds) throws SQLException {
         String sql = """
-                SELECT pedido_id, producto_id, nombre_producto, precio_unitario, cantidad, subtotal
+                SELECT id_detalle, pedido_id, producto_id, nombre_producto, precio_unitario, cantidad, subtotal
                 FROM pedido_detalle
                 WHERE pedido_id = ANY (?)
                 ORDER BY pedido_id, id_detalle
@@ -224,7 +224,8 @@ public class PedidoDAO {
                                     resultado.getString("nombre_producto"),
                                     resultado.getBigDecimal("precio_unitario"),
                                     resultado.getInt("cantidad"),
-                                    resultado.getBigDecimal("subtotal")));
+                                    resultado.getBigDecimal("subtotal"),
+                                    resultado.getLong("id_detalle")));
                 }
             }
         }
@@ -273,7 +274,7 @@ public class PedidoDAO {
     private List<DetallePedido> listarDetalles(Connection conexion, long pedidoId)
             throws SQLException {
         String sql = """
-                SELECT producto_id, nombre_producto, precio_unitario, cantidad, subtotal
+                SELECT id_detalle, producto_id, nombre_producto, precio_unitario, cantidad, subtotal
                 FROM pedido_detalle
                 WHERE pedido_id = ?
                 ORDER BY id_detalle
@@ -288,7 +289,8 @@ public class PedidoDAO {
                             resultado.getString("nombre_producto"),
                             resultado.getBigDecimal("precio_unitario"),
                             resultado.getInt("cantidad"),
-                            resultado.getBigDecimal("subtotal")));
+                            resultado.getBigDecimal("subtotal"),
+                            resultado.getLong("id_detalle")));
                 }
             }
         }

@@ -165,3 +165,10 @@ test('registrarLectura conserva la lista si el servidor rechaza la operación', 
   assert.equal(actualizada, lista)
   assert.equal(contarNotificacionesNoLeidas(actualizada), 1)
 })
+
+test('spec 006: badges de reclamos y devoluciones', async () => {
+  const { obtenerBadgeEstadoNotificacion } = await import('../src/notificaciones/bandeja-notificaciones.js')
+  assert.equal(obtenerBadgeEstadoNotificacion('RECLAMO_RESUELTO').texto, 'Reclamo resuelto')
+  assert.equal(obtenerBadgeEstadoNotificacion('DEVOLUCION_CERRADA').estado, 'devolucion')
+  assert.match(obtenerBadgeEstadoNotificacion('devolucion_rechazada').clase, /bg-danger-subtle/)
+})
