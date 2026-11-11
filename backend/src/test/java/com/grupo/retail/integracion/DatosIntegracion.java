@@ -73,6 +73,23 @@ public final class DatosIntegracion {
         return "t".equals(texto("SELECT leida FROM notificacion WHERE id_notificacion = ?", idNotificacion));
     }
 
+    /** Cantidad del producto en el carrito ACTIVO del cliente (0 si no está). */
+    public int cantidadEnCarrito(long clienteId, long productoId) {
+        return contar("""
+                SELECT COALESCE(SUM(cd.cantidad), 0) FROM carrito_detalle cd
+                JOIN carrito c ON c.id_carrito = cd.carrito_id
+                WHERE c.usuario_id = ? AND c.estado = 'ACTIVO' AND cd.producto_id = ?
+                """, clienteId, productoId);
+    }
+
+    public int revisionCarrito(long clienteId) {
+        return contar("SELECT revision FROM carrito WHERE usuario_id = ? AND estado = 'ACTIVO'", clienteId);
+    }
+
+    public void desactivarProducto(long productoId) {
+        ejecutar("UPDATE producto SET activo = FALSE WHERE id = ?", productoId);
+    }
+
     public int enviosDe(long pedidoId) {
         return contar("SELECT COUNT(*) FROM envio WHERE pedido_id = ?", pedidoId);
     }

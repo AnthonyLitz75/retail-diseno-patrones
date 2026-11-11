@@ -4,6 +4,11 @@ import { formatoPrecio } from '../utilidades/formato.js'
 import { resolverImagenProducto } from '../catalogo/imagen-producto.js'
 import { construirPayloadConfirmacion } from './checkout.js'
 import {
+  deshacerUltimaAccion,
+  mensajeErrorDeshacer,
+  pintarEstadoConDeshacer
+} from './deshacer-carrito.js'
+import {
   obtenerCarritoInvitado,
   agregarProductoInvitado,
   actualizarCantidadInvitado,
@@ -98,11 +103,32 @@ async function actualizarCantidadDirecta(productoId, nuevaCantidad) {
       json: { cantidad: nuevaCantidad }
     })
     mostrarCarrito(await respuesta.json())
-    estadoCarrito.className = 'alert alert-success py-2 small mb-2'
-    estadoCarrito.textContent = 'Cantidad actualizada.'
+    pintarEstadoConDeshacer(estadoCarrito, 'Cantidad actualizada.', deshacerAccionCarrito)
   } catch (error) {
     mostrarError(error)
     await cargarCarrito()
+  }
+}
+
+/**
+ * Spec 005 (RF08): deshace la última acción del cliente sobre su carrito. Un 409 indica
+ * que el carrito cambió en otra sesión o que el producto ya no está disponible: se recarga
+ * la vista para no mostrar datos viejos.
+ */
+async function deshacerAccionCarrito() {
+  if (!estadoCarrito) return
+  estadoCarrito.className = 'small text-secondary mb-2'
+  estadoCarrito.textContent = 'Deshaciendo la última acción...'
+  try {
+    mostrarCarrito(await deshacerUltimaAccion(apiRequest))
+    pintarEstadoConDeshacer(estadoCarrito, 'Acción deshecha.', deshacerAccionCarrito)
+    mostrarToast('Se deshizo la última acción del carrito.', 'info')
+  } catch (error) {
+    if (error?.status === 409) {
+      await cargarCarrito()
+    }
+    estadoCarrito.className = 'alert alert-warning py-2 small mb-2'
+    estadoCarrito.textContent = mensajeErrorDeshacer(error)
   }
 }
 
@@ -380,10 +406,7 @@ export async function agregarProductoAlCarrito(productoId, productoObj = null, c
       json: { productoId, cantidad: cant }
     })
     mostrarCarrito(await respuesta.json())
-    if (estadoCarrito) {
-      estadoCarrito.className = 'alert alert-success py-2 small mb-2'
-      estadoCarrito.textContent = 'Producto agregado al carrito.'
-    }
+    pintarEstadoConDeshacer(estadoCarrito, 'Producto agregado al carrito.', deshacerAccionCarrito)
     mostrarToast('Producto añadido al carrito.', 'exito')
     abrirCarrito()
   } catch (error) {
@@ -409,8 +432,7 @@ async function quitarProducto(productoId) {
       method: 'DELETE'
     })
     await cargarCarrito()
-    estadoCarrito.className = 'alert alert-success py-2 small mb-2'
-    estadoCarrito.textContent = 'Producto quitado del carrito.'
+    pintarEstadoConDeshacer(estadoCarrito, 'Producto quitado del carrito.', deshacerAccionCarrito)
     mostrarToast('Producto quitado del carrito.', 'info')
   } catch (error) {
     mostrarError(error)
