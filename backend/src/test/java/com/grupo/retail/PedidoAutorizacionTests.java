@@ -10,6 +10,9 @@ import com.grupo.retail.dao.UsuarioDAO;
 import com.grupo.retail.service.SesionCliente;
 import com.grupo.retail.service.SesionEmpleado;
 import com.grupo.retail.transaccion.EjecutorTransaccion;
+import com.grupo.retail.model.PedidoBloqueado;
+import com.grupo.retail.patterns.observer.EventoPedido;
+import com.grupo.retail.patterns.observer.PublicadorEventosPedido;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -34,6 +37,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.ArgumentMatchers.eq;
 
 class PedidoAutorizacionTests {
 
@@ -135,11 +140,20 @@ class PedidoAutorizacionTests {
     void cancelacionDeClienteBloqueaSoloSuPedidoYRegistraEnLaMismaTransaccion() throws Exception {
         PedidoDAO dao = mock(PedidoDAO.class);
         Connection conexion = mock(Connection.class);
-        when(dao.bloquearEstadoPedido(conexion, 91L, 42L)).thenReturn(Optional.of("PENDIENTE"));
+        when(dao.bloquearEstadoPedido(conexion, 91L, 42L)).thenReturn(Optional.of(new PedidoBloqueado("PENDIENTE", 42L)));
 
-        new PedidoService(dao, ejecutorSobre(conexion)).cancelarPedidoComoCliente(91L, 42L);
+        PublicadorEventosPedido publicador = mock(PublicadorEventosPedido.class);
+
+        new PedidoService(dao, ejecutorSobre(conexion), publicador).cancelarPedidoComoCliente(91L, 42L);
 
         verify(dao).registrarCancelacion(conexion, 91L, 42L, "CANCELADO");
+        // Observer: el evento sale con la misma conexión, después de registrar la cancelación.
+        ArgumentCaptor<EventoPedido> evento = ArgumentCaptor.forClass(EventoPedido.class);
+        verify(publicador).publicar(eq(conexion), evento.capture());
+        assertEquals(91L, evento.getValue().pedidoId());
+        assertEquals(42L, evento.getValue().clienteId());
+        assertEquals("PENDIENTE", evento.getValue().estadoAnterior());
+        assertEquals("CANCELADO", evento.getValue().estadoNuevo());
         verify(conexion).commit();
     }
 
@@ -147,9 +161,9 @@ class PedidoAutorizacionTests {
     void cancelacionDeVendedorNoFiltraPorPropietarioYRegistraAlVendedorResponsable() throws Exception {
         PedidoDAO dao = mock(PedidoDAO.class);
         Connection conexion = mock(Connection.class);
-        when(dao.bloquearEstadoPedido(conexion, 91L, null)).thenReturn(Optional.of("PENDIENTE"));
+        when(dao.bloquearEstadoPedido(conexion, 91L, null)).thenReturn(Optional.of(new PedidoBloqueado("PENDIENTE", 42L)));
 
-        new PedidoService(dao, ejecutorSobre(conexion)).cancelarPedidoComoVendedor(91L, 84L);
+        new PedidoService(dao, ejecutorSobre(conexion), mock(PublicadorEventosPedido.class)).cancelarPedidoComoVendedor(91L, 84L);
 
         verify(dao).registrarCancelacion(conexion, 91L, 84L, "CANCELADO");
     }
@@ -158,11 +172,14 @@ class PedidoAutorizacionTests {
     void cancelarUnPedidoYaCanceladoNoRepiteEfectos() throws Exception {
         PedidoDAO dao = mock(PedidoDAO.class);
         Connection conexion = mock(Connection.class);
-        when(dao.bloquearEstadoPedido(conexion, 91L, 42L)).thenReturn(Optional.of("CANCELADO"));
+        when(dao.bloquearEstadoPedido(conexion, 91L, 42L)).thenReturn(Optional.of(new PedidoBloqueado("CANCELADO", 42L)));
 
-        new PedidoService(dao, ejecutorSobre(conexion)).cancelarPedidoComoCliente(91L, 42L);
+        PublicadorEventosPedido publicador = mock(PublicadorEventosPedido.class);
+
+        new PedidoService(dao, ejecutorSobre(conexion), publicador).cancelarPedidoComoCliente(91L, 42L);
 
         verify(dao, never()).registrarCancelacion(any(), anyLong(), anyLong(), anyString());
+        verifyNoInteractions(publicador); // repetir la cancelación no vuelve a avisar
         verify(conexion).commit();
     }
 
@@ -170,8 +187,8 @@ class PedidoAutorizacionTests {
     void elPatronStateRechazaCancelarUnPedidoDespachado() throws Exception {
         PedidoDAO dao = mock(PedidoDAO.class);
         Connection conexion = mock(Connection.class);
-        when(dao.bloquearEstadoPedido(conexion, 91L, 42L)).thenReturn(Optional.of("DESPACHADO"));
-        PedidoService servicio = new PedidoService(dao, ejecutorSobre(conexion));
+        when(dao.bloquearEstadoPedido(conexion, 91L, 42L)).thenReturn(Optional.of(new PedidoBloqueado("DESPACHADO", 42L)));
+        PedidoService servicio = new PedidoService(dao, ejecutorSobre(conexion), mock(PublicadorEventosPedido.class));
 
         assertThrows(IllegalStateException.class, () -> servicio.cancelarPedidoComoCliente(91L, 42L));
 
@@ -184,7 +201,7 @@ class PedidoAutorizacionTests {
         PedidoDAO dao = mock(PedidoDAO.class);
         Connection conexion = mock(Connection.class);
         when(dao.bloquearEstadoPedido(conexion, 91L, 42L)).thenReturn(Optional.empty());
-        PedidoService servicio = new PedidoService(dao, ejecutorSobre(conexion));
+        PedidoService servicio = new PedidoService(dao, ejecutorSobre(conexion), mock(PublicadorEventosPedido.class));
 
         assertThrows(NoSuchElementException.class, () -> servicio.cancelarPedidoComoCliente(91L, 42L));
         verify(conexion).rollback();
@@ -220,13 +237,14 @@ class PedidoAutorizacionTests {
         when(consulta.executeQuery()).thenReturn(resultado);
         when(resultado.next()).thenReturn(true);
         when(resultado.getString("estado")).thenReturn("PENDIENTE");
+        when(resultado.getLong("usuario_id")).thenReturn(42L);
 
-        assertEquals(Optional.of("PENDIENTE"),
+        assertEquals(Optional.of(new PedidoBloqueado("PENDIENTE", 42L)),
                 new PedidoDAO(mock(ProveedorConexiones.class)).bloquearEstadoPedido(conexion, 91L, null));
 
         ArgumentCaptor<String> sql = ArgumentCaptor.forClass(String.class);
         verify(conexion).prepareStatement(sql.capture());
-        assertFalse(sql.getValue().contains("usuario_id"));
+        assertFalse(sql.getValue().contains("usuario_id = ?"));
         verify(consulta).setLong(1, 91L);
         verify(consulta, never()).setLong(2, 84L);
     }

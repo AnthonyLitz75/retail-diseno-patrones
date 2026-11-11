@@ -2,10 +2,10 @@ package com.grupo.retail.dao;
 
 import com.grupo.retail.exception.ErrorAccesoDatosException;
 import com.grupo.retail.model.DetallePedido;
-import com.grupo.retail.model.EventoNotificacion;
 import com.grupo.retail.model.EventoEstadoPedido;
 import com.grupo.retail.model.EnvioPedido;
 import com.grupo.retail.exception.CodigoSeguimientoDuplicadoException;
+import com.grupo.retail.model.PedidoBloqueado;
 import com.grupo.retail.model.PedidoConfirmado;
 import com.grupo.retail.model.PedidoVista;
 import com.grupo.retail.model.ProductoEnCompra;
@@ -13,8 +13,6 @@ import com.grupo.retail.model.ResultadoPago;
 import com.grupo.retail.exception.ClaveConfirmacionEnUsoException;
 import com.grupo.retail.exception.StockInsuficienteException;
 import com.grupo.retail.patterns.singleton.ProveedorConexiones;
-import com.grupo.retail.patterns.factory.FabricaNotificador;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
@@ -38,16 +36,9 @@ public class PedidoDAO {
     private static final String INDICE_CLAVE_CONFIRMACION = "uq_pedido_clave_confirmacion";
 
     private final ProveedorConexiones proveedorConexiones;
-    private final FabricaNotificador fabricaNotificador;
 
     public PedidoDAO(ProveedorConexiones proveedorConexiones) {
-        this(proveedorConexiones, new com.grupo.retail.patterns.factory.FabricaNotificadorInApp());
-    }
-
-    @Autowired
-    public PedidoDAO(ProveedorConexiones proveedorConexiones, FabricaNotificador fabricaNotificador) {
         this.proveedorConexiones = proveedorConexiones;
-        this.fabricaNotificador = fabricaNotificador;
     }
 
     public List<PedidoVista> listarPorCliente(Long clienteId) {
@@ -296,8 +287,8 @@ public class PedidoDAO {
     /**
      * Registra una transición de almacén ya autorizada por el patrón State sobre un pedido
      * que el servicio bloqueó con {@link #bloquearEstadoPedido}: cambia el estado, guarda
-     * el envío al despachar o la fecha de entrega, deja historial y notifica al cliente.
-     * Usa la conexión de la transacción del servicio y nunca la confirma ni la cierra.
+     * el envío al despachar o la fecha de entrega y deja historial. Los avisos los emite el
+     * servicio (Observer). Usa la conexión de la transacción y nunca la confirma ni la cierra.
      */
     public void registrarTransicion(
             Connection conexion, long pedidoId, String nuevoEstado,
@@ -347,7 +338,6 @@ public class PedidoDAO {
                 registrarEntrega.executeUpdate();
             }
         }
-        Long clienteId = buscarClienteEnTransaccion(conexion, pedidoId);
         try (PreparedStatement historial = conexion.prepareStatement(historialSql)) {
             historial.setLong(1, pedidoId);
             historial.setString(2, nuevoEstado);
@@ -355,7 +345,6 @@ public class PedidoDAO {
             historial.setString(4, comentario);
             historial.executeUpdate();
         }
-        notificarCambio(conexion, clienteId, pedidoId, nuevoEstado, comentario);
     }
 
     // ---------------------------------------------------------------------------------
@@ -365,14 +354,15 @@ public class PedidoDAO {
     // ---------------------------------------------------------------------------------
 
     /**
-     * Bloquea el pedido (FOR UPDATE) y devuelve su estado actual. Con {@code clienteId}
-     * solo encuentra pedidos de ese cliente: un pedido ajeno se comporta como inexistente.
+     * Bloquea el pedido (FOR UPDATE) y devuelve su estado actual y su cliente. Con
+     * {@code clienteId} solo encuentra pedidos de ese cliente: un pedido ajeno se comporta
+     * como inexistente.
      */
-    public Optional<String> bloquearEstadoPedido(Connection conexion, long pedidoId, Long clienteId)
-            throws SQLException {
+    public Optional<PedidoBloqueado> bloquearEstadoPedido(
+            Connection conexion, long pedidoId, Long clienteId) throws SQLException {
         String sql = clienteId == null
-                ? "SELECT estado FROM pedido WHERE id_pedido = ? FOR UPDATE"
-                : "SELECT estado FROM pedido WHERE id_pedido = ? AND usuario_id = ? FOR UPDATE";
+                ? "SELECT estado, usuario_id FROM pedido WHERE id_pedido = ? FOR UPDATE"
+                : "SELECT estado, usuario_id FROM pedido WHERE id_pedido = ? AND usuario_id = ? FOR UPDATE";
         try (PreparedStatement consulta = conexion.prepareStatement(sql)) {
             consulta.setLong(1, pedidoId);
             if (clienteId != null) {
@@ -380,7 +370,8 @@ public class PedidoDAO {
             }
             try (ResultSet resultado = consulta.executeQuery()) {
                 return resultado.next()
-                        ? Optional.of(resultado.getString("estado"))
+                        ? Optional.of(new PedidoBloqueado(
+                                resultado.getString("estado"), resultado.getLong("usuario_id")))
                         : Optional.empty();
             }
         }
@@ -389,7 +380,7 @@ public class PedidoDAO {
     /**
      * Aplica los efectos de cancelar un pedido ya bloqueado y validado: repone stock con
      * movimientos CANCELACION (productos en orden ascendente), reversa el pago de prueba,
-     * cambia el estado, deja historial y notifica al cliente.
+     * cambia el estado y deja historial. Los avisos los emite el servicio (Observer).
      */
     public void registrarCancelacion(
             Connection conexion, long pedidoId, long responsableId, String estadoCancelado)
@@ -421,7 +412,6 @@ public class PedidoDAO {
                 VALUES (?, ?, ?, 'Pedido cancelado; stock y pago simulado reversados')
                 """;
 
-        Long destinatarioId = buscarClienteEnTransaccion(conexion, pedidoId);
         List<LineaParaReponer> lineas = new ArrayList<>();
         try (PreparedStatement consulta = conexion.prepareStatement(detallesSql)) {
             consulta.setLong(1, pedidoId);
@@ -473,26 +463,6 @@ public class PedidoDAO {
             historial.setLong(3, responsableId);
             historial.executeUpdate();
         }
-        notificarCambio(conexion, destinatarioId, pedidoId, estadoCancelado,
-                "Pedido cancelado; stock y pago simulado reversados");
-    }
-
-    private Long buscarClienteEnTransaccion(Connection conexion, long pedidoId) throws SQLException {
-        try (PreparedStatement consulta = conexion.prepareStatement(
-                "SELECT usuario_id FROM pedido WHERE id_pedido = ?")) {
-            consulta.setLong(1, pedidoId);
-            try (ResultSet resultado = consulta.executeQuery()) {
-                if (!resultado.next())
-                    throw new NoSuchElementException("No existe el pedido solicitado");
-                return resultado.getLong("usuario_id");
-            }
-        }
-    }
-
-    private void notificarCambio(Connection conexion, Long clienteId, long pedidoId,
-            String estado, String mensaje) throws SQLException {
-        fabricaNotificador.crearNotificador().notificar(conexion,
-                new EventoNotificacion(clienteId, pedidoId, estado, mensaje));
     }
 
     private record LineaParaReponer(long productoId, int cantidad) {

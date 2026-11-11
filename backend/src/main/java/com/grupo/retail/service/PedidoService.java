@@ -2,11 +2,15 @@ package com.grupo.retail.service;
 
 import com.grupo.retail.dao.PedidoDAO;
 import com.grupo.retail.model.EnvioPedido;
+import com.grupo.retail.model.PedidoBloqueado;
 import com.grupo.retail.model.PedidoVista;
+import com.grupo.retail.patterns.observer.EventoPedido;
+import com.grupo.retail.patterns.observer.PublicadorEventosPedido;
 import com.grupo.retail.patterns.state.EstadoPedido;
 import com.grupo.retail.transaccion.EjecutorTransaccion;
 import org.springframework.stereotype.Service;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.function.Function;
@@ -14,13 +18,19 @@ import java.util.function.Function;
 @Service
 public class PedidoService {
     private static final String CANCELADO = "CANCELADO";
+    private static final String MOTIVO_CANCELACION = "Pedido cancelado; stock y pago simulado reversados";
 
     private final PedidoDAO pedidoDAO;
     private final EjecutorTransaccion ejecutorTransaccion;
+    private final PublicadorEventosPedido publicadorEventos;
 
-    public PedidoService(PedidoDAO pedidoDAO, EjecutorTransaccion ejecutorTransaccion) {
+    public PedidoService(
+            PedidoDAO pedidoDAO,
+            EjecutorTransaccion ejecutorTransaccion,
+            PublicadorEventosPedido publicadorEventos) {
         this.pedidoDAO = pedidoDAO;
         this.ejecutorTransaccion = ejecutorTransaccion;
+        this.publicadorEventos = publicadorEventos;
     }
 
     public List<PedidoVista> listarPedidosCliente(Long clienteId) {
@@ -82,35 +92,41 @@ public class PedidoService {
      */
     private void cancelarPedido(Long pedidoId, Long clienteId, Long responsableId) {
         ejecutorTransaccion.ejecutar("No se pudo cancelar el pedido", conexion -> {
-            String estadoActual = pedidoDAO.bloquearEstadoPedido(conexion, pedidoId, clienteId)
+            PedidoBloqueado pedido = pedidoDAO.bloquearEstadoPedido(conexion, pedidoId, clienteId)
                     .orElseThrow(() -> new NoSuchElementException("No existe el pedido solicitado"));
-            if (CANCELADO.equals(estadoActual)) {
+            if (CANCELADO.equals(pedido.estado())) {
                 // Repetir la cancelación es seguro: la primera ya aplicó todos los efectos.
                 return null;
             }
-            EstadoPedido cancelado = EstadoPedido.desde(estadoActual).cancelar();
+            EstadoPedido cancelado = EstadoPedido.desde(pedido.estado()).cancelar();
             pedidoDAO.registrarCancelacion(conexion, pedidoId, responsableId, cancelado.nombre());
+            publicadorEventos.publicar(conexion, new EventoPedido(
+                    pedidoId, pedido.clienteId(), pedido.estado(), cancelado.nombre(),
+                    OffsetDateTime.now(), MOTIVO_CANCELACION));
             return null;
         });
     }
 
     /**
      * Transición de almacén en una sola transacción: bloquea el pedido, el patrón State
-     * decide con el estado real leído bajo ese bloqueo y el DAO registra el cambio con
-     * su envío, historial y notificación. Una transición no válida lanza
-     * IllegalStateException y un código de seguimiento repetido
-     * CodigoSeguimientoDuplicadoException; ambas responden 409.
+     * decide con el estado real leído bajo ese bloqueo, el DAO registra el cambio con su
+     * envío e historial y el patrón Observer avisa a los canales registrados. Una
+     * transición no válida lanza IllegalStateException y un código de seguimiento
+     * repetido CodigoSeguimientoDuplicadoException; ambas responden 409.
      */
     private void cambiarEstado(
             Long pedidoId, Long responsableId,
             Function<EstadoPedido, EstadoPedido> transicion,
             String comentario, EnvioPedido envio) {
         ejecutorTransaccion.ejecutar("No se pudo actualizar el estado del pedido", conexion -> {
-            String estadoActual = pedidoDAO.bloquearEstadoPedido(conexion, pedidoId, null)
+            PedidoBloqueado pedido = pedidoDAO.bloquearEstadoPedido(conexion, pedidoId, null)
                     .orElseThrow(() -> new NoSuchElementException("No existe el pedido solicitado"));
-            EstadoPedido nuevoEstado = transicion.apply(EstadoPedido.desde(estadoActual));
+            EstadoPedido nuevoEstado = transicion.apply(EstadoPedido.desde(pedido.estado()));
             pedidoDAO.registrarTransicion(
                     conexion, pedidoId, nuevoEstado.nombre(), responsableId, comentario, envio);
+            publicadorEventos.publicar(conexion, new EventoPedido(
+                    pedidoId, pedido.clienteId(), pedido.estado(), nuevoEstado.nombre(),
+                    OffsetDateTime.now(), comentario));
             return null;
         });
     }

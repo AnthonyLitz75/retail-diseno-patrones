@@ -58,6 +58,11 @@ public final class DatosIntegracion {
                 pedidoId, estado);
     }
 
+    public int notificacionesDe(long usuarioId, long pedidoId, String estado) {
+        return contar("SELECT COUNT(*) FROM notificacion WHERE usuario_id = ? AND pedido_id = ? AND estado = ?",
+                usuarioId, pedidoId, estado);
+    }
+
     public int enviosDe(long pedidoId) {
         return contar("SELECT COUNT(*) FROM envio WHERE pedido_id = ?", pedidoId);
     }
