@@ -104,8 +104,21 @@ public class SecurityConfig {
                         ).hasRole("CLIENTE")
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/pedidos/{id:[0-9]+}").hasRole("CLIENTE")
 
-                        // 9. Resto de peticiones requieren autenticación
-                        .anyRequest().authenticated()
+                        // 9. Rutas de cualquier usuario autenticado (sesión y notificaciones propias)
+                        .requestMatchers(
+                                "/api/auth/sesion",
+                                "/api/auth/logout",
+                                "/api/notificaciones/**"
+                        ).authenticated()
+
+                        // 10. Denegación por defecto: una ruta /api que no esté declarada arriba
+                        // se rechaza aunque haya sesión (401 sin sesión, 403 con sesión).
+                        // Toda ruta nueva debe agregarse aquí y en MatrizAccesoTest.
+                        .requestMatchers("/api/**").denyAll()
+
+                        // 11. Archivos estáticos de la SPA (servidos por Spring Boot en el
+                        // despliegue Docker): públicos, para que un visitante cargue la tienda.
+                        .anyRequest().permitAll()
                 );
 
         return http.build();
