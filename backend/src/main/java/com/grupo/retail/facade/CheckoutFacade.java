@@ -7,6 +7,8 @@ import com.grupo.retail.exception.StockInsuficienteException;
 import com.grupo.retail.model.PedidoConfirmado;
 import com.grupo.retail.model.ProductoEnCompra;
 import com.grupo.retail.model.ResultadoPago;
+import com.grupo.retail.patterns.observer.EventoPedido;
+import com.grupo.retail.patterns.observer.PublicadorEventosPedido;
 import com.grupo.retail.patterns.pago.PuertoPago;
 import com.grupo.retail.transaccion.EjecutorTransaccion;
 import org.springframework.stereotype.Service;
@@ -14,6 +16,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -33,15 +36,25 @@ import java.util.Optional;
 @Service
 public class CheckoutFacade {
 
+    private static final String ESTADO_INICIAL = "PENDIENTE";
+    private static final String MOTIVO_CONFIRMACION = "Pedido confirmado; pago simulado aprobado";
+
     private final PedidoDAO pedidoDAO;
     private final PuertoPago puertoPago;
     private final EjecutorTransaccion ejecutorTransaccion;
+    private final PublicadorEventosPedido publicadorEventos;
 
-    public CheckoutFacade(PedidoDAO pedidoDAO, PuertoPago puertoPago, EjecutorTransaccion ejecutorTransaccion) {
+    public CheckoutFacade(
+            PedidoDAO pedidoDAO,
+            PuertoPago puertoPago,
+            EjecutorTransaccion ejecutorTransaccion,
+            PublicadorEventosPedido publicadorEventos) {
         this.pedidoDAO = Objects.requireNonNull(pedidoDAO, "pedidoDAO no puede ser null");
         this.puertoPago = Objects.requireNonNull(puertoPago, "puertoPago no puede ser null");
         this.ejecutorTransaccion = Objects.requireNonNull(
                 ejecutorTransaccion, "ejecutorTransaccion no puede ser null");
+        this.publicadorEventos = Objects.requireNonNull(
+                publicadorEventos, "publicadorEventos no puede ser null");
     }
 
     public PedidoConfirmado confirmarCompra(Long usuarioId, String metodoPago) {
@@ -95,8 +108,15 @@ public class CheckoutFacade {
         }
 
         // 5. Persistencia del pedido completo en la misma conexión.
-        return pedidoDAO.registrarCompra(
+        PedidoConfirmado pedido = pedidoDAO.registrarCompra(
                 conexion, usuarioId, total, pago, productos, carritoId, clave, destinatario, direccion);
+
+        // 6. Observer: la alerta in-app entra en esta transacción; la auditoría y el
+        //    correo simulado salen solo después del commit.
+        publicadorEventos.publicar(conexion, new EventoPedido(
+                pedido.idPedido(), usuarioId, null, ESTADO_INICIAL,
+                OffsetDateTime.now(), MOTIVO_CONFIRMACION));
+        return pedido;
     }
 
     private static void validarProductos(List<ProductoEnCompra> productos) {

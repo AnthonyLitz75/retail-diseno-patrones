@@ -165,3 +165,38 @@ test("configurarBandejaNotificaciones controla ciclo de vida y visibilidad segú
   bandeja.iniciarPollingNotificaciones();
   bandeja.detenerPollingNotificaciones();
 });
+
+test("abrir una notificación no leída la marca en el servidor y baja el contador (spec 005, T010)", async () => {
+  const contenedor = global.document.createElement("div");
+  const badge = global.document.createElement("span");
+  const lista = global.document.createElement("div");
+  const llamadas = [];
+
+  const bandeja = configurarBandejaNotificaciones({
+    apiRequest: async (ruta, opciones) => {
+      llamadas.push(`${opciones?.method} ${ruta}`);
+      if (opciones?.method === "PATCH") return { id: 5, leida: true };
+      return [
+        { id: 5, pedidoId: 20, estado: "PENDIENTE", leida: false },
+        { id: 6, pedidoId: 21, estado: "DESPACHADO", leida: false },
+      ];
+    },
+    obtenerUsuarioSesion: () => ({ rol: "CLIENTE" }),
+    cambiarVista: () => {},
+    elementos: {
+      contenedorNotificaciones: contenedor,
+      badgeContadorNotificaciones: badge,
+      listaNotificaciones: lista,
+    },
+  });
+
+  await bandeja.cargarNotificacionesCliente();
+  assert.equal(badge.textContent, "2");
+
+  lista.children[0].dispatch("click");
+  await new Promise((resolver) => setTimeout(resolver, 0));
+
+  assert.ok(llamadas.includes("PATCH /api/notificaciones/5/leida"), llamadas.join(", "));
+  assert.equal(badge.textContent, "1");
+  assert.equal(bandeja.obtenerCache().find((n) => n.id === 5).leida, true);
+});

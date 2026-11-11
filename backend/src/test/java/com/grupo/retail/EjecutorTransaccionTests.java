@@ -9,10 +9,14 @@ import org.mockito.InOrder;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
@@ -81,6 +85,56 @@ class EjecutorTransaccionTests {
         assertSame(sql, lanzada.getCause());
         verify(conexion).rollback();
         verify(conexion).close();
+    }
+
+    @Test
+    void lasAccionesPostCommitCorrenSoloDespuesDelCommit() throws SQLException {
+        List<String> orden = new ArrayList<>();
+        doAnswer(i -> orden.add("commit")).when(conexion).commit();
+
+        ejecutor.ejecutar("fallo", c -> {
+            ejecutor.trasConfirmar(() -> orden.add("accion"));
+            orden.add("operacion");
+            return null;
+        });
+
+        assertEquals(List.of("operacion", "commit", "accion"), orden);
+    }
+
+    @Test
+    void lasAccionesPostCommitSeDescartanSiHayRollback() {
+        List<String> ejecutadas = new ArrayList<>();
+
+        assertThrows(IllegalStateException.class, () -> ejecutor.ejecutar("fallo", c -> {
+            ejecutor.trasConfirmar(() -> ejecutadas.add("accion"));
+            throw new IllegalStateException("regla incumplida");
+        }));
+
+        assertTrue(ejecutadas.isEmpty(), "Ningún aviso post-commit sale de una transacción revertida");
+        // La siguiente transacción empieza sin acciones pendientes de la anterior.
+        ejecutor.ejecutar("fallo", c -> null);
+        assertTrue(ejecutadas.isEmpty());
+    }
+
+    @Test
+    void unFalloEnUnaAccionPostCommitNoAfectaElResultadoNiLasDemas() {
+        List<String> ejecutadas = new ArrayList<>();
+
+        String resultado = ejecutor.ejecutar("fallo", c -> {
+            ejecutor.trasConfirmar(() -> {
+                throw new IllegalStateException("canal caído");
+            });
+            ejecutor.trasConfirmar(() -> ejecutadas.add("segunda"));
+            return "ok";
+        });
+
+        assertEquals("ok", resultado, "La transacción ya se confirmó: el fallo del canal no la cambia");
+        assertEquals(List.of("segunda"), ejecutadas);
+    }
+
+    @Test
+    void registrarUnaAccionFueraDeUnaTransaccionEsUnError() {
+        assertThrows(IllegalStateException.class, () -> ejecutor.trasConfirmar(() -> { }));
     }
 
     @Test

@@ -3,6 +3,7 @@ package com.grupo.retail.controller;
 import com.grupo.retail.dto.ActualizarCantidadCarrito;
 import com.grupo.retail.dto.AgregarProductoCarrito;
 import com.grupo.retail.model.Carrito;
+import com.grupo.retail.patterns.command.HistorialComandosCarrito;
 import com.grupo.retail.service.CarritoService;
 import com.grupo.retail.service.SesionCliente;
 import jakarta.servlet.http.HttpServletRequest;
@@ -40,7 +41,7 @@ public class CarritoController {
             @Valid @RequestBody AgregarProductoCarrito datos,
             HttpServletRequest solicitud) {
         Carrito carrito = carritoService.agregar(
-            sesionCliente.obtenerId(solicitud), datos.productoId(), datos.cantidad());
+                sesionCliente.obtenerId(solicitud), datos.productoId(), datos.cantidad(), historial(solicitud));
         return ResponseEntity.status(HttpStatus.CREATED).body(carrito);
     }
 
@@ -50,14 +51,24 @@ public class CarritoController {
             @Valid @RequestBody ActualizarCantidadCarrito datos,
             HttpServletRequest solicitud) {
         return carritoService.actualizarCantidad(
-                sesionCliente.obtenerId(solicitud), productoId, datos.cantidad());
+                sesionCliente.obtenerId(solicitud), productoId, datos.cantidad(), historial(solicitud));
     }
 
     @DeleteMapping("/productos/{productoId}")
     public ResponseEntity<Void> quitar(
             @PathVariable Long productoId,
             HttpServletRequest solicitud) {
-        carritoService.quitar(sesionCliente.obtenerId(solicitud), productoId);
+        carritoService.quitar(sesionCliente.obtenerId(solicitud), productoId, historial(solicitud));
         return ResponseEntity.noContent().build();
+    }
+
+    /** Spec 005 (RF08): deshace la última acción de esta sesión sobre el carrito. */
+    @PostMapping("/deshacer")
+    public Carrito deshacer(HttpServletRequest solicitud) {
+        return carritoService.deshacer(sesionCliente.obtenerId(solicitud), historial(solicitud));
+    }
+
+    private static HistorialComandosCarrito historial(HttpServletRequest solicitud) {
+        return HistorialComandosCarrito.de(solicitud.getSession());
     }
 }

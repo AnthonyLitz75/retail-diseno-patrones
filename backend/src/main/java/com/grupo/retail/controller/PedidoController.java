@@ -4,6 +4,7 @@ import com.grupo.retail.dto.SolicitudConfirmarPedido;
 import com.grupo.retail.dto.SolicitudDespachoPedido;
 import com.grupo.retail.facade.CheckoutFacade;
 import com.grupo.retail.model.PedidoConfirmado;
+import com.grupo.retail.patterns.command.HistorialComandosCarrito;
 import com.grupo.retail.model.PedidoVista;
 import com.grupo.retail.service.SesionCliente;
 import com.grupo.retail.service.PedidoService;
@@ -129,6 +130,8 @@ public class PedidoController {
                 solicitud.claveConfirmacion(),
                 solicitud.destinatario(),
                 solicitud.direccionEnvio());
+        // Spec 005 (US6.4): el carrito se convirtió en pedido; ya no hay acciones que deshacer.
+        HistorialComandosCarrito.limpiarEn(peticion.getSession(false));
         return ResponseEntity.status(HttpStatus.CREATED).body(pedido);
     }
 }

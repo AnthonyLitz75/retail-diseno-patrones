@@ -65,6 +65,37 @@ public final class ClienteHttp {
                 .PUT(HttpRequest.BodyPublishers.noBody()));
     }
 
+    public Respuesta agregarAlCarrito(long productoId, int cantidad) {
+        return post("/api/carrito/productos",
+                "{\"productoId\":" + productoId + ",\"cantidad\":" + cantidad + "}");
+    }
+
+    public Respuesta cambiarCantidad(long productoId, int cantidad) {
+        return putJson("/api/carrito/productos/" + productoId, "{\"cantidad\":" + cantidad + "}");
+    }
+
+    public Respuesta quitarDelCarrito(long productoId) {
+        return enviar(HttpRequest.newBuilder(URI.create(base + "/api/carrito/productos/" + productoId))
+                .header("X-XSRF-TOKEN", tokenCsrf)
+                .DELETE());
+    }
+
+    public Respuesta deshacerCarrito() {
+        return post("/api/carrito/deshacer", "{}");
+    }
+
+    /** Descarta el token CSRF para comprobar que el servidor rechaza la escritura. */
+    public ClienteHttp sinCsrf() {
+        tokenCsrf = "token-invalido";
+        return this;
+    }
+
+    public Respuesta patch(String ruta) {
+        return enviar(HttpRequest.newBuilder(URI.create(base + ruta))
+                .header("X-XSRF-TOKEN", tokenCsrf)
+                .method("PATCH", HttpRequest.BodyPublishers.noBody()));
+    }
+
     public Respuesta get(String ruta) {
         return enviar(HttpRequest.newBuilder(URI.create(base + ruta)).GET());
     }

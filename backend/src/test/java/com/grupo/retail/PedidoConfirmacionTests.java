@@ -9,6 +9,8 @@ import com.grupo.retail.facade.CheckoutFacade;
 import com.grupo.retail.model.PedidoConfirmado;
 import com.grupo.retail.model.ProductoEnCompra;
 import com.grupo.retail.model.ResultadoPago;
+import com.grupo.retail.patterns.observer.EventoPedido;
+import com.grupo.retail.patterns.observer.PublicadorEventosPedido;
 import com.grupo.retail.patterns.pago.PuertoPago;
 import com.grupo.retail.patterns.singleton.ProveedorConexiones;
 import com.grupo.retail.transaccion.EjecutorTransaccion;
@@ -36,6 +38,7 @@ class PedidoConfirmacionTests {
     private PedidoDAO dao;
     private PuertoPago puerto;
     private Connection conexion;
+    private PublicadorEventosPedido publicador;
     private CheckoutFacade facade;
 
     @BeforeEach
@@ -46,7 +49,8 @@ class PedidoConfirmacionTests {
         ProveedorConexiones proveedor = mock(ProveedorConexiones.class);
         when(proveedor.obtenerConexion()).thenReturn(conexion);
         // Ejecutor real sobre una conexión simulada: se verifica commit y rollback.
-        facade = new CheckoutFacade(dao, puerto, new EjecutorTransaccion(proveedor));
+        publicador = mock(PublicadorEventosPedido.class);
+        facade = new CheckoutFacade(dao, puerto, new EjecutorTransaccion(proveedor), publicador);
     }
 
     @Test
@@ -108,6 +112,14 @@ class PedidoConfirmacionTests {
         orden.verify(dao).registrarCompra(any(), anyLong(), any(), any(), any(), anyLong(), any(), any(), any());
         orden.verify(conexion).commit();
         verify(conexion, never()).rollback();
+
+        // Observer: la confirmación publica el evento de creación con la conexión de la compra.
+        var evento = org.mockito.ArgumentCaptor.forClass(EventoPedido.class);
+        verify(publicador).publicar(eq(conexion), evento.capture());
+        assertEquals(10L, evento.getValue().pedidoId());
+        assertEquals(5L, evento.getValue().clienteId());
+        assertNull(evento.getValue().estadoAnterior());
+        assertEquals("PENDIENTE", evento.getValue().estadoNuevo());
     }
 
     @Test
@@ -120,7 +132,7 @@ class PedidoConfirmacionTests {
 
         assertSame(existente, resultado);
         verify(dao, never()).bloquearCarritoActivo(any(), anyLong());
-        verifyNoInteractions(puerto);
+        verifyNoInteractions(puerto, publicador); // un reintento no vuelve a notificar
         verify(conexion).commit();
     }
 

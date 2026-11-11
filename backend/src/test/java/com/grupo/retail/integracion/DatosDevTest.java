@@ -45,6 +45,23 @@ class DatosDevTest extends BaseIntegracionPostgres {
                 }
             }
 
+            // H2 (spec 005): el carrito demo solo trae productos activos y al menos uno comprable
+            try (PreparedStatement stmt = conn.prepareStatement("""
+                    SELECT COUNT(*) FILTER (WHERE p.activo = FALSE) AS inactivos,
+                           COUNT(*) FILTER (WHERE p.activo = TRUE AND p.stock >= cd.cantidad) AS comprables
+                    FROM carrito c
+                    JOIN usuario u ON u.id_usuario = c.usuario_id
+                    JOIN carrito_detalle cd ON cd.carrito_id = c.id_carrito
+                    JOIN producto p ON p.id = cd.producto_id
+                    WHERE u.correo = 'registro.web@example.com' AND c.estado = 'ACTIVO'
+                    """)) {
+                try (ResultSet rs = stmt.executeQuery()) {
+                    assertTrue(rs.next());
+                    assertEquals(0, rs.getInt("inactivos"), "El carrito demo no debe contener productos inactivos");
+                    assertTrue(rs.getInt("comprables") >= 1, "El carrito demo debe traer un producto comprable");
+                }
+            }
+
             // Verificar la jerarquia composite de Perifericos
             try (PreparedStatement stmt = conn.prepareStatement(
                     "SELECT COUNT(*) FROM categoria WHERE categoria_padre_id = (" +
