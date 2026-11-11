@@ -41,6 +41,7 @@ docs/*
 .agents/
 .specify/
 specs/
+.claude/
 
 # Local environment files
 .env
