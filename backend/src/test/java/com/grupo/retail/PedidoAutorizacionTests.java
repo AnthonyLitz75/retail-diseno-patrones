@@ -9,6 +9,7 @@ import com.grupo.retail.service.SesionAutenticada;
 import com.grupo.retail.dao.UsuarioDAO;
 import com.grupo.retail.service.SesionCliente;
 import com.grupo.retail.service.SesionEmpleado;
+import com.grupo.retail.transaccion.EjecutorTransaccion;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -18,12 +19,14 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import org.mockito.ArgumentCaptor;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.contains;
@@ -129,61 +132,109 @@ class PedidoAutorizacionTests {
     }
 
     @Test
-    void cancelacionDeClienteLimitaElPedidoAlPropietarioDeSesion() {
+    void cancelacionDeClienteBloqueaSoloSuPedidoYRegistraEnLaMismaTransaccion() throws Exception {
         PedidoDAO dao = mock(PedidoDAO.class);
-        new PedidoService(dao).cancelarPedidoComoCliente(91L, 42L);
-
-        verify(dao).cancelarPedido(91L, 42L, 42L, "CANCELADO");
-    }
-
-    @Test
-    void cancelacionDeVendedorNoFiltraPorPropietarioYRegistraAlVendedorResponsable() {
-        PedidoDAO dao = mock(PedidoDAO.class);
-        new PedidoService(dao).cancelarPedidoComoVendedor(91L, 84L);
-
-        verify(dao).cancelarPedido(91L, null, 84L, "CANCELADO");
-    }
-
-    @Test
-    void consultaSqlDelClienteFiltraPorPropietarioYNoRevelaPedidosAjenos() throws Exception {
-        ProveedorConexiones proveedor = mock(ProveedorConexiones.class);
         Connection conexion = mock(Connection.class);
-        PreparedStatement consulta = mock(PreparedStatement.class);
-        ResultSet resultado = mock(ResultSet.class);
-        when(proveedor.obtenerConexion()).thenReturn(conexion);
-        when(conexion.prepareStatement(contains("SELECT estado"))).thenReturn(consulta);
-        when(consulta.executeQuery()).thenReturn(resultado);
-        when(resultado.next()).thenReturn(false);
+        when(dao.bloquearEstadoPedido(conexion, 91L, 42L)).thenReturn(Optional.of("PENDIENTE"));
 
-        PedidoDAO dao = new PedidoDAO(proveedor);
-        assertThrows(NoSuchElementException.class,
-                () -> dao.cancelarPedido(91L, 42L, 42L, "CANCELADO"));
+        new PedidoService(dao, ejecutorSobre(conexion)).cancelarPedidoComoCliente(91L, 42L);
 
-        verify(consulta).setLong(1, 91L);
-        verify(consulta).setLong(2, 42L);
+        verify(dao).registrarCancelacion(conexion, 91L, 42L, "CANCELADO");
+        verify(conexion).commit();
+    }
+
+    @Test
+    void cancelacionDeVendedorNoFiltraPorPropietarioYRegistraAlVendedorResponsable() throws Exception {
+        PedidoDAO dao = mock(PedidoDAO.class);
+        Connection conexion = mock(Connection.class);
+        when(dao.bloquearEstadoPedido(conexion, 91L, null)).thenReturn(Optional.of("PENDIENTE"));
+
+        new PedidoService(dao, ejecutorSobre(conexion)).cancelarPedidoComoVendedor(91L, 84L);
+
+        verify(dao).registrarCancelacion(conexion, 91L, 84L, "CANCELADO");
+    }
+
+    @Test
+    void cancelarUnPedidoYaCanceladoNoRepiteEfectos() throws Exception {
+        PedidoDAO dao = mock(PedidoDAO.class);
+        Connection conexion = mock(Connection.class);
+        when(dao.bloquearEstadoPedido(conexion, 91L, 42L)).thenReturn(Optional.of("CANCELADO"));
+
+        new PedidoService(dao, ejecutorSobre(conexion)).cancelarPedidoComoCliente(91L, 42L);
+
+        verify(dao, never()).registrarCancelacion(any(), anyLong(), anyLong(), anyString());
+        verify(conexion).commit();
+    }
+
+    @Test
+    void elPatronStateRechazaCancelarUnPedidoDespachado() throws Exception {
+        PedidoDAO dao = mock(PedidoDAO.class);
+        Connection conexion = mock(Connection.class);
+        when(dao.bloquearEstadoPedido(conexion, 91L, 42L)).thenReturn(Optional.of("DESPACHADO"));
+        PedidoService servicio = new PedidoService(dao, ejecutorSobre(conexion));
+
+        assertThrows(IllegalStateException.class, () -> servicio.cancelarPedidoComoCliente(91L, 42L));
+
+        verify(dao, never()).registrarCancelacion(any(), anyLong(), anyLong(), anyString());
         verify(conexion).rollback();
     }
 
     @Test
-    void consultaDeVendedorNoImponeFiltroDePropietario() throws Exception {
-        ProveedorConexiones proveedor = mock(ProveedorConexiones.class);
+    void cancelarUnPedidoInexistenteOAjenoResponde404() throws Exception {
+        PedidoDAO dao = mock(PedidoDAO.class);
+        Connection conexion = mock(Connection.class);
+        when(dao.bloquearEstadoPedido(conexion, 91L, 42L)).thenReturn(Optional.empty());
+        PedidoService servicio = new PedidoService(dao, ejecutorSobre(conexion));
+
+        assertThrows(NoSuchElementException.class, () -> servicio.cancelarPedidoComoCliente(91L, 42L));
+        verify(conexion).rollback();
+    }
+
+    @Test
+    void bloqueoDelClienteFiltraPorPropietarioYNoRevelaPedidosAjenos() throws Exception {
         Connection conexion = mock(Connection.class);
         PreparedStatement consulta = mock(PreparedStatement.class);
         ResultSet resultado = mock(ResultSet.class);
-        when(proveedor.obtenerConexion()).thenReturn(conexion);
-        when(conexion.prepareStatement(org.mockito.ArgumentMatchers.anyString())).thenReturn(consulta);
+        when(conexion.prepareStatement(anyString())).thenReturn(consulta);
+        when(consulta.executeQuery()).thenReturn(resultado);
+        when(resultado.next()).thenReturn(false);
+
+        assertTrue(new PedidoDAO(mock(ProveedorConexiones.class))
+                .bloquearEstadoPedido(conexion, 91L, 42L).isEmpty());
+
+        ArgumentCaptor<String> sql = ArgumentCaptor.forClass(String.class);
+        verify(conexion).prepareStatement(sql.capture());
+        assertTrue(sql.getValue().contains("usuario_id = ?"));
+        assertTrue(sql.getValue().contains("FOR UPDATE"));
+        verify(consulta).setLong(1, 91L);
+        verify(consulta).setLong(2, 42L);
+        verify(conexion, never()).close();
+    }
+
+    @Test
+    void bloqueoDeVendedorNoImponeFiltroDePropietario() throws Exception {
+        Connection conexion = mock(Connection.class);
+        PreparedStatement consulta = mock(PreparedStatement.class);
+        ResultSet resultado = mock(ResultSet.class);
+        when(conexion.prepareStatement(anyString())).thenReturn(consulta);
         when(consulta.executeQuery()).thenReturn(resultado);
         when(resultado.next()).thenReturn(true);
-        when(resultado.getString("estado")).thenReturn("CANCELADO");
+        when(resultado.getString("estado")).thenReturn("PENDIENTE");
 
-        new PedidoDAO(proveedor).cancelarPedido(91L, null, 84L, "CANCELADO");
+        assertEquals(Optional.of("PENDIENTE"),
+                new PedidoDAO(mock(ProveedorConexiones.class)).bloquearEstadoPedido(conexion, 91L, null));
 
-        ArgumentCaptor<String> consultaSql = ArgumentCaptor.forClass(String.class);
-        verify(conexion).prepareStatement(consultaSql.capture());
-        assertFalse(consultaSql.getValue().contains("usuario_id"));
+        ArgumentCaptor<String> sql = ArgumentCaptor.forClass(String.class);
+        verify(conexion).prepareStatement(sql.capture());
+        assertFalse(sql.getValue().contains("usuario_id"));
         verify(consulta).setLong(1, 91L);
         verify(consulta, never()).setLong(2, 84L);
-        verify(conexion).commit();
+    }
+
+    private static EjecutorTransaccion ejecutorSobre(Connection conexion) throws Exception {
+        ProveedorConexiones proveedor = mock(ProveedorConexiones.class);
+        when(proveedor.obtenerConexion()).thenReturn(conexion);
+        return new EjecutorTransaccion(proveedor);
     }
 
     private HttpServletRequest solicitud(Long usuarioId, String rol) {

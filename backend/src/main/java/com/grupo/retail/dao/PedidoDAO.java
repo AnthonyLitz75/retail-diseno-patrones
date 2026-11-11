@@ -386,11 +386,42 @@ public class PedidoDAO {
         }
     }
 
-    public void cancelarPedido(
-            Long pedidoId, Long clienteId, Long responsableId, String nuevoEstado) {
-        String buscarPedidoSql = clienteId == null
+    // ---------------------------------------------------------------------------------
+    // Pasos SQL de la cancelación. PedidoService abre la transacción con
+    // EjecutorTransaccion, decide la transición con el patrón State y llama a estos
+    // métodos con la misma conexión, que nunca cierran (spec 004, T012).
+    // ---------------------------------------------------------------------------------
+
+    /**
+     * Bloquea el pedido (FOR UPDATE) y devuelve su estado actual. Con {@code clienteId}
+     * solo encuentra pedidos de ese cliente: un pedido ajeno se comporta como inexistente.
+     */
+    public Optional<String> bloquearEstadoPedido(Connection conexion, long pedidoId, Long clienteId)
+            throws SQLException {
+        String sql = clienteId == null
                 ? "SELECT estado FROM pedido WHERE id_pedido = ? FOR UPDATE"
                 : "SELECT estado FROM pedido WHERE id_pedido = ? AND usuario_id = ? FOR UPDATE";
+        try (PreparedStatement consulta = conexion.prepareStatement(sql)) {
+            consulta.setLong(1, pedidoId);
+            if (clienteId != null) {
+                consulta.setLong(2, clienteId);
+            }
+            try (ResultSet resultado = consulta.executeQuery()) {
+                return resultado.next()
+                        ? Optional.of(resultado.getString("estado"))
+                        : Optional.empty();
+            }
+        }
+    }
+
+    /**
+     * Aplica los efectos de cancelar un pedido ya bloqueado y validado: repone stock con
+     * movimientos CANCELACION (productos en orden ascendente), reversa el pago de prueba,
+     * cambia el estado, deja historial y notifica al cliente.
+     */
+    public void registrarCancelacion(
+            Connection conexion, long pedidoId, long responsableId, String estadoCancelado)
+            throws SQLException {
         String detallesSql = """
                 SELECT pd.producto_id, pd.cantidad
                 FROM pedido_detalle pd
@@ -410,110 +441,68 @@ public class PedidoDAO {
                 SET estado = 'REVERSADO'
                 WHERE pedido_id = ? AND estado = 'APROBADO'
                 """;
-        String pedidoSql = clienteId == null
-                ? "UPDATE pedido SET estado = ?, actualizado_en = CURRENT_TIMESTAMP "
-                        + "WHERE id_pedido = ? AND estado = 'PENDIENTE'"
-                : "UPDATE pedido SET estado = ?, actualizado_en = CURRENT_TIMESTAMP "
-                        + "WHERE id_pedido = ? AND usuario_id = ? AND estado = 'PENDIENTE'";
+        String pedidoSql = "UPDATE pedido SET estado = ?, actualizado_en = CURRENT_TIMESTAMP "
+                + "WHERE id_pedido = ? AND estado = 'PENDIENTE'";
         String historialSql = """
                 INSERT INTO pedido_historial_estado
                     (pedido_id, estado, responsable_id, comentario)
                 VALUES (?, ?, ?, 'Pedido cancelado; stock y pago simulado reversados')
                 """;
 
-        try (Connection conexion = proveedorConexiones.obtenerConexion()) {
-            conexion.setAutoCommit(false);
-            try {
-                String estadoActual;
-                try (PreparedStatement consulta = conexion.prepareStatement(buscarPedidoSql)) {
-                    consulta.setLong(1, pedidoId);
-                    if (clienteId != null) {
-                        consulta.setLong(2, clienteId);
-                    }
-                    try (ResultSet resultado = consulta.executeQuery()) {
-                        if (!resultado.next()) {
-                            throw new NoSuchElementException("No existe el pedido solicitado");
-                        }
-                        estadoActual = resultado.getString("estado");
-                    }
+        Long destinatarioId = buscarClienteEnTransaccion(conexion, pedidoId);
+        List<LineaParaReponer> lineas = new ArrayList<>();
+        try (PreparedStatement consulta = conexion.prepareStatement(detallesSql)) {
+            consulta.setLong(1, pedidoId);
+            try (ResultSet resultado = consulta.executeQuery()) {
+                while (resultado.next()) {
+                    lineas.add(new LineaParaReponer(
+                            resultado.getLong("producto_id"), resultado.getInt("cantidad")));
                 }
-
-                // A repeated PUT is safe: the first request already performed all side effects.
-                if ("CANCELADO".equals(estadoActual)) {
-                    conexion.commit();
-                    return;
-                }
-                if (!"PENDIENTE".equals(estadoActual) || !"CANCELADO".equals(nuevoEstado)) {
-                    throw new IllegalStateException("Solo se puede cancelar un pedido pendiente");
-                }
-
-                Long destinatarioId = buscarClienteEnTransaccion(conexion, pedidoId);
-                List<LineaParaReponer> lineas = new ArrayList<>();
-                try (PreparedStatement consulta = conexion.prepareStatement(detallesSql)) {
-                    consulta.setLong(1, pedidoId);
-                    try (ResultSet resultado = consulta.executeQuery()) {
-                        while (resultado.next()) {
-                            lineas.add(new LineaParaReponer(
-                                    resultado.getLong("producto_id"), resultado.getInt("cantidad")));
-                        }
-                    }
-                }
-                if (lineas.isEmpty()) {
-                    throw new IllegalStateException("El pedido no tiene productos para reponer");
-                }
-
-                for (LineaParaReponer linea : lineas) {
-                    try (PreparedStatement reponer = conexion.prepareStatement(reponerSql)) {
-                        reponer.setInt(1, linea.cantidad());
-                        reponer.setLong(2, linea.productoId());
-                        if (reponer.executeUpdate() != 1) {
-                            throw new IllegalStateException("No se pudo reponer un producto del pedido");
-                        }
-                    }
-                    try (PreparedStatement movimiento = conexion.prepareStatement(movimientoSql)) {
-                        movimiento.setLong(1, linea.productoId());
-                        movimiento.setInt(2, linea.cantidad());
-                        movimiento.setString(3, "Reposición por cancelación del pedido #" + pedidoId);
-                        movimiento.setLong(4, responsableId);
-                        movimiento.executeUpdate();
-                    }
-                }
-
-                int pagosReversados;
-                try (PreparedStatement pago = conexion.prepareStatement(pagoSql)) {
-                    pago.setLong(1, pedidoId);
-                    pagosReversados = pago.executeUpdate();
-                }
-                if (pagosReversados != 1) {
-                    throw new IllegalStateException("No se encontró un pago aprobado para reversar");
-                }
-
-                try (PreparedStatement actualizacion = conexion.prepareStatement(pedidoSql)) {
-                    actualizacion.setString(1, nuevoEstado);
-                    actualizacion.setLong(2, pedidoId);
-                    if (clienteId != null) {
-                        actualizacion.setLong(3, clienteId);
-                    }
-                    if (actualizacion.executeUpdate() != 1) {
-                        throw new IllegalStateException("El pedido dejó de estar pendiente");
-                    }
-                }
-                try (PreparedStatement historial = conexion.prepareStatement(historialSql)) {
-                    historial.setLong(1, pedidoId);
-                    historial.setString(2, nuevoEstado);
-                    historial.setLong(3, responsableId);
-                    historial.executeUpdate();
-                }
-                notificarCambio(conexion, destinatarioId, pedidoId, nuevoEstado,
-                        "Pedido cancelado; stock y pago simulado reversados");
-                conexion.commit();
-            } catch (SQLException | RuntimeException error) {
-                conexion.rollback();
-                throw error;
             }
-        } catch (SQLException error) {
-            throw new ErrorAccesoDatosException("No se pudo cancelar el pedido", error);
         }
+        if (lineas.isEmpty()) {
+            throw new IllegalStateException("El pedido no tiene productos para reponer");
+        }
+
+        for (LineaParaReponer linea : lineas) {
+            try (PreparedStatement reponer = conexion.prepareStatement(reponerSql)) {
+                reponer.setInt(1, linea.cantidad());
+                reponer.setLong(2, linea.productoId());
+                if (reponer.executeUpdate() != 1) {
+                    throw new IllegalStateException("No se pudo reponer un producto del pedido");
+                }
+            }
+            try (PreparedStatement movimiento = conexion.prepareStatement(movimientoSql)) {
+                movimiento.setLong(1, linea.productoId());
+                movimiento.setInt(2, linea.cantidad());
+                movimiento.setString(3, "Reposición por cancelación del pedido #" + pedidoId);
+                movimiento.setLong(4, responsableId);
+                movimiento.executeUpdate();
+            }
+        }
+
+        try (PreparedStatement pago = conexion.prepareStatement(pagoSql)) {
+            pago.setLong(1, pedidoId);
+            if (pago.executeUpdate() != 1) {
+                throw new IllegalStateException("No se encontró un pago aprobado para reversar");
+            }
+        }
+
+        try (PreparedStatement actualizacion = conexion.prepareStatement(pedidoSql)) {
+            actualizacion.setString(1, estadoCancelado);
+            actualizacion.setLong(2, pedidoId);
+            if (actualizacion.executeUpdate() != 1) {
+                throw new IllegalStateException("El pedido dejó de estar pendiente");
+            }
+        }
+        try (PreparedStatement historial = conexion.prepareStatement(historialSql)) {
+            historial.setLong(1, pedidoId);
+            historial.setString(2, estadoCancelado);
+            historial.setLong(3, responsableId);
+            historial.executeUpdate();
+        }
+        notificarCambio(conexion, destinatarioId, pedidoId, estadoCancelado,
+                "Pedido cancelado; stock y pago simulado reversados");
     }
 
     private Long buscarClienteEnTransaccion(Connection conexion, long pedidoId) throws SQLException {

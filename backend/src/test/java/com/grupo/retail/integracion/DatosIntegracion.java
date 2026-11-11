@@ -83,15 +83,41 @@ public final class DatosIntegracion {
                 """, clienteId);
     }
 
+    public int movimientosDeTipo(long productoId, String tipo) {
+        return contar("SELECT COUNT(*) FROM movimiento_inventario WHERE producto_id = ? AND tipo = ?",
+                productoId, tipo);
+    }
+
+    public int historialDe(long pedidoId, String estado) {
+        return contar("SELECT COUNT(*) FROM pedido_historial_estado WHERE pedido_id = ? AND estado = ?",
+                pedidoId, estado);
+    }
+
+    public int pagosEnEstado(long pedidoId, String estado) {
+        return contar("SELECT COUNT(*) FROM pago WHERE pedido_id = ? AND estado = ?", pedidoId, estado);
+    }
+
+    public String estadoPedido(long pedidoId) {
+        return texto("SELECT estado FROM pedido WHERE id_pedido = ?", pedidoId);
+    }
+
+    /** Lleva un pedido a otro estado sin pasar por la API (preparación de escenarios). */
+    public void forzarEstadoPedido(long pedidoId, String estado) {
+        ejecutar("UPDATE pedido SET estado = ? WHERE id_pedido = ?", estado, pedidoId);
+    }
+
     public int lineasCarrito(long carritoId) {
         return contar("SELECT COUNT(*) FROM carrito_detalle WHERE carrito_id = ?", carritoId);
     }
 
     public String estadoCarrito(long carritoId) {
+        return texto("SELECT estado FROM carrito WHERE id_carrito = ?", carritoId);
+    }
+
+    private String texto(String sql, Object... parametros) {
         try (Connection conexion = dataSource.getConnection();
-             PreparedStatement consulta = conexion.prepareStatement(
-                     "SELECT estado FROM carrito WHERE id_carrito = ?")) {
-            consulta.setLong(1, carritoId);
+             PreparedStatement consulta = conexion.prepareStatement(sql)) {
+            asignar(consulta, parametros);
             try (ResultSet rs = consulta.executeQuery()) {
                 rs.next();
                 return rs.getString(1);

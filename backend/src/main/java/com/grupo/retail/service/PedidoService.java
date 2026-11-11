@@ -5,6 +5,7 @@ import com.grupo.retail.exception.CodigoSeguimientoDuplicadoException;
 import com.grupo.retail.model.EnvioPedido;
 import com.grupo.retail.model.PedidoVista;
 import com.grupo.retail.patterns.state.EstadoPedido;
+import com.grupo.retail.transaccion.EjecutorTransaccion;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -14,10 +15,14 @@ import java.util.NoSuchElementException;
 
 @Service
 public class PedidoService {
-    private final PedidoDAO pedidoDAO;
+    private static final String CANCELADO = "CANCELADO";
 
-    public PedidoService(PedidoDAO pedidoDAO) {
+    private final PedidoDAO pedidoDAO;
+    private final EjecutorTransaccion ejecutorTransaccion;
+
+    public PedidoService(PedidoDAO pedidoDAO, EjecutorTransaccion ejecutorTransaccion) {
         this.pedidoDAO = pedidoDAO;
+        this.ejecutorTransaccion = ejecutorTransaccion;
     }
 
     public List<PedidoVista> listarPedidosCliente(Long clienteId) {
@@ -71,13 +76,24 @@ public class PedidoService {
         cancelarPedido(pedidoId, null, adminId);
     }
 
+    /**
+     * Cancela en una sola transacción. El pedido se bloquea primero y la transición la
+     * decide el patrón State con el estado real leído bajo ese bloqueo: dos cancelaciones
+     * simultáneas se serializan y la segunda encuentra el pedido ya cancelado.
+     * Un estado que no admite cancelar lanza IllegalStateException (409).
+     */
     private void cancelarPedido(Long pedidoId, Long clienteId, Long responsableId) {
-        String estadoCancelado = EstadoPedido.desde("PENDIENTE").cancelar().nombre();
-        try {
-            pedidoDAO.cancelarPedido(pedidoId, clienteId, responsableId, estadoCancelado);
-        } catch (IllegalStateException error) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, error.getMessage(), error);
-        }
+        ejecutorTransaccion.ejecutar("No se pudo cancelar el pedido", conexion -> {
+            String estadoActual = pedidoDAO.bloquearEstadoPedido(conexion, pedidoId, clienteId)
+                    .orElseThrow(() -> new NoSuchElementException("No existe el pedido solicitado"));
+            if (CANCELADO.equals(estadoActual)) {
+                // Repetir la cancelación es seguro: la primera ya aplicó todos los efectos.
+                return null;
+            }
+            EstadoPedido cancelado = EstadoPedido.desde(estadoActual).cancelar();
+            pedidoDAO.registrarCancelacion(conexion, pedidoId, responsableId, cancelado.nombre());
+            return null;
+        });
     }
 
     private void cambiarEstado(
