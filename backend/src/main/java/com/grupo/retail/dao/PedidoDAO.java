@@ -293,34 +293,19 @@ public class PedidoDAO {
         return List.copyOf(historial);
     }
 
-    public Optional<String> buscarEstado(Long pedidoId) {
-        String sql = "SELECT estado FROM pedido WHERE id_pedido = ?";
-        try (Connection conexion = proveedorConexiones.obtenerConexion();
-                PreparedStatement consulta = conexion.prepareStatement(sql)) {
-            consulta.setLong(1, pedidoId);
-            try (ResultSet resultado = consulta.executeQuery()) {
-                return resultado.next()
-                        ? Optional.of(resultado.getString("estado"))
-                        : Optional.empty();
-            }
-        } catch (SQLException error) {
-            throw new ErrorAccesoDatosException("No se pudo consultar el estado del pedido", error);
-        }
-    }
-
-    public boolean cambiarEstado(
-            Long pedidoId, String estadoEsperado, String nuevoEstado,
-            Long responsableId, String comentario) {
-        return cambiarEstado(pedidoId, estadoEsperado, nuevoEstado, responsableId, comentario, null);
-    }
-
-    public boolean cambiarEstado(
-            Long pedidoId, String estadoEsperado, String nuevoEstado,
-            Long responsableId, String comentario, EnvioPedido envio) {
+    /**
+     * Registra una transición de almacén ya autorizada por el patrón State sobre un pedido
+     * que el servicio bloqueó con {@link #bloquearEstadoPedido}: cambia el estado, guarda
+     * el envío al despachar o la fecha de entrega, deja historial y notifica al cliente.
+     * Usa la conexión de la transacción del servicio y nunca la confirma ni la cierra.
+     */
+    public void registrarTransicion(
+            Connection conexion, long pedidoId, String nuevoEstado,
+            long responsableId, String comentario, EnvioPedido envio) throws SQLException {
         String actualizarSql = """
                 UPDATE pedido
                 SET estado = ?, actualizado_en = CURRENT_TIMESTAMP
-                WHERE id_pedido = ? AND estado = ?
+                WHERE id_pedido = ?
                 """;
         String historialSql = """
                 INSERT INTO pedido_historial_estado (pedido_id, estado, responsable_id, comentario)
@@ -330,60 +315,47 @@ public class PedidoDAO {
                 INSERT INTO envio (pedido_id, transportista, codigo_seguimiento)
                 VALUES (?, ?, ?)
                 """;
-        try (Connection conexion = proveedorConexiones.obtenerConexion()) {
-            conexion.setAutoCommit(false);
-            try {
-                int filas;
-                try (PreparedStatement actualizacion = conexion.prepareStatement(actualizarSql)) {
-                    actualizacion.setString(1, nuevoEstado);
-                    actualizacion.setLong(2, pedidoId);
-                    actualizacion.setString(3, estadoEsperado);
-                    filas = actualizacion.executeUpdate();
+        String entregaSql = """
+                UPDATE envio
+                SET entregado_en = CURRENT_TIMESTAMP
+                WHERE pedido_id = ? AND entregado_en IS NULL
+                """;
+
+        try (PreparedStatement actualizacion = conexion.prepareStatement(actualizarSql)) {
+            actualizacion.setString(1, nuevoEstado);
+            actualizacion.setLong(2, pedidoId);
+            if (actualizacion.executeUpdate() != 1) {
+                throw new NoSuchElementException("No existe el pedido solicitado");
+            }
+        }
+        if (envio != null) {
+            try (PreparedStatement insertarEnvio = conexion.prepareStatement(envioSql)) {
+                insertarEnvio.setLong(1, pedidoId);
+                insertarEnvio.setString(2, envio.transportista());
+                insertarEnvio.setString(3, envio.codigoSeguimiento());
+                insertarEnvio.executeUpdate();
+            } catch (SQLException error) {
+                if (VIOLACION_UNICA.equals(error.getSQLState())) {
+                    throw new CodigoSeguimientoDuplicadoException(error);
                 }
-                if (filas == 0) {
-                    conexion.rollback();
-                    return false;
-                }
-                if (envio != null) {
-                    try (PreparedStatement insertarEnvio = conexion.prepareStatement(envioSql)) {
-                        insertarEnvio.setLong(1, pedidoId);
-                        insertarEnvio.setString(2, envio.transportista());
-                        insertarEnvio.setString(3, envio.codigoSeguimiento());
-                        insertarEnvio.executeUpdate();
-                    }
-                }
-                if ("ENTREGADO".equals(nuevoEstado)) {
-                    String updateEnvioSql = """
-                            UPDATE envio
-                            SET entregado_en = CURRENT_TIMESTAMP
-                            WHERE pedido_id = ? AND entregado_en IS NULL
-                            """;
-                    try (PreparedStatement updateEnvio = conexion.prepareStatement(updateEnvioSql)) {
-                        updateEnvio.setLong(1, pedidoId);
-                        updateEnvio.executeUpdate();
-                    }
-                }
-                Long clienteId = buscarClienteEnTransaccion(conexion, pedidoId);
-                try (PreparedStatement historial = conexion.prepareStatement(historialSql)) {
-                    historial.setLong(1, pedidoId);
-                    historial.setString(2, nuevoEstado);
-                    historial.setLong(3, responsableId);
-                    historial.setString(4, comentario);
-                    historial.executeUpdate();
-                }
-                notificarCambio(conexion, clienteId, pedidoId, nuevoEstado, comentario);
-                conexion.commit();
-                return true;
-            } catch (SQLException | RuntimeException error) {
-                conexion.rollback();
                 throw error;
             }
-        } catch (SQLException error) {
-            if ("23505".equals(error.getSQLState())) {
-                throw new CodigoSeguimientoDuplicadoException(error);
-            }
-            throw new ErrorAccesoDatosException("No se pudo actualizar el estado del pedido", error);
         }
+        if ("ENTREGADO".equals(nuevoEstado)) {
+            try (PreparedStatement registrarEntrega = conexion.prepareStatement(entregaSql)) {
+                registrarEntrega.setLong(1, pedidoId);
+                registrarEntrega.executeUpdate();
+            }
+        }
+        Long clienteId = buscarClienteEnTransaccion(conexion, pedidoId);
+        try (PreparedStatement historial = conexion.prepareStatement(historialSql)) {
+            historial.setLong(1, pedidoId);
+            historial.setString(2, nuevoEstado);
+            historial.setLong(3, responsableId);
+            historial.setString(4, comentario);
+            historial.executeUpdate();
+        }
+        notificarCambio(conexion, clienteId, pedidoId, nuevoEstado, comentario);
     }
 
     // ---------------------------------------------------------------------------------

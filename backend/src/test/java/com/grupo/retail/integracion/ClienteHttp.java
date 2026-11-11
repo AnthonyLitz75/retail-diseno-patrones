@@ -65,6 +65,13 @@ public final class ClienteHttp {
                 .PUT(HttpRequest.BodyPublishers.noBody()));
     }
 
+    public Respuesta putJson(String ruta, String json) {
+        return enviar(HttpRequest.newBuilder(URI.create(base + ruta))
+                .header("Content-Type", "application/json")
+                .header("X-XSRF-TOKEN", tokenCsrf)
+                .PUT(HttpRequest.BodyPublishers.ofString(json)));
+    }
+
     private void renovarCsrf() {
         Respuesta respuesta = enviar(HttpRequest.newBuilder(URI.create(base + "/api/auth/csrf")).GET());
         Matcher m = TOKEN.matcher(respuesta.cuerpo());

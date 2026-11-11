@@ -92,11 +92,17 @@ class FactoryNotificacionesTests {
         when(filas.next()).thenReturn(true);
         when(filas.getLong("usuario_id")).thenReturn(7L);
 
-        assertTrue(new com.grupo.retail.dao.PedidoDAO(proveedor, factory)
-                .cambiarEstado(15L, "PENDIENTE", "EN_PREPARACION", 8L, "Preparado"));
+        var ejecutor = new com.grupo.retail.transaccion.EjecutorTransaccion(proveedor);
+        var dao = new com.grupo.retail.dao.PedidoDAO(proveedor, factory);
+        ejecutor.ejecutar("fallo", c -> {
+            dao.registrarTransicion(c, 15L, "EN_PREPARACION", 8L, "Preparado", null);
+            return null;
+        });
         verify(notifier).notificar(eq(conexion), eq(new EventoNotificacion(
                 7L, 15L, "EN_PREPARACION", "Preparado")));
-        verify(conexion).commit();
+        var orden = inOrder(notifier, conexion);
+        orden.verify(notifier).notificar(eq(conexion), any(EventoNotificacion.class));
+        orden.verify(conexion).commit();
         verify(conexion, never()).rollback();
     }
 
@@ -122,8 +128,13 @@ class FactoryNotificacionesTests {
         doThrow(new java.sql.SQLException("fallo de persistencia"))
                 .when(notifier).notificar(eq(conexion), any(EventoNotificacion.class));
 
-        assertThrows(com.grupo.retail.exception.ErrorAccesoDatosException.class, () -> new com.grupo.retail.dao.PedidoDAO(proveedor, factory)
-                .cambiarEstado(15L, "PENDIENTE", "EN_PREPARACION", 8L, "Preparado"));
+        var ejecutor = new com.grupo.retail.transaccion.EjecutorTransaccion(proveedor);
+        var dao = new com.grupo.retail.dao.PedidoDAO(proveedor, factory);
+        assertThrows(com.grupo.retail.exception.ErrorAccesoDatosException.class, () -> ejecutor.ejecutar(
+                "fallo", c -> {
+                    dao.registrarTransicion(c, 15L, "EN_PREPARACION", 8L, "Preparado", null);
+                    return null;
+                }));
         verify(conexion).rollback();
         verify(conexion, never()).commit();
     }

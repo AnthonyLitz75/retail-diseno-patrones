@@ -42,6 +42,20 @@ public final class DatosIntegracion {
         return new Cliente(id, correo);
     }
 
+    /** Cuenta de personal (ALMACEN, VENDEDOR, ADMIN o SOPORTE) para iniciar sesión en pruebas. */
+    public Cliente crearEmpleado(String rol) {
+        String correo = rol.toLowerCase() + "-" + UUID.randomUUID() + "@prueba.test";
+        long id = insertarYDevolverId(
+                "INSERT INTO usuario (nombre, correo, clave_hash, rol) VALUES (?, ?, ?, ?) "
+                        + "RETURNING id_usuario",
+                "Empleado de prueba", correo, claveHash, rol);
+        return new Cliente(id, correo);
+    }
+
+    public int enviosEntregados(long pedidoId) {
+        return contar("SELECT COUNT(*) FROM envio WHERE pedido_id = ? AND entregado_en IS NOT NULL", pedidoId);
+    }
+
     public long crearProducto(BigDecimal precio, int stock) {
         String sku = "IT-" + UUID.randomUUID().toString().substring(0, 18);
         return insertarYDevolverId(

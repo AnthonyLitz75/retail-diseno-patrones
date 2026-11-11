@@ -1,17 +1,15 @@
 package com.grupo.retail.service;
 
 import com.grupo.retail.dao.PedidoDAO;
-import com.grupo.retail.exception.CodigoSeguimientoDuplicadoException;
 import com.grupo.retail.model.EnvioPedido;
 import com.grupo.retail.model.PedidoVista;
 import com.grupo.retail.patterns.state.EstadoPedido;
 import com.grupo.retail.transaccion.EjecutorTransaccion;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.function.Function;
 
 @Service
 public class PedidoService {
@@ -96,30 +94,24 @@ public class PedidoService {
         });
     }
 
+    /**
+     * Transición de almacén en una sola transacción: bloquea el pedido, el patrón State
+     * decide con el estado real leído bajo ese bloqueo y el DAO registra el cambio con
+     * su envío, historial y notificación. Una transición no válida lanza
+     * IllegalStateException y un código de seguimiento repetido
+     * CodigoSeguimientoDuplicadoException; ambas responden 409.
+     */
     private void cambiarEstado(
             Long pedidoId, Long responsableId,
-            java.util.function.Function<EstadoPedido, EstadoPedido> transicion,
+            Function<EstadoPedido, EstadoPedido> transicion,
             String comentario, EnvioPedido envio) {
-        String estadoActual = pedidoDAO.buscarEstado(pedidoId)
-                .orElseThrow(() -> new NoSuchElementException("No existe el pedido solicitado"));
-        EstadoPedido nuevoEstado;
-        try {
-            nuevoEstado = transicion.apply(EstadoPedido.desde(estadoActual));
-        } catch (IllegalStateException error) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, error.getMessage(), error);
-        }
-
-        boolean actualizado;
-        try {
-            actualizado = pedidoDAO.cambiarEstado(
-                    pedidoId, estadoActual, nuevoEstado.nombre(), responsableId, comentario, envio);
-        } catch (CodigoSeguimientoDuplicadoException error) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, error.getMessage(), error);
-        }
-        if (!actualizado) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
-                    "El estado del pedido cambió. Actualiza la lista e inténtalo nuevamente");
-        }
+        ejecutorTransaccion.ejecutar("No se pudo actualizar el estado del pedido", conexion -> {
+            String estadoActual = pedidoDAO.bloquearEstadoPedido(conexion, pedidoId, null)
+                    .orElseThrow(() -> new NoSuchElementException("No existe el pedido solicitado"));
+            EstadoPedido nuevoEstado = transicion.apply(EstadoPedido.desde(estadoActual));
+            pedidoDAO.registrarTransicion(
+                    conexion, pedidoId, nuevoEstado.nombre(), responsableId, comentario, envio);
+            return null;
+        });
     }
 }

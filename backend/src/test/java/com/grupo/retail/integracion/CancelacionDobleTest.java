@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Test;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Callable;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -22,9 +21,6 @@ class CancelacionDobleTest extends BaseCompraIntegracion {
     private static final BigDecimal PRECIO = new BigDecimal("65.00");
     private static final int STOCK_INICIAL = 10;
     private static final int CANTIDAD = 3;
-
-    private record Compra(DatosIntegracion.Cliente cliente, long producto, long pedido) {
-    }
 
     @Test
     @DisplayName("US4.1: cancelar dos veces seguidas restituye el stock y reversa el pago una sola vez")
@@ -86,12 +82,7 @@ class CancelacionDobleTest extends BaseCompraIntegracion {
     }
 
     private Compra comprar() {
-        long producto = datos.crearProducto(PRECIO, STOCK_INICIAL);
-        DatosIntegracion.Cliente cliente = datos.crearCliente();
-        datos.crearCarritoActivo(cliente.id(), Map.of(producto, CANTIDAD));
-        ClienteHttp.Respuesta compra = sesionDe(cliente).confirmarCompra("PRUEBA_APROBADA", null);
-        assertEquals(201, compra.estado(), compra.toString());
-        return new Compra(cliente, producto, compra.idPedido());
+        return comprar(PRECIO, STOCK_INICIAL, CANTIDAD);
     }
 
     private static String rutaCancelar(Compra compra) {
