@@ -1,7 +1,9 @@
 package com.grupo.retail.exception;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.ErrorResponse;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -82,6 +84,11 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", error.getMessage()));
     }
 
+    @ExceptionHandler({StockInsuficienteException.class, ClaveConfirmacionEnUsoException.class})
+    public ResponseEntity<Map<String, String>> manejarConflictoDeCompra(RuntimeException error) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", error.getMessage()));
+    }
+
     @ExceptionHandler(PagoRechazadoException.class)
     public ResponseEntity<Map<String, String>> manejarPagoRechazado(PagoRechazadoException error) {
         return ResponseEntity.status(HttpStatus.PAYMENT_REQUIRED).body(Map.of("error", error.getMessage()));
@@ -112,8 +119,32 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, String>> manejarErrorInesperado(Exception error) {
+        // Las excepciones propias de Spring MVC (ruta o recurso inexistente, método no
+        // soportado, tipo de contenido no aceptado, etc.) ya traen su código HTTP: se
+        // respeta en lugar de convertirlas en 500.
+        if (error instanceof ErrorResponse errorMvc) {
+            return manejarErrorMvc(errorMvc);
+        }
         LOGGER.log(System.Logger.Level.ERROR, "Error no controlado capturado por GlobalExceptionHandler", error);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("error", "Ocurrió un error inesperado en el servidor"));
+    }
+
+    private ResponseEntity<Map<String, String>> manejarErrorMvc(ErrorResponse error) {
+        HttpStatusCode estado = error.getStatusCode();
+        String mensaje;
+        if (estado.value() == HttpStatus.NOT_FOUND.value()) {
+            mensaje = "Recurso no encontrado";
+        } else if (estado.value() == HttpStatus.METHOD_NOT_ALLOWED.value()) {
+            mensaje = "Método HTTP no permitido para esta ruta";
+        } else if (estado.is4xxClientError()) {
+            mensaje = "Solicitud inválida";
+        } else {
+            LOGGER.log(System.Logger.Level.ERROR, "Error de Spring MVC con estado " + estado, (Throwable) error);
+            mensaje = "Ocurrió un error inesperado en el servidor";
+        }
+        return ResponseEntity.status(estado)
+                .headers(error.getHeaders())
+                .body(Map.of("error", mensaje));
     }
 }
