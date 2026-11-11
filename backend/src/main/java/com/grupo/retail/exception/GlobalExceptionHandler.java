@@ -84,6 +84,11 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", error.getMessage()));
     }
 
+    @ExceptionHandler({StockInsuficienteException.class, ClaveConfirmacionEnUsoException.class})
+    public ResponseEntity<Map<String, String>> manejarConflictoDeCompra(RuntimeException error) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", error.getMessage()));
+    }
+
     @ExceptionHandler(PagoRechazadoException.class)
     public ResponseEntity<Map<String, String>> manejarPagoRechazado(PagoRechazadoException error) {
         return ResponseEntity.status(HttpStatus.PAYMENT_REQUIRED).body(Map.of("error", error.getMessage()));
