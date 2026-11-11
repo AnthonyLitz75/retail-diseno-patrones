@@ -105,3 +105,22 @@ test('etiquetas de estado conocidas y desconocidas', () => {
   assert.equal(etiquetaEstadoDevolucion('CERRADA').clase, 'text-bg-success')
   assert.equal(etiquetaEstadoDevolucion('OTRO').texto, 'OTRO')
 })
+
+test('Mi atención: resumen de abiertos y estado de preguntas', async () => {
+  const { resumirAtenciones, etiquetaEstadoPregunta } = await import('../src/atencion/mi-atencion.js')
+  const resumen = resumirAtenciones({
+    preguntas: [{ respuesta: 'Sí' }, { respuesta: null }],
+    reclamos: [{ estado: 'RESUELTO' }, { estado: 'ESCALADO' }, { estado: 'ABIERTO' }],
+    devoluciones: [{ estado: 'CERRADA' }, { estado: 'RECHAZADA' }, { estado: 'APROBADA' }]
+  })
+  assert.deepEqual(resumen, {
+    preguntas: { total: 2, abiertos: 1 },
+    reclamos: { total: 3, abiertos: 2 },
+    devoluciones: { total: 3, abiertos: 1 }
+  })
+  assert.equal(etiquetaEstadoPregunta({ respuesta: 'ok' }).texto, 'Respondida')
+  assert.equal(etiquetaEstadoPregunta({}).texto, 'Pendiente')
+  assert.deepEqual(resumirAtenciones({}), {
+    preguntas: { total: 0, abiertos: 0 }, reclamos: { total: 0, abiertos: 0 }, devoluciones: { total: 0, abiertos: 0 }
+  })
+})

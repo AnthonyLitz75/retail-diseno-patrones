@@ -262,7 +262,12 @@
 .category-dropdown-link:focus-visible {
   background: #f1f5f9;
   color: var(--retail-blue);
-  outline: none;
+}
+
+/* Foco visible con teclado (spec 007, T020): el fondo gris solo no se distingue del blanco. */
+.category-dropdown-link:focus-visible {
+  outline: 2px solid var(--retail-blue);
+  outline-offset: -2px;
 }
 
 /* Submenú Lateral para categorías compuestas */

@@ -2,6 +2,7 @@ const MENSAJES_HTTP = {
   400: 'La solicitud contiene datos inválidos.',
   401: 'Inicia sesión para continuar.',
   403: 'No tienes permiso para realizar esta acción.',
+  402: 'El pago fue rechazado. Revisa el medio de pago e inténtalo de nuevo.',
   404: 'No se encontró el recurso solicitado.',
   409: 'Hay un conflicto con el estado actual. Actualiza e inténtalo de nuevo.',
   500: 'Ocurrió un error en el servidor.'
@@ -49,8 +50,54 @@ export class ApiError extends Error {
   }
 }
 
-export async function apiRequest(url, options = {}, esReintento = false) {
-  const { json, headers: headersIniciales, ...opcionesFetch } = options
+// ---------- Eventos de peticiones (spec 007, T002 y T004) ----------
+// El cliente HTTP no conoce la interfaz: avisa a quien se suscriba cuándo empieza y termina
+// una petición y cuándo falla por sesión (401) o permisos (403). Así el indicador de carga y
+// el manejo global de errores viven en sus propios módulos y se prueban por separado.
+
+const suscriptores = new Set()
+
+/**
+ * @param {(evento: {tipo: 'inicio'|'fin'|'error', url: string, segundoPlano: boolean, status?: number, mensaje?: string}) => void} oyente
+ * @returns {() => void} función para cancelar la suscripción
+ */
+export function suscribirEventosApi(oyente) {
+  suscriptores.add(oyente)
+  return () => suscriptores.delete(oyente)
+}
+
+function emitir(evento) {
+  for (const oyente of suscriptores) {
+    try {
+      oyente(evento)
+    } catch {
+      // Un oyente con fallas no debe romper la petición.
+    }
+  }
+}
+
+/**
+ * Petición a la API con cookies de sesión y CSRF. Opción propia: {@code segundoPlano: true}
+ * para consultas automáticas (por ejemplo, el sondeo de notificaciones), que no muestran el
+ * indicador de carga.
+ */
+export async function apiRequest(url, options = {}) {
+  const segundoPlano = Boolean(options.segundoPlano)
+  emitir({ tipo: 'inicio', url, segundoPlano })
+  try {
+    return await realizarPeticion(url, options)
+  } catch (error) {
+    if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
+      emitir({ tipo: 'error', url, segundoPlano, status: error.status, mensaje: error.message })
+    }
+    throw error
+  } finally {
+    emitir({ tipo: 'fin', url, segundoPlano })
+  }
+}
+
+async function realizarPeticion(url, options = {}, esReintento = false) {
+  const { json, headers: headersIniciales, segundoPlano: _segundoPlano, ...opcionesFetch } = options
   const headers = new Headers(headersIniciales)
   const metodo = (options.method || 'GET').toUpperCase()
   const esMutacion = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(metodo)
@@ -87,7 +134,7 @@ export async function apiRequest(url, options = {}, esReintento = false) {
   if (!respuesta.ok) {
     if (respuesta.status === 403 && esMutacion && !esReintento) {
       await obtenerTokenCsrf(true)
-      return apiRequest(url, options, true)
+      return realizarPeticion(url, options, true)
     }
     throw await crearErrorHttp(respuesta)
   }

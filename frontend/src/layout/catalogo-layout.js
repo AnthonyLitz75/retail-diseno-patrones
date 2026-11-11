@@ -19,6 +19,7 @@ export function renderizarCatalogoLayout({ heroHtml = '' } = {}) {
       <button class="nav-link" id="tab-administracion" type="button" role="tab" data-vista="administracion" aria-selected="false" hidden>Administración</button>
       <button class="nav-link" id="tab-consultas" type="button" role="tab" data-vista="consultas" aria-selected="false" hidden>Consultas</button>
       <button class="nav-link" id="tab-soporte" type="button" role="tab" data-vista="soporte" aria-selected="false" hidden>Atención</button>
+      <button class="nav-link" id="tab-atencion" type="button" role="tab" data-vista="atencion" aria-selected="false" hidden>Mi atención</button>
     </nav>
 
     <!-- Migas de Pan (Breadcrumbs) SPA (RF-02, RF-07) -->
@@ -218,12 +219,12 @@ export function renderizarCatalogoLayout({ heroHtml = '' } = {}) {
                 <span class="small fw-semibold text-secondary text-nowrap">Precio:</span>
                 <div class="input-group input-group-sm catalog-price-input-group">
                   <span class="input-group-text py-1 px-2 text-muted">S/</span>
-                  <input id="precio-min" class="form-control form-control-sm" type="number" min="0" step="0.01" placeholder="Mín">
+                  <input id="precio-min" class="form-control form-control-sm" type="number" min="0" step="0.01" placeholder="Mín" aria-label="Precio mínimo en soles">
                 </div>
                 <span class="text-muted small">&ndash;</span>
                 <div class="input-group input-group-sm catalog-price-input-group">
                   <span class="input-group-text py-1 px-2 text-muted">S/</span>
-                  <input id="precio-max" class="form-control form-control-sm" type="number" min="0" step="0.01" placeholder="Máx">
+                  <input id="precio-max" class="form-control form-control-sm" type="number" min="0" step="0.01" placeholder="Máx" aria-label="Precio máximo en soles">
                 </div>
               </div>
 
@@ -364,6 +365,9 @@ export function renderizarCatalogoLayout({ heroHtml = '' } = {}) {
 
     <!-- Vista Soporte (spec 006): bandejas de reclamos y devoluciones -->
     <div id="vista-soporte" class="modulo-vista" hidden></div>
+
+    <!-- Vista Mi atención del cliente (spec 007, T012) -->
+    <div id="vista-atencion" class="modulo-vista" hidden></div>
 
     <!-- Offcanvas Lateral: Carrito de Compras -->
     <div id="seccion-carrito" class="offcanvas offcanvas-end" tabindex="-1" aria-labelledby="titulo-carrito">

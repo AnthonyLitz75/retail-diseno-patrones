@@ -5,7 +5,7 @@
 
 import {
   determinarVistasPorRol,
-  obtenerVistaPorDefecto,
+  obtenerVistaInicial,
   obtenerEtiquetaPestaña,
   esVistaPermitida,
 } from "../utilidades/navegacion.js";
@@ -59,7 +59,12 @@ export function configurarSesionYVistas({
 
   let vistaActiva = "tienda";
 
-  function cambiarVista(vista) {
+  /**
+   * @param {string} vista
+   * @param {{conservarHash?: boolean}} [opciones] conservarHash: al fijar la vista inicial de la
+   *   sesión no se toca la URL; el enrutador y sus guardas deciden qué hacer con ella (spec 007).
+   */
+  function cambiarVista(vista, { conservarHash = false } = {}) {
     const rol = estado.usuarioSesion ? estado.usuarioSesion.rol : null;
     if (!esVistaPermitida(vista, rol)) {
       vista = "tienda";
@@ -83,6 +88,7 @@ export function configurarSesionYVistas({
     });
 
     if (
+      !conservarHash &&
       typeof window !== "undefined" &&
       vista === "tienda" &&
       (window.location.hash === "#/pedidos" || window.location.hash === "#seccion-pedidos")
@@ -100,7 +106,7 @@ export function configurarSesionYVistas({
 
     if (!rol) {
       navModulos.hidden = true;
-      cambiarVista("tienda");
+      cambiarVista("tienda", { conservarHash: true });
       return;
     }
 
@@ -119,8 +125,9 @@ export function configurarSesionYVistas({
       });
     }
 
-    const vistaDefecto = obtenerVistaPorDefecto(rol);
-    cambiarVista(vistaDefecto);
+    const hashActual = typeof window !== "undefined" ? window.location.hash : "";
+    const vistaDefecto = obtenerVistaInicial(rol, hashActual);
+    cambiarVista(vistaDefecto, { conservarHash: true });
   }
 
   function configurarPestañasNavegacion() {
@@ -240,6 +247,10 @@ export function configurarSesionYVistas({
         method: "POST",
       });
       mostrarSesionCerrada();
+      // Al salir a propósito se vuelve al inicio: la ruta privada ya no tiene sentido.
+      if (typeof window !== "undefined" && window.location.hash === "#/pedidos") {
+        window.location.hash = "#/";
+      }
     } catch (error) {
       if (usuarioActivo) {
         usuarioActivo.textContent = error.message;

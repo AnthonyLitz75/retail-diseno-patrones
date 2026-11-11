@@ -6,6 +6,7 @@
 import {
   mostrarPedidos,
   ejecutarActualizacionEstadoPedido,
+  crearFormularioDespacho,
 } from "./pedidos-vista.js";
 import {
   mostrarConfirmacion,
@@ -29,6 +30,7 @@ export function configurarControladorPedidos({
   obtenerEstado,
   elementos = {},
   acciones = {},
+  Modal = null,
 }) {
   const {
     seccionPedidos,
@@ -44,7 +46,7 @@ export function configurarControladorPedidos({
   } = acciones;
 
   async function actualizarEstadoPedido(pedidoId, accion, boton, datos = undefined) {
-    await ejecutarActualizacionEstadoPedido({
+    return ejecutarActualizacionEstadoPedido({
       apiRequest,
       pedidoId,
       accion,
@@ -56,6 +58,25 @@ export function configurarControladorPedidos({
       },
       mostrarToast,
     });
+  }
+
+  /**
+   * Spec 007 (T013): abre el modal de despacho con el formulario de siempre; si el
+   * registro sale bien, se cierra. Sin modal (por ejemplo en pruebas), la tarjeta usa el
+   * formulario en línea.
+   */
+  function abrirDespacho(pedido) {
+    const modal = typeof document !== "undefined" ? document.querySelector("#modal-despacho") : null;
+    const destino = modal?.querySelector("#modal-despacho-formulario");
+    if (!modal || !destino || !Modal) return;
+    const instancia = Modal.getOrCreateInstance(modal);
+    modal.querySelector("#modal-despacho-titulo").textContent = `Registrar despacho del pedido #${pedido.idPedido}`;
+    destino.replaceChildren(crearFormularioDespacho(pedido, async ({ transportista, codigoSeguimiento, boton }) => {
+      const resultado = await actualizarEstadoPedido(pedido.idPedido, "despachar", boton, { transportista, codigoSeguimiento });
+      if (resultado?.ok) instancia.hide();
+    }));
+    instancia.show();
+    modal.addEventListener("shown.bs.modal", () => destino.querySelector("input")?.focus(), { once: true });
   }
 
   async function cancelarPedido(pedido, boton) {
@@ -169,6 +190,7 @@ export function configurarControladorPedidos({
         onActualizarEstado: (id, accion, boton, datos) =>
           actualizarEstadoPedido(id, accion, boton, datos),
         onCancelarPedido: (pedido, boton) => cancelarPedido(pedido, boton),
+        onAbrirDespacho: Modal ? (pedido) => abrirDespacho(pedido) : null,
         crearAtencion: atenciones
           ? (pedido) => crearSeccionAtencionPedido(pedido, {
             ...atenciones,

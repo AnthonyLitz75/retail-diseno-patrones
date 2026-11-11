@@ -12,6 +12,8 @@ import {
 import { renderizarVistaDetalleProducto } from "../catalogo/detalle-producto.js";
 import { resolverImagenProducto } from "../catalogo/imagen-producto.js";
 import { esFavorito, alternarFavorito } from "../catalogo/favoritos.js";
+import { esRutaProtegida, evaluarAcceso } from "./guardas.js";
+import { rutaLoginConRetorno } from "../utilidades/errores-globales.js";
 
 /**
  * Renderiza la lista de migas de pan (Breadcrumbs) en el contenedor del DOM.
@@ -79,6 +81,10 @@ export function configurarEnrutadorSPA({
     agregarProductoAlCarrito,
     abrirModalPreguntas,
     mostrarToast,
+    esperarSesion,
+    redirigir = (ruta) => {
+      if (typeof window !== "undefined") window.location.href = ruta;
+    },
   } = acciones;
 
   function renderizarCrumbs(crumbs) {
@@ -94,6 +100,22 @@ export function configurarEnrutadorSPA({
         ? window.location.hash
         : "#/";
     const rutaInfo = parsearRuta(hash);
+
+    // Guarda de cliente (spec 007, T003): en rutas protegidas se espera a conocer la sesión
+    // para no mandar al login a alguien que sí la tiene y recién está cargando.
+    if (esRutaProtegida(rutaInfo.tipo)) {
+      if (typeof esperarSesion === "function") await esperarSesion();
+      const acceso = evaluarAcceso(rutaInfo.tipo, estado.usuarioSesion?.rol ?? null);
+      if (!acceso.permitido) {
+        if (typeof mostrarToast === "function") mostrarToast(acceso.mensaje, "advertencia");
+        if (acceso.destino === "login") {
+          if (typeof redirigir === "function") redirigir(rutaLoginConRetorno(hash));
+        } else if (typeof window !== "undefined") {
+          window.location.hash = "#/";
+        }
+        return;
+      }
+    }
 
     if (vista404) vista404.hidden = true;
     if (vistaDetalleProducto) vistaDetalleProducto.hidden = true;

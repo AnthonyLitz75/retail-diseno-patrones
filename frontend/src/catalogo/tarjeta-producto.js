@@ -213,7 +213,7 @@ export function crearElementoTarjetaProducto(
       const btnHist = document.createElement("button");
       btnHist.type = "button";
       btnHist.className =
-        "btn btn-outline-info btn-sm py-0 px-2 product-card-staff-btn";
+        "btn btn-outline-dark btn-sm py-0 px-2 product-card-staff-btn";
       btnHist.textContent = "Movimientos";
       btnHist.addEventListener("click", (e) => {
         e.stopPropagation();
@@ -235,13 +235,23 @@ export function crearElementoTarjetaProducto(
       const btnPrecio = document.createElement("button");
       btnPrecio.type = "button";
       btnPrecio.className =
-        "btn btn-outline-warning btn-sm py-0 px-2 product-card-staff-btn";
+        "btn btn-outline-success btn-sm py-0 px-2 product-card-staff-btn";
       btnPrecio.textContent = "Editar precio";
       btnPrecio.addEventListener("click", (e) => {
         e.stopPropagation();
         callbacks.onAbrirModalPrecio?.(producto);
       });
-      filaStaff.append(btnPrecio);
+      // RF16 (spec 007): ficha (nombre, marca, imagen, categoría) y desactivación
+      const btnFicha = document.createElement("button");
+      btnFicha.type = "button";
+      btnFicha.className =
+        "btn btn-outline-secondary btn-sm py-0 px-2 product-card-staff-btn";
+      btnFicha.textContent = "Editar ficha";
+      btnFicha.addEventListener("click", (e) => {
+        e.stopPropagation();
+        callbacks.onAbrirModalEditar?.(producto);
+      });
+      filaStaff.append(btnPrecio, btnFicha);
     }
     actionsBox.append(filaStaff);
   }

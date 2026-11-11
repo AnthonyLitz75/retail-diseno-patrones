@@ -9,7 +9,9 @@ import {
   listarCategoriasAdmin,
   listarCuentas,
   registrarPersonal,
-  solicitarCsvVentas,
+  REPORTES_CSV,
+  solicitarCsv,
+  tarjetasResumen,
 } from "./administracion.js";
 import {
   mostrarConfirmacion,
@@ -47,6 +49,7 @@ export function crearPanelAdministracion(apiRequest, alCambiarCategorias) {
   const listaCategorias = seccion.querySelector("#lista-categorias-admin");
   const estadoReporte = seccion.querySelector("#estado-reporte-admin");
   const metricas = seccion.querySelector("#metricas-admin");
+  const ultimosMovimientos = seccion.querySelector("#ultimos-movimientos-admin");
 
   let usuariosCache = [];
 
@@ -319,6 +322,30 @@ export function crearPanelAdministracion(apiRequest, alCambiarCategorias) {
     return promesaCategoriasEnCurso;
   }
 
+  function renderizarUltimosMovimientos(movimientos) {
+    const lista = Array.isArray(movimientos) ? movimientos : [];
+    if (lista.length === 0) {
+      const fila = document.createElement("tr");
+      const celda = crearElemento("td", "text-muted", "Sin movimientos en el periodo.");
+      celda.colSpan = 6;
+      fila.append(celda);
+      ultimosMovimientos.replaceChildren(fila);
+      return;
+    }
+    ultimosMovimientos.replaceChildren(...lista.map((m) => {
+      const fila = document.createElement("tr");
+      fila.append(
+        crearElemento("td", "", new Date(m.fecha).toLocaleString("es-PE")),
+        crearElemento("td", "font-monospace", m.sku || ""),
+        crearElemento("td", "", m.tipo),
+        crearElemento("td", m.cantidad < 0 ? "text-danger" : "text-success", String(m.cantidad)),
+        crearElemento("td", "", m.motivo || ""),
+        crearElemento("td", "", m.responsable || "—"),
+      );
+      return fila;
+    }));
+  }
+
   let promesaReporteEnCurso = null;
   async function consultarReporte(evento) {
     evento?.preventDefault();
@@ -331,24 +358,8 @@ export function crearPanelAdministracion(apiRequest, alCambiarCategorias) {
           seccion.querySelector("#reporte-hasta").value,
         );
         const resumen = await cargarResumenAdmin(apiRequest, consulta);
-        const tarjetas = [
-          ["Pedidos vendidos", resumen.pedidosVendidos],
-          ["Total de ventas", `S/ ${Number(resumen.totalVentas).toFixed(2)}`],
-          ["Productos activos", resumen.productosActivos],
-          ["Unidades en stock", resumen.unidadesEnStock],
-          [
-            "Valor del inventario",
-            `S/ ${Number(resumen.valorInventario).toFixed(2)}`,
-          ],
-          [
-            "Movimientos",
-            Object.entries(resumen.movimientos || {})
-              .map(([tipo, cantidad]) => `${tipo}: ${cantidad}`)
-              .join(" · ") || "Sin movimientos",
-          ],
-        ];
         const columnas = [];
-        for (const [etiqueta, valor] of tarjetas) {
+        for (const [etiqueta, valor] of tarjetasResumen(resumen)) {
           const columna = crearElemento("div", "col-12 col-sm-6 col-lg-4");
           const tarjeta = crearElemento("article", "border rounded p-3 h-100");
           tarjeta.append(
@@ -359,6 +370,7 @@ export function crearPanelAdministracion(apiRequest, alCambiarCategorias) {
           columnas.push(columna);
         }
         metricas.replaceChildren(...columnas);
+        renderizarUltimosMovimientos(resumen.ultimosMovimientos);
         mostrarEstado(estadoReporte, "Reporte actualizado.", "success");
       } catch (error) {
         mostrarEstado(
@@ -443,24 +455,24 @@ export function crearPanelAdministracion(apiRequest, alCambiarCategorias) {
   seccion
     .querySelector("#form-reporte-admin")
     .addEventListener("submit", consultarReporte);
-  seccion
-    .querySelector("#descargar-reporte-admin")
-    .addEventListener("click", async (evento) => {
+  seccion.querySelectorAll("[data-reporte-csv]").forEach((botonCsv) => {
+    botonCsv.addEventListener("click", async (evento) => {
       const boton = evento.currentTarget;
+      const tipo = boton.dataset.reporteCsv;
       boton.disabled = true;
       try {
         const consulta = crearParametrosReporte(
           seccion.querySelector("#reporte-desde").value,
           seccion.querySelector("#reporte-hasta").value,
         );
-        const respuesta = await solicitarCsvVentas(apiRequest, consulta);
+        const respuesta = await solicitarCsv(apiRequest, tipo, consulta);
         const url = URL.createObjectURL(await respuesta.blob());
         const enlace = document.createElement("a");
         enlace.href = url;
-        enlace.download = "ventas.csv";
+        enlace.download = REPORTES_CSV[tipo].archivo;
         enlace.click();
         URL.revokeObjectURL(url);
-        mostrarEstado(estadoReporte, "Archivo CSV descargado.", "success");
+        mostrarEstado(estadoReporte, `Archivo ${REPORTES_CSV[tipo].archivo} descargado.`, "success");
       } catch (error) {
         mostrarEstado(
           estadoReporte,
@@ -471,6 +483,7 @@ export function crearPanelAdministracion(apiRequest, alCambiarCategorias) {
         boton.disabled = false;
       }
     });
+  });
 
   return {
     element: seccion,

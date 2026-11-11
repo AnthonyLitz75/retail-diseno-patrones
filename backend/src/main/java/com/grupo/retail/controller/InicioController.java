@@ -2,7 +2,9 @@ package com.grupo.retail.controller;
 
 import com.grupo.retail.dto.ActualizarPrecio;
 import com.grupo.retail.dto.AjusteInventario;
+import com.grupo.retail.dto.CambiarEstadoProducto;
 import com.grupo.retail.dto.CategoriaArbolDTO;
+import com.grupo.retail.dto.EditarProducto;
 import com.grupo.retail.dto.NuevoProducto;
 import com.grupo.retail.model.Categoria;
 import com.grupo.retail.model.MovimientoInventario;
@@ -13,6 +15,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -107,6 +110,24 @@ public class InicioController {
                         id, datos.nuevoStock(), datos.motivo(), responsableId)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    /** RF16: todos los productos, incluidos los desactivados (ADMIN y VENDEDOR). */
+    @GetMapping("/productos/gestion")
+    public List<Producto> listarParaGestion() {
+        return productoService.listarParaGestion();
+    }
+
+    /** RF16: edita nombre, marca, descripción, imagen y categoría (ADMIN y VENDEDOR). */
+    @PutMapping("/productos/{id}")
+    public Producto editarFicha(@PathVariable Long id, @Valid @RequestBody EditarProducto datos) {
+        return productoService.editarFicha(id, datos);
+    }
+
+    /** RF16: activa o desactiva el producto; nunca lo borra (ADMIN y VENDEDOR). */
+    @PatchMapping("/productos/{id}/estado")
+    public Producto cambiarEstado(@PathVariable Long id, @Valid @RequestBody CambiarEstadoProducto datos) {
+        return productoService.cambiarEstado(id, datos.activo());
     }
 
     @GetMapping("/productos/{id}/movimientos")

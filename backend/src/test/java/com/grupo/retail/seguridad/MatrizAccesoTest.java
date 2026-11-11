@@ -155,6 +155,9 @@ public class MatrizAccesoTest {
                 // 6. Rutas de ADMIN y VENDEDOR (Catálogo y Precio)
                 new DefinicionRuta("POST", "/api/productos", false, false, Set.of("ADMIN", "VENDEDOR"), "{}"),
                 new DefinicionRuta("PUT", "/api/productos/1/precio", false, false, Set.of("ADMIN", "VENDEDOR"), "{}"),
+                new DefinicionRuta("GET", "/api/productos/gestion", false, false, Set.of("ADMIN", "VENDEDOR"), null),
+                new DefinicionRuta("PUT", "/api/productos/1", false, false, Set.of("ADMIN", "VENDEDOR"), "{}"),
+                new DefinicionRuta("PATCH", "/api/productos/1/estado", false, false, Set.of("ADMIN", "VENDEDOR"), "{}"),
 
                 // 7. Cancelación de Pedidos (CLIENTE, VENDEDOR, ADMIN)
                 new DefinicionRuta("PUT", "/api/pedidos/1/cancelar", false, false, Set.of("CLIENTE", "VENDEDOR", "ADMIN"), null),
@@ -174,6 +177,8 @@ public class MatrizAccesoTest {
                 new DefinicionRuta("PATCH", "/api/admin/categorias/1/estado", false, false, Set.of("ADMIN"), "{}"),
                 new DefinicionRuta("GET", "/api/admin/reportes/resumen", false, false, Set.of("ADMIN"), null),
                 new DefinicionRuta("GET", "/api/admin/reportes/ventas.csv", false, false, Set.of("ADMIN"), null),
+                new DefinicionRuta("GET", "/api/admin/reportes/inventario.csv", false, false, Set.of("ADMIN"), null),
+                new DefinicionRuta("GET", "/api/admin/reportes/movimientos.csv", false, false, Set.of("ADMIN"), null),
 
                 // 10. Atención y soporte (spec 006)
                 new DefinicionRuta("POST", "/api/pedidos/1/reclamos", false, false, Set.of("CLIENTE"), "{}"),

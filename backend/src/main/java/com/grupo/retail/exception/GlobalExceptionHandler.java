@@ -43,7 +43,9 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, String>> manejarValidacion(MethodArgumentNotValidException error) {
         String mensaje = error.getBindingResult().getFieldErrors().stream()
-                .map(campo -> campo.getField() + ": " + campo.getDefaultMessage())
+                // Cada mensaje ya nombra su campo en español ("El nombre es obligatorio"); el
+                // nombre técnico del atributo no aporta al usuario (spec 007, T002).
+                .map(org.springframework.validation.FieldError::getDefaultMessage)
                 .findFirst()
                 .orElse("Datos de solicitud inválidos");
         return ResponseEntity.badRequest().body(Map.of("error", mensaje));

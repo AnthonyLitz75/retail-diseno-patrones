@@ -42,6 +42,7 @@ export function crearTarjetaPedido(
     onActualizarEstado = null,
     onCancelarPedido = null,
     crearAtencion = null,
+    onAbrirDespacho = null,
   } = {},
 ) {
   const tarjeta = document.createElement("article");
@@ -228,7 +229,16 @@ export function crearTarjetaPedido(
 
   const esStaffOperativo = ["ADMIN", "ALMACEN"].includes(usuarioSesion?.rol);
   if (!esCliente && esStaffOperativo && transicion) {
-    if (transicion.accion === "despachar") {
+    if (transicion.accion === "despachar" && typeof onAbrirDespacho === "function") {
+      // Spec 007 (T013): el despacho se registra en un modal con foco y etiquetas propias.
+      const botonDespacho = document.createElement("button");
+      botonDespacho.type = "button";
+      botonDespacho.className =
+        "btn btn-primary btn-sm rounded-pill px-4 mt-3 shadow-sm align-self-start";
+      botonDespacho.textContent = "Registrar despacho…";
+      botonDespacho.addEventListener("click", () => onAbrirDespacho(pedido));
+      cuerpo.append(botonDespacho);
+    } else if (transicion.accion === "despachar") {
       cuerpo.append(
         crearFormularioDespacho(pedido, ({ transportista, codigoSeguimiento, boton }) => {
           onActualizarEstado?.(pedido.idPedido, "despachar", boton, {
@@ -270,6 +280,7 @@ export function mostrarPedidos(
     onActualizarEstado = null,
     onCancelarPedido = null,
     crearAtencion = null,
+    onAbrirDespacho = null,
     onExplorarCatalogo = null,
   } = {},
 ) {
@@ -338,6 +349,7 @@ export function mostrarPedidos(
       onActualizarEstado,
       onCancelarPedido,
       crearAtencion,
+      onAbrirDespacho,
     });
     listaPedidos.append(tarjeta);
   }

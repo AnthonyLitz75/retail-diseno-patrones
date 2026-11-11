@@ -1,6 +1,7 @@
 package com.grupo.retail.dao;
 
 import com.grupo.retail.exception.ErrorAccesoDatosException;
+import com.grupo.retail.dto.EditarProducto;
 import com.grupo.retail.dto.NuevoProducto;
 import com.grupo.retail.model.Categoria;
 import com.grupo.retail.model.MovimientoInventario;
@@ -300,6 +301,92 @@ public class ProductoDAO {
         } catch (SQLException error) {
             throw new IllegalStateException(
                     "No se pudo consultar el historial de inventario", error);
+        }
+    }
+
+    // ---------- RF16 (spec 007, T014a): gestión de la ficha y del estado ----------
+
+    private static final String GESTION_POR_ID_SQL = SELECT_PRODUCTOS + " WHERE p.id = ?";
+
+    private static final String GESTION_LISTA_SQL = SELECT_PRODUCTOS + " ORDER BY p.activo DESC, p.nombre, p.id";
+
+    /**
+     * Actualiza la ficha solo si la categoría existe y está activa; precio y stock no se
+     * tocan. El detalle de pedidos guarda su propio nombre y precio, así que no cambia.
+     */
+    private static final String ACTUALIZAR_FICHA_SQL = """
+            UPDATE producto p
+            SET nombre = ?, marca = ?, descripcion = ?, imagen = ?,
+                categoria = c.nombre, categoria_id = c.id_categoria
+            FROM categoria c
+            WHERE p.id = ? AND c.nombre = ? AND c.activa = TRUE
+            """;
+
+    private static final String CAMBIAR_ESTADO_SQL = "UPDATE producto SET activo = ? WHERE id = ?";
+
+    /** Todos los productos, activos primero; solo para el personal (incluye desactivados). */
+    public List<Producto> listarParaGestion() {
+        try (Connection conexion = proveedorConexiones.obtenerConexion();
+                PreparedStatement consulta = conexion.prepareStatement(GESTION_LISTA_SQL);
+                ResultSet filas = consulta.executeQuery()) {
+            List<Producto> productos = new ArrayList<>();
+            while (filas.next()) {
+                productos.add(mapearProducto(filas));
+            }
+            return List.copyOf(productos);
+        } catch (SQLException error) {
+            throw new ErrorAccesoDatosException("No se pudieron listar los productos", error);
+        }
+    }
+
+    /**
+     * @return vacío si el producto no existe (404)
+     * @throws IllegalArgumentException si la categoría no existe o está inactiva (400)
+     */
+    public Optional<Producto> actualizarFicha(long id, EditarProducto datos) {
+        try (Connection conexion = proveedorConexiones.obtenerConexion()) {
+            int actualizados;
+            try (PreparedStatement consulta = conexion.prepareStatement(ACTUALIZAR_FICHA_SQL)) {
+                consulta.setString(1, datos.nombre());
+                consulta.setString(2, datos.marca());
+                consulta.setString(3, datos.descripcion());
+                consulta.setString(4, datos.imagen());
+                consulta.setLong(5, id);
+                consulta.setString(6, datos.categoria());
+                actualizados = consulta.executeUpdate();
+            }
+            Optional<Producto> producto = buscarParaGestion(conexion, id);
+            if (actualizados == 0 && producto.isPresent()) {
+                throw new IllegalArgumentException("La categoría seleccionada no existe o está inactiva");
+            }
+            return producto;
+        } catch (SQLException error) {
+            throw new ErrorAccesoDatosException("No se pudo actualizar la ficha del producto", error);
+        }
+    }
+
+    /** @return vacío si el producto no existe */
+    public Optional<Producto> cambiarEstado(long id, boolean activo) {
+        try (Connection conexion = proveedorConexiones.obtenerConexion()) {
+            try (PreparedStatement consulta = conexion.prepareStatement(CAMBIAR_ESTADO_SQL)) {
+                consulta.setBoolean(1, activo);
+                consulta.setLong(2, id);
+                if (consulta.executeUpdate() == 0) {
+                    return Optional.empty();
+                }
+            }
+            return buscarParaGestion(conexion, id);
+        } catch (SQLException error) {
+            throw new ErrorAccesoDatosException("No se pudo cambiar el estado del producto", error);
+        }
+    }
+
+    private Optional<Producto> buscarParaGestion(Connection conexion, long id) throws SQLException {
+        try (PreparedStatement consulta = conexion.prepareStatement(GESTION_POR_ID_SQL)) {
+            consulta.setLong(1, id);
+            try (ResultSet resultado = consulta.executeQuery()) {
+                return resultado.next() ? Optional.of(mapearProducto(resultado)) : Optional.empty();
+            }
         }
     }
 

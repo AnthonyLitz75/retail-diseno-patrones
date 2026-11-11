@@ -2,6 +2,7 @@ package com.grupo.retail.service;
 
 import com.grupo.retail.dao.CategoriaDAO;
 import com.grupo.retail.dao.ProductoDAO;
+import com.grupo.retail.dto.EditarProducto;
 import com.grupo.retail.dto.NuevoProducto;
 import com.grupo.retail.model.Categoria;
 import com.grupo.retail.model.MovimientoInventario;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 @Service
@@ -51,6 +53,23 @@ public class ProductoService {
     public Optional<Producto> actualizarStock(
             Long id, int nuevoStock, String motivo, Long responsableId) {
         return productoDAO.actualizarStock(id, nuevoStock, motivo, responsableId);
+    }
+
+    /** RF16: catálogo de gestión, incluye los productos desactivados. */
+    public List<Producto> listarParaGestion() {
+        return productoDAO.listarParaGestion();
+    }
+
+    /** RF16: edita la ficha; 404 si no existe y 400 si la categoría no es válida. */
+    public Producto editarFicha(long id, EditarProducto datos) {
+        return productoDAO.actualizarFicha(id, datos)
+                .orElseThrow(() -> new NoSuchElementException("No existe el producto solicitado"));
+    }
+
+    /** RF16: activa o desactiva; nunca hay borrado físico. */
+    public Producto cambiarEstado(long id, boolean activo) {
+        return productoDAO.cambiarEstado(id, activo)
+                .orElseThrow(() -> new NoSuchElementException("No existe el producto solicitado"));
     }
 
     public List<MovimientoInventario> listarMovimientos(Long productoId) {

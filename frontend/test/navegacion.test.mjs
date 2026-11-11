@@ -11,7 +11,7 @@ test('determinarVistasPorRol asigna vistas específicas según privilegios del r
   assert.deepEqual(determinarVistasPorRol('ADMIN'), ['administracion', 'tienda', 'pedidos', 'inventario'])
   assert.deepEqual(determinarVistasPorRol('ALMACEN'), ['pedidos', 'inventario', 'tienda'])
   assert.deepEqual(determinarVistasPorRol('VENDEDOR'), ['tienda', 'consultas', 'pedidos', 'inventario'])
-  assert.deepEqual(determinarVistasPorRol('CLIENTE'), ['tienda', 'pedidos'])
+  assert.deepEqual(determinarVistasPorRol('CLIENTE'), ['tienda', 'pedidos', 'atencion'])
   assert.deepEqual(determinarVistasPorRol('SOPORTE'), ['soporte', 'tienda'])
   assert.deepEqual(determinarVistasPorRol(null), ['tienda'])
   assert.deepEqual(determinarVistasPorRol('DESCONOCIDO'), ['tienda'])
@@ -48,3 +48,12 @@ test('esVistaPermitida valida correctamente el acceso a cada módulo', () => {
   assert.equal(esVistaPermitida('pedidos', null), false)
 })
 
+
+test('obtenerVistaInicial respeta #/pedidos si el rol lo permite (spec 007, T003)', async () => {
+  const { obtenerVistaInicial } = await import('../src/utilidades/navegacion.js')
+  assert.equal(obtenerVistaInicial('CLIENTE', '#/pedidos'), 'pedidos')
+  assert.equal(obtenerVistaInicial('ADMIN', '#/pedidos'), 'pedidos')
+  assert.equal(obtenerVistaInicial('SOPORTE', '#/pedidos'), 'soporte', 'Sin acceso: vista por defecto')
+  assert.equal(obtenerVistaInicial('ADMIN', '#/'), 'administracion')
+  assert.equal(obtenerVistaInicial('CLIENTE', '#/constructor'), 'tienda')
+})

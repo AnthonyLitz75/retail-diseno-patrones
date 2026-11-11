@@ -107,7 +107,8 @@ export function formatearFechaNotificacion(fechaIso) {
 export async function consultarMisNotificaciones(request = apiRequest, limite = 50) {
   const limiteValido = typeof limite === 'number' && limite > 0 && limite <= 100 ? limite : 50
   const respuesta = await request(`/api/notificaciones/mias?limite=${limiteValido}`, {
-    method: 'GET'
+    method: 'GET',
+    segundoPlano: true
   })
   if (respuesta && typeof respuesta.json === 'function') {
     return await respuesta.json()

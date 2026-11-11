@@ -19,3 +19,27 @@
   --retail-shadow-hover: 0 10px 25px rgba(13, 110, 253, 0.12);
   --retail-motion: cubic-bezier(.22, 1, .36, 1);
 }
+
+/* Accesibilidad (spec 007, T020): el fondo de página (#f8fafc) no es blanco puro y los
+   colores de texto de Bootstrap quedaban apenas por debajo del contraste AA (4.5:1). Se
+   oscurecen solo las utilidades de texto, enlaces y botones con contorno; los botones
+   rellenos conservan sus colores. */
+:root {
+  --bs-primary-rgb: 10, 88, 202;            /* #0a58ca: 5.9:1 sobre #f8fafc */
+  --bs-secondary-rgb: 84, 91, 98;           /* #545b62: 6.5:1 */
+  --bs-success-rgb: 20, 108, 67;            /* #146c43: 6.1:1 */
+  --bs-link-color: #0a58ca;
+  --bs-link-color-rgb: 10, 88, 202;
+  --bs-link-hover-color: #084298;
+  --bs-link-hover-color-rgb: 8, 66, 152;
+}
+
+.btn-outline-primary {
+  --bs-btn-color: #0a58ca;
+  --bs-btn-border-color: #0a58ca;
+}
+
+.btn-outline-success {
+  --bs-btn-color: #146c43;
+  --bs-btn-border-color: #146c43;
+}
