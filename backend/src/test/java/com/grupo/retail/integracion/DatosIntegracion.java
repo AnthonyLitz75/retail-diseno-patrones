@@ -52,6 +52,16 @@ public final class DatosIntegracion {
         return new Cliente(id, correo);
     }
 
+    /** Responsable registrado en el historial para ese estado del pedido. */
+    public long responsableDe(long pedidoId, String estado) {
+        return contar("SELECT responsable_id FROM pedido_historial_estado WHERE pedido_id = ? AND estado = ?",
+                pedidoId, estado);
+    }
+
+    public int enviosDe(long pedidoId) {
+        return contar("SELECT COUNT(*) FROM envio WHERE pedido_id = ?", pedidoId);
+    }
+
     public int enviosEntregados(long pedidoId) {
         return contar("SELECT COUNT(*) FROM envio WHERE pedido_id = ? AND entregado_en IS NOT NULL", pedidoId);
     }
