@@ -55,6 +55,33 @@
   z-index: 1050 !important;
 }
 
+/*
+ * H4 (verificación del spec 005): el menú se abre desde JavaScript, sin Popper, así que
+ * no recibe data-bs-popper y Bootstrap no aplica la alineación a la derecha de
+ * .dropdown-menu-end. Se ancla al borde derecho de la campana y nunca supera el ancho
+ * de la pantalla, para que no se corte ni genere desplazamiento horizontal.
+ */
+#contenedor-notificaciones .notification-dropdown {
+  top: 100%;
+  right: 0;
+  left: auto;
+  margin-top: 0.5rem;
+  min-width: min(320px, calc(100vw - 32px));
+  max-width: min(380px, calc(100vw - 32px));
+}
+
+/* En celular el menú ocupa el ancho de la pantalla con 16 px de margen a cada lado. */
+@media (max-width: 575.98px) {
+  #contenedor-notificaciones .notification-dropdown {
+    position: fixed;
+    left: 16px;
+    right: 16px;
+    top: auto;
+    min-width: 0;
+    max-width: none;
+  }
+}
+
 .notification-list {
   max-height: 360px;
   overflow-y: auto;

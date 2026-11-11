@@ -339,3 +339,23 @@
     background: #f8fafc;
   }
 }
+
+/*
+ * H4 (verificación del spec 005): con sesión iniciada, en celular las acciones (sesión,
+ * cerrar sesión, campana y carrito) no cabían en una línea y la página se desplazaba en
+ * horizontal, dejando la campana y el carrito fuera de la pantalla.
+ */
+@media (max-width: 575.98px) {
+  .header-actions {
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    white-space: normal;
+  }
+
+  #usuario-activo {
+    flex-basis: 100%;
+    text-align: right;
+  }
+}
