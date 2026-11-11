@@ -6,7 +6,8 @@ import { construirPayloadConfirmacion } from './checkout.js'
 import {
   deshacerUltimaAccion,
   mensajeErrorDeshacer,
-  pintarEstadoConDeshacer
+  pintarEstadoConDeshacer,
+  puedeSeguirDeshaciendo
 } from './deshacer-carrito.js'
 import {
   obtenerCarritoInvitado,
@@ -124,11 +125,15 @@ async function deshacerAccionCarrito() {
     pintarEstadoConDeshacer(estadoCarrito, 'Acción deshecha.', deshacerAccionCarrito)
     mostrarToast('Se deshizo la última acción del carrito.', 'info')
   } catch (error) {
-    if (error?.status === 409) {
+    const mensaje = mensajeErrorDeshacer(error)
+    if (puedeSeguirDeshaciendo(error)) {
+      // 409: se recarga la vista y se ofrece seguir con las acciones anteriores (H1).
       await cargarCarrito()
+      pintarEstadoConDeshacer(estadoCarrito, mensaje, deshacerAccionCarrito, document, 'advertencia')
+      return
     }
     estadoCarrito.className = 'alert alert-warning py-2 small mb-2'
-    estadoCarrito.textContent = mensajeErrorDeshacer(error)
+    estadoCarrito.textContent = mensaje
   }
 }
 

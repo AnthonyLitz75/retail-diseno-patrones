@@ -2,6 +2,7 @@ package com.grupo.retail.service;
 
 import com.grupo.retail.dao.CarritoDAO;
 import com.grupo.retail.exception.CarritoDesactualizadoException;
+import com.grupo.retail.exception.StockInsuficienteException;
 import com.grupo.retail.model.Carrito;
 import com.grupo.retail.model.CarritoBloqueado;
 import com.grupo.retail.patterns.command.AgregarProductoComando;
@@ -29,6 +30,8 @@ public class CarritoService {
 
     private static final String SIN_ACCIONES = "No hay acciones para deshacer";
     private static final String NO_ESTA_EN_CARRITO = "El producto no está en tu carrito";
+    private static final String ACCION_DESCARTADA =
+            "Se descartó esa acción; puedes seguir deshaciendo las anteriores";
 
     private final CarritoDAO carritoDAO;
     private final EjecutorTransaccion ejecutorTransaccion;
@@ -86,11 +89,30 @@ public class CarritoService {
                 historial.limpiar();
                 throw new CarritoDesactualizadoException();
             }
-            registro.comando().deshacer(carritoDAO, conexion);
+            deshacerODescartar(conexion, registro, historial);
             long revision = carritoDAO.incrementarRevision(conexion, carrito.id());
             ejecutorTransaccion.trasConfirmar(() -> historial.quitar(registro, revision));
             return carritoDAO.leerCarrito(conexion, carrito.id(), revision);
         });
+    }
+
+    /**
+     * Si el inverso no es posible (producto desactivado o sin stock), esa acción ya nunca
+     * podrá deshacerse: se descarta del historial para no bloquear las anteriores y se
+     * responde 409 con el motivo. El historial vive en memoria, así que el descarte se
+     * mantiene aunque la transacción se revierta.
+     */
+    private void deshacerODescartar(Connection conexion, HistorialComandosCarrito.Registro registro,
+            HistorialComandosCarrito historial) throws SQLException {
+        try {
+            registro.comando().deshacer(carritoDAO, conexion);
+        } catch (StockInsuficienteException error) {
+            historial.descartar(registro);
+            throw new StockInsuficienteException(error.getMessage() + ". " + ACCION_DESCARTADA);
+        } catch (IllegalStateException error) {
+            historial.descartar(registro);
+            throw new IllegalStateException(error.getMessage() + ". " + ACCION_DESCARTADA, error);
+        }
     }
 
     private Carrito aplicar(Connection conexion, CarritoBloqueado carrito, ComandoCarrito comando,

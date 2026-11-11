@@ -33,13 +33,27 @@ export function mensajeErrorDeshacer(error) {
 }
 
 /**
- * Muestra un mensaje de éxito con un botón "Deshacer" en el estado del carrito.
+ * Tras un 409 el servidor ya descartó la acción que no se podía deshacer (o vació un
+ * historial desactualizado): conviene ofrecer Deshacer otra vez para seguir con las
+ * anteriores. Si no queda ninguna, el siguiente intento responde 400 con su mensaje.
+ * @param {{ status?: number } | null} error
+ * @returns {boolean}
+ */
+export function puedeSeguirDeshaciendo(error) {
+  return error?.status === 409
+}
+
+/**
+ * Muestra un mensaje con un botón "Deshacer" en el estado del carrito.
  * @param {HTMLElement|null} contenedor
  * @param {string} mensaje
  * @param {Function} alDeshacer
  * @param {Document} [doc=document]
+ * @param {'exito'|'advertencia'} [tipo='exito']
  */
-export function pintarEstadoConDeshacer(contenedor, mensaje, alDeshacer, doc = globalThis.document) {
+export function pintarEstadoConDeshacer(
+  contenedor, mensaje, alDeshacer, doc = globalThis.document, tipo = 'exito'
+) {
   if (!contenedor || !doc) return
 
   const texto = doc.createElement('span')
@@ -52,6 +66,7 @@ export function pintarEstadoConDeshacer(contenedor, mensaje, alDeshacer, doc = g
   boton.setAttribute('aria-label', 'Deshacer la última acción del carrito')
   boton.addEventListener('click', () => alDeshacer())
 
-  contenedor.className = 'alert alert-success py-2 small mb-2'
+  const color = tipo === 'advertencia' ? 'alert-warning' : 'alert-success'
+  contenedor.className = `alert ${color} py-2 small mb-2`
   contenedor.replaceChildren(texto, boton)
 }

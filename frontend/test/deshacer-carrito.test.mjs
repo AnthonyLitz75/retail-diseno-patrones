@@ -3,7 +3,8 @@ import assert from 'node:assert/strict'
 import {
   deshacerUltimaAccion,
   mensajeErrorDeshacer,
-  pintarEstadoConDeshacer
+  pintarEstadoConDeshacer,
+  puedeSeguirDeshaciendo
 } from '../src/carrito/deshacer-carrito.js'
 
 // Spec 005, T018 (US4-US6): botón Deshacer del carrito.
@@ -69,4 +70,25 @@ test('pintarEstadoConDeshacer muestra el mensaje y un botón accesible que ejecu
 
 test('pintarEstadoConDeshacer tolera un contenedor ausente', () => {
   assert.doesNotThrow(() => pintarEstadoConDeshacer(null, 'x', () => {}, documentoFalso))
+})
+
+test('pintarEstadoConDeshacer en modo advertencia mantiene el botón tras un 409 (H1)', () => {
+  const estado = crearElementoFalso('p')
+  let pulsado = 0
+
+  pintarEstadoConDeshacer(estado, 'El producto ya no está disponible. Se descartó esa acción.',
+    () => { pulsado++ }, documentoFalso, 'advertencia')
+
+  assert.match(estado.className, /alert-warning/)
+  const [, boton] = estado.children
+  assert.equal(boton.textContent, 'Deshacer')
+  boton.oyentes.click()
+  assert.equal(pulsado, 1)
+})
+
+test('puedeSeguirDeshaciendo solo ofrece el botón tras un 409', () => {
+  assert.equal(puedeSeguirDeshaciendo({ status: 409 }), true)
+  assert.equal(puedeSeguirDeshaciendo({ status: 400 }), false)
+  assert.equal(puedeSeguirDeshaciendo({ status: 500 }), false)
+  assert.equal(puedeSeguirDeshaciendo(null), false)
 })

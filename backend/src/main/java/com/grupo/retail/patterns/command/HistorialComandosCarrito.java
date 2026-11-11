@@ -64,6 +64,17 @@ public final class HistorialComandosCarrito implements Serializable {
         }
     }
 
+    /**
+     * Descarta el último registro cuando su deshacer no es posible (producto desactivado o
+     * sin stock). El intento se revirtió, así que la revisión esperada no cambia y las
+     * acciones anteriores siguen pudiéndose deshacer.
+     */
+    public synchronized void descartar(Registro registro) {
+        if (registro != null && registro == pila.peek()) {
+            pila.pop();
+        }
+    }
+
     public synchronized void limpiar() {
         pila.clear();
     }

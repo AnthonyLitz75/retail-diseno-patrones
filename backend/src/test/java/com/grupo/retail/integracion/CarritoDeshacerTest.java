@@ -104,6 +104,29 @@ class CarritoDeshacerTest extends BaseCompraIntegracion {
     }
 
     @Test
+    @DisplayName("H1: tras un 409 por producto no disponible se descarta esa acción y se puede seguir deshaciendo")
+    void trasUn409PorProductoSeSigueDeshaciendo() {
+        long desactivado = datos.crearProducto(PRECIO, 10);
+        long activo = datos.crearProducto(PRECIO, 10);
+        DatosIntegracion.Cliente cliente = datos.crearCliente();
+        ClienteHttp sesion = sesionDe(cliente);
+        sesion.agregarAlCarrito(desactivado, 2);
+        sesion.agregarAlCarrito(activo, 1);
+        sesion.cambiarCantidad(activo, 3);
+        sesion.quitarDelCarrito(desactivado);
+        datos.desactivarProducto(desactivado);
+
+        ClienteHttp.Respuesta fallido = sesion.deshacerCarrito();
+        ClienteHttp.Respuesta siguiente = sesion.deshacerCarrito();
+
+        assertEquals(409, fallido.estado(), fallido.toString());
+        assertTrue(fallido.cuerpo().contains("Se descartó esa acción"), fallido.cuerpo());
+        assertEquals(200, siguiente.estado(), "La acción anterior se puede deshacer: " + siguiente);
+        assertEquals(1, datos.cantidadEnCarrito(cliente.id(), activo), "Deshacer el cambio vuelve a 1");
+        assertEquals(0, datos.cantidadEnCarrito(cliente.id(), desactivado));
+    }
+
+    @Test
     @DisplayName("US6.5: deshacer la eliminación de un producto desactivado responde 409 con el motivo")
     void productoDesactivadoResponde409() {
         long producto = datos.crearProducto(PRECIO, 10);

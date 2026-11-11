@@ -164,6 +164,22 @@ class ComandoCarritoTests {
     }
 
     @Test
+    void descartarQuitaElUltimoRegistroSinCambiarLaRevisionEsperada() {
+        HistorialComandosCarrito historial = new HistorialComandosCarrito();
+        historial.registrar(new AgregarProductoComando(1L, 7L, 0, 1), 5L);
+        historial.registrar(new EliminarProductoComando(1L, 8L, 2), 6L);
+        HistorialComandosCarrito.Registro fallido = historial.ultimo().orElseThrow();
+
+        historial.descartar(fallido);
+
+        // El deshacer fallido se revirtió: el carrito sigue en la revisión 6.
+        assertEquals(6L, historial.revisionEsperada());
+        assertEquals(new AgregarProductoComando(1L, 7L, 0, 1), historial.ultimo().orElseThrow().comando());
+        historial.descartar(fallido); // ya no está arriba: no quita otro
+        assertEquals(1, historial.tamanio());
+    }
+
+    @Test
     void deshacerSubeLaRevisionYElSiguienteDeshacerLaEspera() {
         HistorialComandosCarrito historial = new HistorialComandosCarrito();
         historial.registrar(new AgregarProductoComando(1L, 7L, 0, 1), 5L);
