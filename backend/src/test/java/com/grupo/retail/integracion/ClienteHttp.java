@@ -65,6 +65,10 @@ public final class ClienteHttp {
                 .PUT(HttpRequest.BodyPublishers.noBody()));
     }
 
+    public Respuesta get(String ruta) {
+        return enviar(HttpRequest.newBuilder(URI.create(base + ruta)).GET());
+    }
+
     public Respuesta putJson(String ruta, String json) {
         return enviar(HttpRequest.newBuilder(URI.create(base + ruta))
                 .header("Content-Type", "application/json")

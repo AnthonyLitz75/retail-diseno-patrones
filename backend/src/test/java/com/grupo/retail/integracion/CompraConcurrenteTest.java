@@ -20,32 +20,45 @@ class CompraConcurrenteTest extends BaseCompraIntegracion {
 
     private static final BigDecimal PRECIO = new BigDecimal("49.90");
 
+    /**
+     * Veces que se repite cada carrera (T016, SC-001). En una ejecución normal es 1; para
+     * la evidencia del spec: {@code ./mvnw.cmd verify -Dconcurrencia.repeticiones=20}.
+     */
+    private static final int REPETICIONES = Integer.getInteger("concurrencia.repeticiones", 1);
+
     @Test
     @DisplayName("US2.1: dos clientes compran la última unidad; uno confirma y el otro recibe 409")
     void ultimaUnidadSeVendeUnaSolaVez() throws Exception {
-        long producto = datos.crearProducto(PRECIO, 1);
-        List<Callable<ClienteHttp.Respuesta>> compras = comprasDeUnaUnidad(producto, 2);
+        for (int ronda = 1; ronda <= REPETICIONES; ronda++) {
+            long producto = datos.crearProducto(PRECIO, 1);
+            List<Callable<ClienteHttp.Respuesta>> compras = comprasDeUnaUnidad(producto, 2);
 
-        List<ClienteHttp.Respuesta> respuestas = enParalelo(compras);
+            List<ClienteHttp.Respuesta> respuestas = enParalelo(compras);
 
-        assertEquals(1, contar(respuestas, 201), "Debe confirmarse exactamente una compra: " + respuestas);
-        assertEquals(1, contar(respuestas, 409), "La compra perdedora debe recibir 409: " + respuestas);
-        assertEquals(0, datos.stock(producto));
-        assertEquals(1, datos.unidadesVendidas(producto));
+            String contexto = "ronda " + ronda + "/" + REPETICIONES + ": " + respuestas;
+            assertEquals(1, contar(respuestas, 201), "Debe confirmarse exactamente una compra, " + contexto);
+            assertEquals(1, contar(respuestas, 409), "La compra perdedora debe recibir 409, " + contexto);
+            assertEquals(0, datos.stock(producto), contexto);
+            assertEquals(1, datos.unidadesVendidas(producto), contexto);
+        }
     }
 
     @Test
     @DisplayName("US2.2: 20 compras simultáneas sobre stock 10 confirman exactamente 10 unidades")
     void veinteComprasSobreStockDiez() throws Exception {
-        long producto = datos.crearProducto(PRECIO, 10);
-        List<Callable<ClienteHttp.Respuesta>> compras = comprasDeUnaUnidad(producto, 20);
+        for (int ronda = 1; ronda <= REPETICIONES; ronda++) {
+            long producto = datos.crearProducto(PRECIO, 10);
+            List<Callable<ClienteHttp.Respuesta>> compras = comprasDeUnaUnidad(producto, 20);
 
-        List<ClienteHttp.Respuesta> respuestas = enParalelo(compras);
+            List<ClienteHttp.Respuesta> respuestas = enParalelo(compras);
 
-        assertEquals(10, contar(respuestas, 201), "Deben confirmarse 10 compras: " + respuestas);
-        assertEquals(10, contar(respuestas, 409), "Las 10 restantes deben recibir 409: " + respuestas);
-        assertEquals(0, datos.stock(producto), "El stock final debe ser 0, nunca negativo");
-        assertEquals(10, datos.unidadesVendidas(producto));
+            String contexto = "ronda " + ronda + "/" + REPETICIONES + ": " + respuestas;
+            assertEquals(10, contar(respuestas, 201), "Deben confirmarse 10 compras, " + contexto);
+            assertEquals(10, contar(respuestas, 409), "Las 10 restantes deben recibir 409, " + contexto);
+            assertEquals(0, datos.stock(producto), "El stock final debe ser 0, nunca negativo, " + contexto);
+            assertEquals(10, datos.unidadesVendidas(producto), contexto);
+        }
+        System.out.println("[T016] Carreras de compra repetidas " + REPETICIONES + " veces sin fallos");
     }
 
     @Test
