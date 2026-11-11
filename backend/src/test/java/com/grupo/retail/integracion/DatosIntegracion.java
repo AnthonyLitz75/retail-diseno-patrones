@@ -90,6 +90,47 @@ public final class DatosIntegracion {
         ejecutar("UPDATE producto SET activo = FALSE WHERE id = ?", productoId);
     }
 
+    public long idDetallePedido(long pedidoId, long productoId) {
+        return contar("SELECT id_detalle FROM pedido_detalle WHERE pedido_id = ? AND producto_id = ?",
+                pedidoId, productoId);
+    }
+
+    public long idDetalleDevolucion(long devolucionId, long pedidoDetalleId) {
+        return contar("SELECT id_detalle_devolucion FROM detalle_devolucion "
+                + "WHERE devolucion_id = ? AND pedido_detalle_id = ?", devolucionId, pedidoDetalleId);
+    }
+
+    public String estadoDevolucion(long devolucionId) {
+        return texto("SELECT estado FROM devolucion WHERE id_devolucion = ?", devolucionId);
+    }
+
+    public boolean devolucionTieneFechaCierre(long devolucionId) {
+        return contar("SELECT COUNT(*) FROM devolucion WHERE id_devolucion = ? AND fecha_cierre IS NOT NULL",
+                devolucionId) == 1;
+    }
+
+    /** Monto reembolsado del pago del pedido, en céntimos para comparar sin decimales. */
+    public long centimosReembolsados(long pedidoId) {
+        return contar("SELECT COALESCE(SUM(monto_reembolsado * 100), 0)::bigint FROM pago WHERE pedido_id = ?",
+                pedidoId);
+    }
+
+    public String estadoReclamo(long idReclamo) {
+        return texto("SELECT estado FROM reclamo WHERE id_reclamo = ?", idReclamo);
+    }
+
+    /** Responsable de soporte o administrador del reclamo (0 si no hay). */
+    public long responsableReclamo(long idReclamo, String columna) {
+        if (!columna.equals("soporte_id") && !columna.equals("admin_id")) {
+            throw new IllegalArgumentException("Columna no permitida: " + columna);
+        }
+        return contar("SELECT COALESCE(" + columna + ", 0) FROM reclamo WHERE id_reclamo = ?", idReclamo);
+    }
+
+    public int notificacionesDeEstado(long usuarioId, long pedidoId, String estado) {
+        return notificacionesDe(usuarioId, pedidoId, estado);
+    }
+
     public int enviosDe(long pedidoId) {
         return contar("SELECT COUNT(*) FROM envio WHERE pedido_id = ?", pedidoId);
     }

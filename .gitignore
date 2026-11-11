@@ -50,3 +50,7 @@ specs/
 **/.env
 **/.env.*
 !**/.env.example
+
+# Caché local del escáner de SonarQube
+.sonar/
+**/.sonar/

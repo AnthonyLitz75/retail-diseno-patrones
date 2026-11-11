@@ -11,6 +11,13 @@ import {
   mostrarConfirmacion,
   mostrarToast,
 } from "../utilidades/notificaciones.js";
+import {
+  listarMisDevoluciones,
+  listarMisReclamos,
+  registrarReclamo,
+  solicitarDevolucion,
+} from "../atencion/atencion.js";
+import { crearSeccionAtencionPedido } from "../atencion/atencion-cliente.js";
 
 /**
  * Configura los flujos y eventos de la sección de pedidos.
@@ -63,6 +70,53 @@ export function configurarControladorPedidos({
     }
   }
 
+  /** Reclamos y devoluciones del cliente; si fallan, los pedidos se muestran igual. */
+  async function cargarAtencionesCliente() {
+    const [reclamos, devoluciones] = await Promise.all([
+      listarMisReclamos(apiRequest).catch(() => []),
+      listarMisDevoluciones(apiRequest).catch(() => []),
+    ]);
+    return {
+      reclamos: Array.isArray(reclamos) ? reclamos : [],
+      devoluciones: Array.isArray(devoluciones) ? devoluciones : [],
+    };
+  }
+
+  async function enviarAtencion(enviar, mensajeExito, { boton, estado }) {
+    if (boton) boton.disabled = true;
+    if (estado) {
+      estado.className = "small mb-0 text-secondary";
+      estado.textContent = "Enviando...";
+    }
+    try {
+      const resultado = await enviar();
+      mostrarToast(mensajeExito(resultado), "exito");
+      await cargarPedidos();
+    } catch (error) {
+      if (estado) {
+        estado.className = "small mb-0 text-danger";
+        estado.textContent = error.message;
+      }
+      if (boton) boton.disabled = false;
+    }
+  }
+
+  function enviarReclamo(pedido, datos, ui) {
+    return enviarAtencion(
+      () => registrarReclamo(apiRequest, pedido.idPedido, datos),
+      (reclamo) => `Reclamo #${reclamo.id} registrado. Soporte te responderá pronto.`,
+      ui,
+    );
+  }
+
+  function enviarDevolucion(pedido, motivo, lineas, ui) {
+    return enviarAtencion(
+      () => solicitarDevolucion(apiRequest, pedido.idPedido, motivo, lineas),
+      (devolucion) => `Devolución #${devolucion.id} solicitada. Te avisaremos cuando Soporte la revise.`,
+      ui,
+    );
+  }
+
   async function cargarPedidos() {
     const estado = obtenerEstado ? obtenerEstado() : {};
     if (!estado.usuarioSesion) {
@@ -106,6 +160,7 @@ export function configurarControladorPedidos({
     try {
       const respuesta = await apiRequest(ruta);
       const pedidos = await respuesta.json();
+      const atenciones = esCliente ? await cargarAtencionesCliente() : null;
       mostrarPedidos(pedidos, {
         esCliente,
         usuarioSesion: estado.usuarioSesion,
@@ -114,6 +169,13 @@ export function configurarControladorPedidos({
         onActualizarEstado: (id, accion, boton, datos) =>
           actualizarEstadoPedido(id, accion, boton, datos),
         onCancelarPedido: (pedido, boton) => cancelarPedido(pedido, boton),
+        crearAtencion: atenciones
+          ? (pedido) => crearSeccionAtencionPedido(pedido, {
+            ...atenciones,
+            onRegistrarReclamo: enviarReclamo,
+            onSolicitarDevolucion: enviarDevolucion,
+          })
+          : null,
         onExplorarCatalogo: () => {
           if (typeof cambiarVista === "function") cambiarVista("tienda");
         },

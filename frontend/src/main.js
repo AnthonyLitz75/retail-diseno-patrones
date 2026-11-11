@@ -39,6 +39,8 @@ import { configurarControladorCatalogo } from "./catalogo/catalogo-controlador.j
 import { configurarControlesUI } from "./layout/controles-ui.js";
 import { configurarSesionYVistas } from "./estado/sesion.js";
 import { configurarEnrutadorSPA } from "./router/router.js";
+import { configurarPortalSoporte } from "./soporte/soporte-vista.js";
+import { crearPanelIncidencias } from "./administracion/incidencias-vista.js";
 
 // 1. Montaje del Layout Semántico Principal
 montarLayoutPrincipal("#app");
@@ -84,6 +86,16 @@ const panelAdministracion = crearPanelAdministracion(apiRequest, async () => {
   await catalogoCtrl.cargarProductos();
 });
 document.querySelector("#vista-administracion")?.append(panelAdministracion.element);
+const panelIncidencias = crearPanelIncidencias(apiRequest, mostrarToast);
+document.querySelector("#vista-administracion")?.append(panelIncidencias.element);
+
+// 3b. Portal de Soporte (spec 006): reclamos, devoluciones y contexto del pedido
+const portalSoporte = configurarPortalSoporte({
+  apiRequest,
+  obtenerEstado: () => estado,
+  contenedor: document.querySelector("#vista-soporte"),
+  mostrarToast,
+});
 
 // 4. Panel de Inventario y Kardex
 const inventarioCtrl = configurarPanelInventario({
@@ -273,6 +285,7 @@ const sesionCtrl = configurarSesionYVistas({
       inventario: document.querySelector("#vista-inventario"),
       administracion: document.querySelector("#vista-administracion"),
       consultas: document.querySelector("#vista-consultas"),
+      soporte: document.querySelector("#vista-soporte"),
     },
   },
   acciones: {
@@ -292,7 +305,12 @@ const sesionCtrl = configurarSesionYVistas({
         if (vista === "pedidos") void pedidosCtrl.cargarPedidos();
         else if (vista === "inventario" && ["ADMIN", "VENDEDOR", "ALMACEN"].includes(rol)) void inventarioCtrl.iniciarPanelInventario();
         else if (vista === "consultas" && rol === "VENDEDOR") void vendedorCtrl.cargarPreguntasVendedor();
-        else if (vista === "administracion" && rol === "ADMIN") void panelAdministracion.cargar();
+        else if (vista === "administracion" && rol === "ADMIN") {
+          void panelAdministracion.cargar();
+          panelIncidencias.element.hidden = false;
+          void panelIncidencias.cargar();
+        }
+        else if (vista === "soporte" && rol === "SOPORTE") void portalSoporte.cargar();
       }
     },
   },

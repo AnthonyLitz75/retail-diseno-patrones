@@ -103,6 +103,17 @@ public class SecurityConfig {
                                 "/api/productos/{id:[0-9]+}/preguntas"
                         ).hasRole("CLIENTE")
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/pedidos/{id:[0-9]+}").hasRole("CLIENTE")
+                        // Atención del cliente (spec 006): reclamos y devoluciones sobre pedidos propios
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/pedidos/{id:[0-9]+}/reclamos").hasRole("CLIENTE")
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/reclamos/mis-reclamos").hasRole("CLIENTE")
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/pedidos/{id:[0-9]+}/devoluciones").hasRole("CLIENTE")
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/devoluciones/mis-devoluciones").hasRole("CLIENTE")
+
+                        // 8b. Soporte (spec 006): la bandeja la ven SOPORTE y ADMIN; atenderla es solo de SOPORTE.
+                        // Los escalamientos del administrador viven bajo /api/admin/** (regla 2).
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/soporte/reclamos").hasAnyRole("SOPORTE", "ADMIN")
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/soporte/devoluciones").hasAnyRole("SOPORTE", "ADMIN")
+                        .requestMatchers("/api/soporte/**").hasRole("SOPORTE")
 
                         // 9. Rutas de cualquier usuario autenticado (sesión y notificaciones propias)
                         .requestMatchers(

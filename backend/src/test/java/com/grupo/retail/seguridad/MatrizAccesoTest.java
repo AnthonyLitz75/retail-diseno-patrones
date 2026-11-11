@@ -106,7 +106,7 @@ public class MatrizAccesoTest {
         }
     }
 
-    private static final List<String> TODOS_LOS_ROLES = List.of("CLIENTE", "VENDEDOR", "ALMACEN", "ADMIN");
+    private static final List<String> TODOS_LOS_ROLES = List.of("CLIENTE", "VENDEDOR", "ALMACEN", "ADMIN", "SOPORTE");
 
     private static record DefinicionRuta(
             String metodo,
@@ -173,7 +173,25 @@ public class MatrizAccesoTest {
                 new DefinicionRuta("PUT", "/api/admin/categorias/1", false, false, Set.of("ADMIN"), "{}"),
                 new DefinicionRuta("PATCH", "/api/admin/categorias/1/estado", false, false, Set.of("ADMIN"), "{}"),
                 new DefinicionRuta("GET", "/api/admin/reportes/resumen", false, false, Set.of("ADMIN"), null),
-                new DefinicionRuta("GET", "/api/admin/reportes/ventas.csv", false, false, Set.of("ADMIN"), null)
+                new DefinicionRuta("GET", "/api/admin/reportes/ventas.csv", false, false, Set.of("ADMIN"), null),
+
+                // 10. Atención y soporte (spec 006)
+                new DefinicionRuta("POST", "/api/pedidos/1/reclamos", false, false, Set.of("CLIENTE"), "{}"),
+                new DefinicionRuta("GET", "/api/reclamos/mis-reclamos", false, false, Set.of("CLIENTE"), null),
+                new DefinicionRuta("GET", "/api/soporte/reclamos", false, false, Set.of("SOPORTE", "ADMIN"), null),
+                new DefinicionRuta("PUT", "/api/soporte/reclamos/1/tomar", false, false, Set.of("SOPORTE"), null),
+                new DefinicionRuta("PUT", "/api/soporte/reclamos/1/responder", false, false, Set.of("SOPORTE"), "{}"),
+                new DefinicionRuta("PUT", "/api/soporte/reclamos/1/escalar", false, false, Set.of("SOPORTE"), "{}"),
+                new DefinicionRuta("POST", "/api/pedidos/1/devoluciones", false, false, Set.of("CLIENTE"), "{}"),
+                new DefinicionRuta("GET", "/api/devoluciones/mis-devoluciones", false, false, Set.of("CLIENTE"), null),
+                new DefinicionRuta("GET", "/api/soporte/devoluciones", false, false, Set.of("SOPORTE", "ADMIN"), null),
+                new DefinicionRuta("PUT", "/api/soporte/devoluciones/1/decision", false, false, Set.of("SOPORTE"), "{}"),
+                new DefinicionRuta("PUT", "/api/soporte/devoluciones/1/recepcion", false, false, Set.of("SOPORTE"), "{}"),
+                new DefinicionRuta("GET", "/api/soporte/pedidos/1", false, false, Set.of("SOPORTE"), null),
+                new DefinicionRuta("GET", "/api/admin/incidencias", false, false, Set.of("ADMIN"), null),
+                new DefinicionRuta("GET", "/api/admin/incidencias/sin-agente", false, false, Set.of("ADMIN"), null),
+                new DefinicionRuta("PUT", "/api/admin/incidencias/1/reasignar", false, false, Set.of("ADMIN"), "{}"),
+                new DefinicionRuta("PUT", "/api/admin/incidencias/1/resolver", false, false, Set.of("ADMIN"), "{}")
         );
 
         List<EscenarioAcceso> escenarios = new ArrayList<>();

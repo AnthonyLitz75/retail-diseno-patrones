@@ -24,6 +24,15 @@ public final class ClienteHttp {
     private String tokenCsrf;
 
     public record Respuesta(int estado, String cuerpo) {
+        /** Primer valor numérico del campo indicado en el JSON de la respuesta. */
+        public long campoNumerico(String campo) {
+            Matcher m = Pattern.compile("\"" + Pattern.quote(campo) + "\"\\s*:\\s*(\\d+)").matcher(cuerpo);
+            if (!m.find()) {
+                throw new IllegalStateException("La respuesta no contiene " + campo + ": " + cuerpo);
+            }
+            return Long.parseLong(m.group(1));
+        }
+
         public long idPedido() {
             Matcher m = ID_PEDIDO.matcher(cuerpo);
             if (!m.find()) {
@@ -63,6 +72,10 @@ public final class ClienteHttp {
         return enviar(HttpRequest.newBuilder(URI.create(base + ruta))
                 .header("X-XSRF-TOKEN", tokenCsrf)
                 .PUT(HttpRequest.BodyPublishers.noBody()));
+    }
+
+    public Respuesta postJson(String ruta, String json) {
+        return post(ruta, json);
     }
 
     public Respuesta agregarAlCarrito(long productoId, int cantidad) {

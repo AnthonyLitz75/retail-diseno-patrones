@@ -3,7 +3,8 @@ export const VISTAS_DISPONIBLES = {
   pedidos: { id: 'vista-pedidos', tabId: 'tab-pedidos' },
   inventario: { id: 'vista-inventario', tabId: 'tab-inventario' },
   administracion: { id: 'vista-administracion', tabId: 'tab-administracion' },
-  consultas: { id: 'vista-consultas', tabId: 'tab-consultas' }
+  consultas: { id: 'vista-consultas', tabId: 'tab-consultas' },
+  soporte: { id: 'vista-soporte', tabId: 'tab-soporte' }
 }
 
 export function determinarVistasPorRol(rol) {
@@ -14,6 +15,8 @@ export function determinarVistasPorRol(rol) {
       return ['pedidos', 'inventario', 'tienda']
     case 'VENDEDOR':
       return ['tienda', 'consultas', 'pedidos', 'inventario']
+    case 'SOPORTE':
+      return ['soporte', 'tienda']
     case 'CLIENTE':
       return ['tienda', 'pedidos']
     default:
@@ -27,6 +30,8 @@ export function obtenerVistaPorDefecto(rol) {
       return 'administracion'
     case 'ALMACEN':
       return 'pedidos'
+    case 'SOPORTE':
+      return 'soporte'
     default:
       return 'tienda'
   }
@@ -38,7 +43,8 @@ export function obtenerEtiquetaPestaña(vista, rol) {
     pedidos: rol === 'CLIENTE' ? 'Mis compras' : 'Gestión de pedidos',
     inventario: 'Inventario y kardex',
     administracion: 'Administración',
-    consultas: 'Consultas de clientes'
+    consultas: 'Consultas de clientes',
+    soporte: 'Atención al cliente'
   }
   return etiquetas[vista] || vista
 }

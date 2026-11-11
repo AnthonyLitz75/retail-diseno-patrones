@@ -41,6 +41,7 @@ export function crearTarjetaPedido(
     usuarioSesion = null,
     onActualizarEstado = null,
     onCancelarPedido = null,
+    crearAtencion = null,
   } = {},
 ) {
   const tarjeta = document.createElement("article");
@@ -190,6 +191,12 @@ export function crearTarjetaPedido(
     cuerpo.append(historial);
   }
 
+  // 6b. Atención postventa del cliente (spec 006): reclamos y devoluciones
+  if (esCliente && typeof crearAtencion === "function") {
+    const atencion = crearAtencion(pedido);
+    if (atencion) cuerpo.append(atencion);
+  }
+
   // 7. Acciones según Rol y Estado del Pedido
   const transicionesAlmacen = {
     PENDIENTE: { accion: "preparar", etiqueta: "Marcar en preparación" },
@@ -262,6 +269,7 @@ export function mostrarPedidos(
     estadoPedidos = document.querySelector("#estado-pedidos"),
     onActualizarEstado = null,
     onCancelarPedido = null,
+    crearAtencion = null,
     onExplorarCatalogo = null,
   } = {},
 ) {
@@ -329,6 +337,7 @@ export function mostrarPedidos(
       usuarioSesion,
       onActualizarEstado,
       onCancelarPedido,
+      crearAtencion,
     });
     listaPedidos.append(tarjeta);
   }
