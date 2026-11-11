@@ -90,6 +90,31 @@ public final class DatosIntegracion {
         ejecutar("UPDATE producto SET activo = FALSE WHERE id = ?", productoId);
     }
 
+    public long idDetallePedido(long pedidoId, long productoId) {
+        return contar("SELECT id_detalle FROM pedido_detalle WHERE pedido_id = ? AND producto_id = ?",
+                pedidoId, productoId);
+    }
+
+    public long idDetalleDevolucion(long devolucionId, long pedidoDetalleId) {
+        return contar("SELECT id_detalle_devolucion FROM detalle_devolucion "
+                + "WHERE devolucion_id = ? AND pedido_detalle_id = ?", devolucionId, pedidoDetalleId);
+    }
+
+    public String estadoDevolucion(long devolucionId) {
+        return texto("SELECT estado FROM devolucion WHERE id_devolucion = ?", devolucionId);
+    }
+
+    public boolean devolucionTieneFechaCierre(long devolucionId) {
+        return contar("SELECT COUNT(*) FROM devolucion WHERE id_devolucion = ? AND fecha_cierre IS NOT NULL",
+                devolucionId) == 1;
+    }
+
+    /** Monto reembolsado del pago del pedido, en céntimos para comparar sin decimales. */
+    public long centimosReembolsados(long pedidoId) {
+        return contar("SELECT COALESCE(SUM(monto_reembolsado * 100), 0)::bigint FROM pago WHERE pedido_id = ?",
+                pedidoId);
+    }
+
     public String estadoReclamo(long idReclamo) {
         return texto("SELECT estado FROM reclamo WHERE id_reclamo = ?", idReclamo);
     }

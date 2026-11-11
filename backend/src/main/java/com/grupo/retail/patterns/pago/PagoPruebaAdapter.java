@@ -5,6 +5,7 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 
+/** Adapter: traduce el proveedor simulado al contrato {@link PuertoPago} del dominio. */
 @Component
 public class PagoPruebaAdapter implements PuertoPago {
 
@@ -16,12 +17,19 @@ public class PagoPruebaAdapter implements PuertoPago {
 
     @Override
     public ResultadoPago procesar(BigDecimal monto, String escenario) {
-        RespuestaProveedorPago respuesta = proveedor.cobrar(monto, escenario);
-        String estado = respuesta.aceptado() ? "APROBADO" : "RECHAZADO";
+        return traducir(proveedor.cobrar(monto, escenario), "APROBADO");
+    }
+
+    @Override
+    public ResultadoPago reembolsar(BigDecimal monto, String referenciaCobro, String escenario) {
+        return traducir(proveedor.devolver(monto, referenciaCobro, escenario), "REEMBOLSADO");
+    }
+
+    private static ResultadoPago traducir(RespuestaProveedorPago respuesta, String estadoAceptado) {
         return new ResultadoPago(
                 respuesta.aceptado(),
                 "SIMULADO",
-                estado,
+                respuesta.aceptado() ? estadoAceptado : "RECHAZADO",
                 respuesta.referencia(),
                 respuesta.descripcion());
     }

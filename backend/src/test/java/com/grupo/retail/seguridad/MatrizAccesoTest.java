@@ -182,6 +182,11 @@ public class MatrizAccesoTest {
                 new DefinicionRuta("PUT", "/api/soporte/reclamos/1/tomar", false, false, Set.of("SOPORTE"), null),
                 new DefinicionRuta("PUT", "/api/soporte/reclamos/1/responder", false, false, Set.of("SOPORTE"), "{}"),
                 new DefinicionRuta("PUT", "/api/soporte/reclamos/1/escalar", false, false, Set.of("SOPORTE"), "{}"),
+                new DefinicionRuta("POST", "/api/pedidos/1/devoluciones", false, false, Set.of("CLIENTE"), "{}"),
+                new DefinicionRuta("GET", "/api/devoluciones/mis-devoluciones", false, false, Set.of("CLIENTE"), null),
+                new DefinicionRuta("GET", "/api/soporte/devoluciones", false, false, Set.of("SOPORTE", "ADMIN"), null),
+                new DefinicionRuta("PUT", "/api/soporte/devoluciones/1/decision", false, false, Set.of("SOPORTE"), "{}"),
+                new DefinicionRuta("PUT", "/api/soporte/devoluciones/1/recepcion", false, false, Set.of("SOPORTE"), "{}"),
                 new DefinicionRuta("GET", "/api/admin/incidencias", false, false, Set.of("ADMIN"), null),
                 new DefinicionRuta("PUT", "/api/admin/incidencias/1/resolver", false, false, Set.of("ADMIN"), "{}")
         );
