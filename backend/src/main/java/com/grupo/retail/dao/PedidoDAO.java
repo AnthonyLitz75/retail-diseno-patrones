@@ -65,16 +65,20 @@ public class PedidoDAO {
         return buscarVista(pedidoId, null);
     }
 
+    private static final String VISTA_PEDIDO_SQL = """
+            SELECT p.id_pedido, u.nombre AS cliente_nombre, u.correo AS cliente_correo,
+                   p.estado, p.total, p.creado_en,
+                   e.transportista, e.codigo_seguimiento, e.despachado_en, e.entregado_en
+            FROM pedido p
+            JOIN usuario u ON u.id_usuario = p.usuario_id
+            LEFT JOIN envio e ON e.pedido_id = p.id_pedido
+            WHERE p.id_pedido = ?""";
+
+    /** Variante con el filtro de propietario: el cliente solo ve sus pedidos. */
+    private static final String VISTA_PEDIDO_PROPIO_SQL = VISTA_PEDIDO_SQL + " AND p.usuario_id = ?";
+
     private Optional<PedidoVista> buscarVista(long pedidoId, Long clienteId) {
-        String sql = """
-                SELECT p.id_pedido, u.nombre AS cliente_nombre, u.correo AS cliente_correo,
-                       p.estado, p.total, p.creado_en,
-                       e.transportista, e.codigo_seguimiento, e.despachado_en, e.entregado_en
-                FROM pedido p
-                JOIN usuario u ON u.id_usuario = p.usuario_id
-                LEFT JOIN envio e ON e.pedido_id = p.id_pedido
-                WHERE p.id_pedido = ?
-                """.stripTrailing() + (clienteId == null ? "" : " AND p.usuario_id = ?");
+        String sql = clienteId == null ? VISTA_PEDIDO_SQL : VISTA_PEDIDO_PROPIO_SQL;
         try (Connection conexion = proveedorConexiones.obtenerConexion();
                 PreparedStatement consulta = conexion.prepareStatement(sql)) {
             consulta.setLong(1, pedidoId);
