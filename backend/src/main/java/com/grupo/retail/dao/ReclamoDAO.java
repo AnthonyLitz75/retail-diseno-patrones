@@ -89,6 +89,33 @@ public class ReclamoDAO {
         }
     }
 
+    /**
+     * Comprueba que el usuario sea un agente SOPORTE activo y lo bloquea en modo compartido
+     * (FOR SHARE) para que no lo desactiven mientras se le reasigna un reclamo.
+     */
+    public boolean bloquearSoporteActivo(Connection conexion, long usuarioId) throws SQLException {
+        String sql = "SELECT 1 FROM usuario WHERE id_usuario = ? AND rol = 'SOPORTE' AND activo FOR SHARE";
+        try (PreparedStatement consulta = conexion.prepareStatement(sql)) {
+            consulta.setLong(1, usuarioId);
+            try (ResultSet fila = consulta.executeQuery()) {
+                return fila.next();
+            }
+        }
+    }
+
+    /** Reclamos EN_ATENCION cuyo agente ya no está activo o dejó de ser SOPORTE (T013). */
+    public List<Reclamo> listarSinAgenteActivo() {
+        return listar("SELECT " + COLUMNAS + " FROM reclamo WHERE estado = 'EN_ATENCION' AND soporte_id IN "
+                + "(SELECT id_usuario FROM usuario WHERE NOT activo OR rol <> 'SOPORTE') "
+                + "ORDER BY actualizado_en LIMIT ?");
+    }
+
+    /** Reclamos de un pedido para la vista de contexto de Soporte (RF27). */
+    public List<Reclamo> listarPorPedido(long pedidoId) {
+        return listar("SELECT " + COLUMNAS + " FROM reclamo WHERE pedido_id = ? ORDER BY id_reclamo LIMIT ?",
+                pedidoId);
+    }
+
     public List<Reclamo> listarPorCliente(long clienteId) {
         String sql = "SELECT " + COLUMNAS + " FROM reclamo WHERE cliente_id = ? ORDER BY id_reclamo DESC LIMIT ?";
         return listar(sql, clienteId);

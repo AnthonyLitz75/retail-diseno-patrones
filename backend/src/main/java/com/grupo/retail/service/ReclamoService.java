@@ -3,6 +3,7 @@ package com.grupo.retail.service;
 import com.grupo.retail.dao.PedidoDAO;
 import com.grupo.retail.dao.ReclamoDAO;
 import com.grupo.retail.dto.EscalarReclamo;
+import com.grupo.retail.dto.ReasignarReclamo;
 import com.grupo.retail.dto.RegistrarReclamo;
 import com.grupo.retail.dto.ResolverIncidencia;
 import com.grupo.retail.dto.ResponderReclamo;
@@ -131,6 +132,28 @@ public class ReclamoService {
                         "Resolvimos tu reclamo #" + reclamo.id());
             }
             return actualizado;
+        });
+    }
+
+    /** T013: reclamos EN_ATENCION cuyo agente fue desactivado o cambió de rol. */
+    public List<Reclamo> listarSinAgente() {
+        return reclamoDAO.listarSinAgenteActivo();
+    }
+
+    /**
+     * T013 (caso límite de US3): el administrador pasa un reclamo EN_ATENCION a otro agente
+     * SOPORTE activo (400 si no lo es). El estado y la respuesta no cambian; el nuevo agente
+     * continúa la atención como responsable.
+     */
+    public Reclamo reasignar(long idReclamo, ReasignarReclamo datos) {
+        return transicion(idReclamo, (conexion, reclamo) -> {
+            if (reclamo.estado() != EstadoReclamo.EN_ATENCION) {
+                throw new IllegalStateException("Solo se reasignan reclamos en atención");
+            }
+            if (!reclamoDAO.bloquearSoporteActivo(conexion, datos.soporteId())) {
+                throw new IllegalArgumentException("El destino debe ser un agente de soporte activo");
+            }
+            return reclamoDAO.guardar(conexion, reclamo.reasignadoA(datos.soporteId()));
         });
     }
 

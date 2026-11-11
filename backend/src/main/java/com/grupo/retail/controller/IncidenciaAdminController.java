@@ -1,5 +1,6 @@
 package com.grupo.retail.controller;
 
+import com.grupo.retail.dto.ReasignarReclamo;
 import com.grupo.retail.dto.ResolverIncidencia;
 import com.grupo.retail.model.Reclamo;
 import com.grupo.retail.service.ReclamoService;
@@ -31,6 +32,17 @@ public class IncidenciaAdminController {
     @GetMapping
     public List<Reclamo> escaladas() {
         return reclamoService.listarIncidencias();
+    }
+
+    /** T013: reclamos en atención cuyo agente fue desactivado; el administrador los reasigna. */
+    @GetMapping("/sin-agente")
+    public List<Reclamo> sinAgente() {
+        return reclamoService.listarSinAgente();
+    }
+
+    @PutMapping("/{id}/reasignar")
+    public Reclamo reasignar(@PathVariable Long id, @Valid @RequestBody ReasignarReclamo datos) {
+        return reclamoService.reasignar(id, datos);
     }
 
     @PutMapping("/{id}/resolver")

@@ -9,6 +9,7 @@ import com.grupo.retail.model.PedidoBloqueado;
 import com.grupo.retail.model.PedidoConfirmado;
 import com.grupo.retail.model.PedidoVista;
 import com.grupo.retail.model.ProductoEnCompra;
+import com.grupo.retail.model.ResumenPago;
 import com.grupo.retail.model.ResultadoPago;
 import com.grupo.retail.exception.ClaveConfirmacionEnUsoException;
 import com.grupo.retail.exception.StockInsuficienteException;
@@ -56,6 +57,15 @@ public class PedidoDAO {
     }
 
     public Optional<PedidoVista> buscarPorIdYCliente(Long pedidoId, Long clienteId) {
+        return buscarVista(pedidoId, clienteId);
+    }
+
+    /** Vista del pedido sin filtro de propietario, solo para personal autorizado (RF27). */
+    public Optional<PedidoVista> buscarPorId(long pedidoId) {
+        return buscarVista(pedidoId, null);
+    }
+
+    private Optional<PedidoVista> buscarVista(long pedidoId, Long clienteId) {
         String sql = """
                 SELECT p.id_pedido, u.nombre AS cliente_nombre, u.correo AS cliente_correo,
                        p.estado, p.total, p.creado_en,
@@ -63,12 +73,14 @@ public class PedidoDAO {
                 FROM pedido p
                 JOIN usuario u ON u.id_usuario = p.usuario_id
                 LEFT JOIN envio e ON e.pedido_id = p.id_pedido
-                WHERE p.id_pedido = ? AND p.usuario_id = ?
-                """;
+                WHERE p.id_pedido = ?
+                """.stripTrailing() + (clienteId == null ? "" : " AND p.usuario_id = ?");
         try (Connection conexion = proveedorConexiones.obtenerConexion();
                 PreparedStatement consulta = conexion.prepareStatement(sql)) {
             consulta.setLong(1, pedidoId);
-            consulta.setLong(2, clienteId);
+            if (clienteId != null) {
+                consulta.setLong(2, clienteId);
+            }
             try (ResultSet resultado = consulta.executeQuery()) {
                 if (!resultado.next()) {
                     return Optional.empty();
@@ -86,6 +98,30 @@ public class PedidoDAO {
             }
         } catch (SQLException error) {
             throw new ErrorAccesoDatosException("No se pudo consultar el pedido", error);
+        }
+    }
+
+    /** Resumen del cobro del pedido, sin la referencia del proveedor (RF27). */
+    public Optional<ResumenPago> buscarResumenPago(long pedidoId) {
+        String sql = """
+                SELECT estado, monto, monto_reembolsado, creado_en
+                FROM pago
+                WHERE pedido_id = ?
+                ORDER BY (estado = 'APROBADO') DESC, creado_en DESC
+                LIMIT 1
+                """;
+        try (Connection conexion = proveedorConexiones.obtenerConexion();
+                PreparedStatement consulta = conexion.prepareStatement(sql)) {
+            consulta.setLong(1, pedidoId);
+            try (ResultSet fila = consulta.executeQuery()) {
+                if (!fila.next()) {
+                    return Optional.empty();
+                }
+                return Optional.of(new ResumenPago(fila.getString("estado"), fila.getBigDecimal("monto"),
+                        fila.getBigDecimal("monto_reembolsado"), fila.getObject("creado_en", OffsetDateTime.class)));
+            }
+        } catch (SQLException error) {
+            throw new ErrorAccesoDatosException("No se pudo consultar el pago del pedido", error);
         }
     }
 

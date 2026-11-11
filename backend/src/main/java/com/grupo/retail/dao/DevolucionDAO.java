@@ -256,6 +256,12 @@ public class DevolucionDAO {
                 + "ORDER BY id_devolucion DESC LIMIT ?", clienteId);
     }
 
+    /** Devoluciones de un pedido para la vista de contexto de Soporte (RF27). */
+    public List<Devolucion> listarPorPedido(long pedidoId) {
+        return listar("SELECT " + COLUMNAS + " FROM devolucion WHERE pedido_id = ? "
+                + "ORDER BY id_devolucion LIMIT ?", pedidoId);
+    }
+
     /** Bandeja de Soporte; sin filtro devuelve las devoluciones por decidir o recibir. */
     public List<Devolucion> listarPorEstado(EstadoDevolucion estado) {
         if (estado == null) {

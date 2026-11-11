@@ -28,6 +28,11 @@ public record Reclamo(
                 EstadoReclamo.EN_ATENCION, respuesta, motivoEscalamiento, resolucionAdmin, creadoEn, actualizadoEn);
     }
 
+    public Reclamo reasignadoA(long agente) {
+        return new Reclamo(id, pedidoId, clienteId, agente, adminId, motivo, descripcion,
+                estado, respuesta, motivoEscalamiento, resolucionAdmin, creadoEn, actualizadoEn);
+    }
+
     public Reclamo respondido(String texto, EstadoReclamo nuevoEstado) {
         return new Reclamo(id, pedidoId, clienteId, soporteId, adminId, motivo, descripcion,
                 nuevoEstado, texto, motivoEscalamiento, resolucionAdmin, creadoEn, actualizadoEn);
