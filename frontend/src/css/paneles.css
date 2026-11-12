@@ -278,33 +278,49 @@
    En celular y tablet se mantienen las pestañas horizontales de siempre.
    ========================================================================== */
 @media (min-width: 992px) {
+  /* El panel ocupa todo el ancho: el menú queda pegado al borde izquierdo (como en el
+     boceto) en lugar de flotar dentro del .container centrado de 1320 px. */
   .storefront.con-menu-lateral {
+    max-width: none;
     display: grid;
-    grid-template-columns: 230px minmax(0, 1fr);
-    column-gap: 1.5rem;
+    grid-template-columns: 250px minmax(0, 1fr);
+    column-gap: 2rem;
     align-items: start;
+    padding-left: 0 !important;
+    padding-right: 2rem !important;
   }
 
+  /* El contenido usa el resto del ancho, con un tope para que las líneas no se estiren. */
   .storefront.con-menu-lateral > * {
     grid-column: 2;
+    justify-self: center;
+    width: 100%;
+    max-width: 1400px;
     min-width: 0;
   }
 
   .storefront.con-menu-lateral > #navegacion-modulos {
     grid-column: 1;
     grid-row: 1 / span 40;
+    justify-self: stretch;
+    align-self: start;
     position: sticky;
-    top: 1rem;
+    top: 0;
+    min-height: 100vh;
+    margin-top: -1.5rem;
+    margin-bottom: 0 !important;
+    padding: 1.5rem 1rem;
     flex-direction: column;
     flex-wrap: nowrap;
     gap: 0.25rem !important;
-    margin-bottom: 0 !important;
-    padding: 0.85rem;
+    border-width: 0 1px 0 0;
+    border-radius: 0;
+    box-shadow: none;
   }
 
   .storefront.con-menu-lateral > #navegacion-modulos::before {
     content: "Panel del personal";
-    padding: 0.25rem 0.75rem 0.5rem;
+    padding: 0.25rem 0.75rem 0.75rem;
     font-size: 0.72rem;
     font-weight: 700;
     letter-spacing: 0.06em;
@@ -403,4 +419,12 @@
   font-size: 1.45rem;
   font-weight: 800;
   color: var(--retail-ink);
+}
+
+/* Con el menú lateral, los botones flotantes de redes (izquierda) taparían el menú; el
+   personal no los necesita mientras trabaja en el panel. */
+@media (min-width: 992px) {
+  body:has(.storefront.con-menu-lateral) .floating-social-dock {
+    display: none;
+  }
 }
