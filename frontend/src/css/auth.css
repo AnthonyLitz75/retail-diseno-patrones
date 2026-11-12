@@ -364,3 +364,75 @@
   border-radius: 16px;
   background: #ffffff;
 }
+
+/* Registro: reglas de contraseña en vivo y términos (boceto "Crear cuenta") */
+.auth-reglas-clave {
+  margin: 0.5rem 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.85rem;
+  color: var(--retail-muted);
+}
+
+.auth-reglas-clave li {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.auth-reglas-clave li::before {
+  content: "";
+  flex: 0 0 auto;
+  width: 0.85rem;
+  height: 0.85rem;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+}
+
+.auth-reglas-clave li.cumple {
+  color: #146c43;
+}
+
+.auth-reglas-clave li.cumple::before {
+  content: "✓";
+  display: grid;
+  place-items: center;
+  border-color: #146c43;
+  background: #146c43;
+  color: var(--retail-surface);
+  font-size: 0.6rem;
+  font-weight: 700;
+}
+
+.auth-terminos {
+  margin-left: 1.5em;
+  color: var(--retail-muted);
+}
+
+.auth-terminos summary {
+  color: var(--retail-blue);
+  cursor: pointer;
+}
+
+.auth-terminos[open] summary {
+  margin-bottom: 0.35rem;
+}
+
+/* Celular y tablet: el panel de marca se reduce a logo y título para que el formulario
+   quede a la vista sin desplazarse (antes ocupaba casi toda la primera pantalla). */
+@media (max-width: 991.98px) {
+  .auth-showcase-panel {
+    padding: 1.25rem 1.25rem 1.5rem;
+  }
+
+  .auth-showcase-panel .auth-showcase-desc,
+  .auth-showcase-panel .auth-trust-pills,
+  .auth-showcase-panel .auth-showcase-footer {
+    display: none;
+  }
+
+  .auth-showcase-panel .auth-showcase-title {
+    margin: 0.75rem 0 0;
+    font-size: 1.35rem;
+  }
+}

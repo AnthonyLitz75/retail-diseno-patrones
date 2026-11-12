@@ -226,3 +226,181 @@
   --bs-table-color: #b02a37;
   color: #b02a37;
 }
+
+/* ==========================================================================
+   Formulario "Nuevo producto" (boceto del panel vendedor)
+   ========================================================================== */
+.nuevo-producto-grupo {
+  min-width: 0;
+  margin: 0;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--retail-border);
+  border-radius: 0.75rem;
+  background: var(--retail-surface);
+}
+
+/* La leyenda va dentro de la caja (float + clear) y no cortando el borde del fieldset. */
+.nuevo-producto-grupo legend {
+  float: left;
+  width: 100%;
+  padding: 0;
+}
+
+.nuevo-producto-grupo legend + * {
+  clear: both;
+}
+
+.nuevo-producto-grupo legend,
+.nuevo-producto-titulo {
+  margin-bottom: 0.25rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--retail-ink);
+}
+
+.nuevo-producto-ayuda {
+  margin-bottom: 0.75rem;
+  font-size: 0.85rem;
+  color: var(--retail-muted);
+}
+
+.nuevo-producto-vista-previa {
+  max-width: 280px;
+  margin-inline: auto;
+}
+
+.nuevo-producto-vista-previa .product-card {
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   Menú lateral del personal (boceto "Panel de personal") — solo en escritorio.
+   En celular y tablet se mantienen las pestañas horizontales de siempre.
+   ========================================================================== */
+@media (min-width: 992px) {
+  .storefront.con-menu-lateral {
+    display: grid;
+    grid-template-columns: 230px minmax(0, 1fr);
+    column-gap: 1.5rem;
+    align-items: start;
+  }
+
+  .storefront.con-menu-lateral > * {
+    grid-column: 2;
+    min-width: 0;
+  }
+
+  .storefront.con-menu-lateral > #navegacion-modulos {
+    grid-column: 1;
+    grid-row: 1 / span 40;
+    position: sticky;
+    top: 1rem;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    gap: 0.25rem !important;
+    margin-bottom: 0 !important;
+    padding: 0.85rem;
+  }
+
+  .storefront.con-menu-lateral > #navegacion-modulos::before {
+    content: "Panel del personal";
+    padding: 0.25rem 0.75rem 0.5rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--retail-muted);
+  }
+
+  .storefront.con-menu-lateral > #navegacion-modulos .nav-link {
+    width: 100%;
+    text-align: start;
+  }
+}
+
+/* ==========================================================================
+   Vista "Productos": barra de filtros, pestañas y tabla (boceto del panel)
+   ========================================================================== */
+.panel-productos-barra {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.75rem;
+  border: 1px solid var(--retail-border);
+  border-radius: 0.75rem;
+  background: var(--retail-bg-page);
+}
+
+@media (max-width: 767.98px) {
+  .panel-productos-barra {
+    grid-template-columns: 1fr;
+  }
+}
+
+.panel-productos-pestanas {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  padding: 0.2rem;
+  border-radius: 0.6rem;
+  background: var(--retail-border);
+}
+
+.panel-productos-pestana {
+  padding: 0.4rem 0.8rem;
+  border: 0;
+  border-radius: 0.5rem;
+  background: transparent;
+  color: var(--retail-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.panel-productos-pestana[aria-pressed="true"] {
+  background: var(--retail-surface);
+  color: var(--retail-ink);
+  box-shadow: var(--retail-shadow);
+}
+
+.tabla-gestion-productos th {
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--retail-muted);
+}
+
+/* Indicadores de la cabecera de Administración (boceto del panel) */
+.indicadores-admin {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 0.75rem;
+  margin: 0.75rem 0 1rem;
+}
+
+.indicadores-admin:empty {
+  display: none;
+}
+
+.indicador-admin {
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--retail-border);
+  border-radius: 0.75rem;
+  background: var(--retail-surface);
+}
+
+.indicador-admin p {
+  margin: 0;
+}
+
+.indicador-admin-etiqueta,
+.indicador-admin-nota {
+  font-size: 0.8rem;
+  color: var(--retail-muted);
+}
+
+.indicador-admin-valor {
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: var(--retail-ink);
+}

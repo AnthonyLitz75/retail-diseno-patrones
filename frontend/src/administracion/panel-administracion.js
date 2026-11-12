@@ -5,6 +5,7 @@ import {
   cargarResumenAdmin,
   crearCategoria,
   crearParametrosReporte,
+  indicadoresDestacados,
   desactivarCuenta,
   listarCategoriasAdmin,
   listarCuentas,
@@ -489,7 +490,29 @@ export function crearPanelAdministracion(apiRequest, alCambiarCategorias) {
     etiquetaGrupo: "Secciones de administración",
     prefijo: "pestana-admin",
   });
-  seccion.querySelector("#titulo-administracion")?.after(pestanas.element);
+  // Boceto del panel: cuatro indicadores sin rango de fechas sobre las pestañas.
+  const indicadores = crearElemento("div", "indicadores-admin");
+  indicadores.setAttribute("aria-label", "Indicadores generales de la tienda");
+  indicadores.setAttribute("role", "region");
+  seccion.querySelector("#titulo-administracion")?.after(indicadores, pestanas.element);
+
+  async function cargarIndicadores() {
+    try {
+      const resumen = await cargarResumenAdmin(apiRequest, "");
+      indicadores.replaceChildren(...indicadoresDestacados(resumen).map(({ etiqueta, valor, nota }) => {
+        const tarjeta = crearElemento("article", "indicador-admin");
+        tarjeta.append(
+          crearElemento("p", "indicador-admin-etiqueta", etiqueta),
+          crearElemento("p", "indicador-admin-valor", valor),
+          crearElemento("p", "indicador-admin-nota", nota),
+        );
+        return tarjeta;
+      }));
+    } catch {
+      // Sin indicadores la administración sigue funcionando; el detalle está en Reportes.
+      indicadores.replaceChildren();
+    }
+  }
   for (const [id, etiqueta] of [
     ["cuentas", "Cuentas"],
     ["categorias", "Categorías"],
@@ -513,6 +536,7 @@ export function crearPanelAdministracion(apiRequest, alCambiarCategorias) {
     mostrarSeccion: (id) => pestanas.mostrar(id),
     async cargar() {
       await Promise.all([
+        cargarIndicadores(),
         cargarCuentas(),
         cargarCategorias(),
         consultarReporte(),

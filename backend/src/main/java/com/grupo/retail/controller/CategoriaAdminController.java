@@ -24,9 +24,11 @@ import java.util.List;
 @RequestMapping("/api/admin/categorias")
 public class CategoriaAdminController {
     private final CategoriaService categoriaService;
+    private final SesionEmpleado sesionEmpleado;
 
     public CategoriaAdminController(CategoriaService categoriaService, SesionEmpleado sesionEmpleado) {
         this.categoriaService = categoriaService;
+        this.sesionEmpleado = sesionEmpleado;
     }
 
     @GetMapping
@@ -38,7 +40,7 @@ public class CategoriaAdminController {
     public ResponseEntity<Categoria> crear(
             @Valid @RequestBody SolicitudCategoria solicitud,
             HttpServletRequest peticion) {
-        Categoria creada = categoriaService.crear(solicitud);
+        Categoria creada = categoriaService.crear(solicitud, sesionEmpleado.obtenerId(peticion));
         return ResponseEntity.created(URI.create("/api/admin/categorias/" + creada.idCategoria()))
                 .body(creada);
     }
@@ -48,7 +50,7 @@ public class CategoriaAdminController {
             @PathVariable Long id,
             @Valid @RequestBody SolicitudCategoria solicitud,
             HttpServletRequest peticion) {
-        return categoriaService.actualizarNombre(id, solicitud)
+        return categoriaService.actualizarNombre(id, solicitud, sesionEmpleado.obtenerId(peticion))
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
@@ -58,7 +60,7 @@ public class CategoriaAdminController {
             @PathVariable Long id,
             @Valid @RequestBody ActualizarEstadoCategoria solicitud,
             HttpServletRequest peticion) {
-        return categoriaService.actualizarEstado(id, solicitud.activa())
+        return categoriaService.actualizarEstado(id, solicitud.activa(), sesionEmpleado.obtenerId(peticion))
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }

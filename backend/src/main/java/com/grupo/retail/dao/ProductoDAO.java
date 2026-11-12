@@ -138,27 +138,64 @@ public class ProductoDAO {
         }
     }
 
+    private static final String COLUMNAS_PRODUCTO =
+            "id, sku, nombre, marca, categoria, categoria_id, descripcion, precio, precio_anterior, stock, nuevo, imagen, activo";
     private static final String INSERTAR_PRODUCTO_SQL = """
-            INSERT INTO producto (nombre, categoria, categoria_id, precio, stock, activo)
-            SELECT ?, c.nombre, c.id_categoria, ?, ?, TRUE
+            INSERT INTO producto (sku, nombre, marca, descripcion, imagen, categoria, categoria_id,
+                                  precio, precio_anterior, stock, nuevo, activo)
+            SELECT ?, ?, ?, ?, ?, c.nombre, c.id_categoria, ?, ?, ?, ?, TRUE
             FROM categoria c
             WHERE c.nombre = ? AND c.activa = TRUE
-            RETURNING id, sku, nombre, marca, categoria, categoria_id, descripcion, precio, precio_anterior, stock, nuevo, imagen, activo
-            """;
+            RETURNING\s""" + COLUMNAS_PRODUCTO;
+    /** Código con el formato del catálogo (PA-0033) a partir del id, solo si nadie lo usa ya. */
+    private static final String ASIGNAR_SKU_GENERADO_SQL = """
+            UPDATE producto p
+            SET sku = 'PA-' || LPAD(p.id::text, 4, '0')
+            WHERE p.id = ? AND p.sku IS NULL
+              AND NOT EXISTS (SELECT 1 FROM producto o WHERE o.sku = 'PA-' || LPAD(p.id::text, 4, '0'))
+            RETURNING\s""" + COLUMNAS_PRODUCTO;
+    private static final String EXISTE_SKU_SQL = "SELECT 1 FROM producto WHERE sku = ?";
     private static final String BLOQUEAR_ACTIVO_SQL = SELECT_PRODUCTOS + " WHERE p.id = ? AND p.activo = TRUE FOR UPDATE OF p";
 
     /**
      * Inserta el producto en la categoría indicada si existe y está activa; vacío si no.
+     * Sin código, le asigna PA-NNNN según su id (si ese código está libre).
      * El stock inicial y su movimiento los registra el servicio en la misma transacción.
      */
     public Optional<Producto> insertar(Connection conexion, NuevoProducto datos) throws SQLException {
+        Optional<Producto> insertado;
         try (PreparedStatement consulta = conexion.prepareStatement(INSERTAR_PRODUCTO_SQL)) {
-            consulta.setString(1, datos.nombre().trim());
-            consulta.setBigDecimal(2, datos.precio());
-            consulta.setInt(3, datos.stock());
-            consulta.setString(4, datos.categoria());
+            consulta.setString(1, datos.sku());
+            consulta.setString(2, datos.nombre());
+            consulta.setString(3, datos.marca());
+            consulta.setString(4, datos.descripcion());
+            consulta.setString(5, datos.imagen());
+            consulta.setBigDecimal(6, datos.precio());
+            consulta.setBigDecimal(7, datos.precioAnterior());
+            consulta.setInt(8, datos.stock());
+            consulta.setBoolean(9, Boolean.TRUE.equals(datos.nuevo()));
+            consulta.setString(10, datos.categoria());
             try (ResultSet resultado = consulta.executeQuery()) {
-                return resultado.next() ? Optional.of(mapearProducto(resultado)) : Optional.empty();
+                insertado = resultado.next() ? Optional.of(mapearProducto(resultado)) : Optional.empty();
+            }
+        }
+        if (insertado.isEmpty() || insertado.get().sku() != null) {
+            return insertado;
+        }
+        try (PreparedStatement consulta = conexion.prepareStatement(ASIGNAR_SKU_GENERADO_SQL)) {
+            consulta.setLong(1, insertado.get().id());
+            try (ResultSet resultado = consulta.executeQuery()) {
+                return resultado.next() ? Optional.of(mapearProducto(resultado)) : insertado;
+            }
+        }
+    }
+
+    /** Si algún producto (activo o no) ya usa ese código. */
+    public boolean existeSku(Connection conexion, String sku) throws SQLException {
+        try (PreparedStatement consulta = conexion.prepareStatement(EXISTE_SKU_SQL)) {
+            consulta.setString(1, sku);
+            try (ResultSet resultado = consulta.executeQuery()) {
+                return resultado.next();
             }
         }
     }

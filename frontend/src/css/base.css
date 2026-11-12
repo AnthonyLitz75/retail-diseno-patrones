@@ -3,6 +3,13 @@
    Estilos base, resets y utilidades flotantes globales
    ========================================================================== */
 
+/* El atributo hidden siempre oculta. Bootstrap ya trae esta regla en su reboot, pero sus
+   utilidades (.d-flex, .d-block…) también son !important y van después, así que un
+   <nav class="d-flex" hidden> seguía visible (paginación del catálogo, kardex y auditoría). */
+[hidden] {
+  display: none !important;
+}
+
 html {
   scroll-behavior: smooth;
   scroll-padding-top: 1.5rem;

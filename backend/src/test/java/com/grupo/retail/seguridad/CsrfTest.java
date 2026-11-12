@@ -1,5 +1,6 @@
 package com.grupo.retail.seguridad;
 
+import com.grupo.retail.service.AuditoriaService;
 import com.grupo.retail.integracion.BaseIntegracionPostgres;
 import com.grupo.retail.dao.UsuarioDAO;
 import com.grupo.retail.model.Usuario;
@@ -47,6 +48,10 @@ public class CsrfTest extends BaseIntegracionPostgres {
 
     @MockitoBean
     private UsuarioDAO usuarioDAO;
+
+    /** Esta clase prueba solo CSRF: la auditoría (con su clave foránea a usuario) se simula. */
+    @MockitoBean
+    private AuditoriaService auditoriaService;
 
     @BeforeEach
     void setup() {

@@ -1,5 +1,10 @@
 package com.grupo.retail.controller;
 
+import java.util.Locale;
+import com.grupo.retail.service.AuditoriaService;
+import com.grupo.retail.model.EventoAuditoria;
+import com.grupo.retail.model.AccionAuditoria;
+import com.grupo.retail.exception.DemasiadosIntentosException;
 import com.grupo.retail.security.LimitadorIntentosLogin;
 import com.grupo.retail.dto.InicioSesion;
 import com.grupo.retail.dto.RegistroCliente;
@@ -34,12 +39,14 @@ public class AuthController {
     private final UsuarioService usuarioService;
     private final SesionAutenticada sesionAutenticada;
     private final LimitadorIntentosLogin limitadorIntentos;
+    private final AuditoriaService auditoriaService;
 
     public AuthController(UsuarioService usuarioService, SesionAutenticada sesionAutenticada,
-            LimitadorIntentosLogin limitadorIntentos) {
+            LimitadorIntentosLogin limitadorIntentos, AuditoriaService auditoriaService) {
         this.usuarioService = usuarioService;
         this.sesionAutenticada = sesionAutenticada;
         this.limitadorIntentos = limitadorIntentos;
+        this.auditoriaService = auditoriaService;
     }
 
     @PostMapping("/registro")
@@ -53,11 +60,21 @@ public class AuthController {
     public ResponseEntity<?> iniciarSesion(
             @Valid @RequestBody InicioSesion datos,
             HttpServletRequest solicitud) {
-        limitadorIntentos.verificar(datos.correo());
+        String correoIntentado = datos.correo().trim().toLowerCase(Locale.ROOT);
+        try {
+            limitadorIntentos.verificar(datos.correo());
+        } catch (DemasiadosIntentosException bloqueo) {
+            auditoriaService.registrarAparte(new EventoAuditoria(null, correoIntentado, null,
+                    AccionAuditoria.INICIO_SESION_BLOQUEADO, "USUARIO", null,
+                    "Correo bloqueado temporalmente por intentos fallidos"));
+            throw bloqueo;
+        }
         Optional<Usuario> resultado = usuarioService.autenticarCliente(datos);
 
         if (resultado.isEmpty()) {
             limitadorIntentos.registrarFallo(datos.correo());
+            auditoriaService.registrarAparte(new EventoAuditoria(null, correoIntentado, null,
+                    AccionAuditoria.INICIO_SESION_FALLIDO, "USUARIO", null, "Correo o contraseña incorrectos"));
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("error", "Correo o contraseña incorrectos"));
         }
@@ -82,6 +99,8 @@ public class AuthController {
         SecurityContextHolder.setContext(context);
         sesion.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
 
+        auditoriaService.registrarAparte(new EventoAuditoria(usuario.idUsuario(), usuario.correo(), usuario.rol(),
+                AccionAuditoria.INICIO_SESION, "USUARIO", usuario.idUsuario(), ""));
         return ResponseEntity.ok(usuario);
     }
 

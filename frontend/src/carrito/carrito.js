@@ -2,7 +2,16 @@ import { apiRequest } from '../api/api.js'
 import { mostrarToast } from '../utilidades/notificaciones.js'
 import { formatoPrecio } from '../utilidades/formato.js'
 import { asignarImagenConRespaldo, resolverImagenProducto } from '../catalogo/imagen-producto.js'
-import { construirPayloadConfirmacion } from './checkout.js'
+import {
+  construirPayloadConfirmacion,
+  conservarClaveTrasError,
+  describirPago,
+  mensajeErrorCompra,
+  numeroPedido,
+  PASOS_CHECKOUT,
+  pasoTrasActualizarCarrito,
+  textoBotonPagar
+} from './checkout.js'
 import {
   deshacerUltimaAccion,
   mensajeErrorDeshacer,
@@ -28,6 +37,17 @@ let spinnerConfirmarCompra
 let textoConfirmarCompra
 let campoDestinatario
 let campoDireccion
+let botonContinuar
+let textoContinuar
+let botonVolverCarrito
+let totalCheckout
+let resumenCheckout
+let pasoConfirmacion
+// Checkout en tres pasos (boceto "Confirmar compra"): paso visible y clave del intento de
+// compra en curso. La clave se conserva solo si el resultado fue desconocido (sin respuesta).
+let pasoActual = 'carrito'
+let claveIntento = null
+let ultimoTotal = 0
 let compraEnProceso = false
 let offcanvasInstancia = null
 let OffcanvasClase = null
@@ -77,9 +97,124 @@ export function inicializarCarrito({ offcanvas = null, Offcanvas = null } = {}) 
   textoConfirmarCompra = document.querySelector('#confirmar-compra-texto')
   campoDestinatario = document.querySelector('#checkout-destinatario')
   campoDireccion = document.querySelector('#checkout-direccion')
+  botonContinuar = document.querySelector('#continuar-checkout')
+  textoContinuar = document.querySelector('#continuar-checkout-texto')
+  botonVolverCarrito = document.querySelector('#volver-carrito')
+  totalCheckout = document.querySelector('#checkout-total')
+  resumenCheckout = document.querySelector('#checkout-resumen')
+  pasoConfirmacion = document.querySelector('#checkout-paso-confirmacion')
+  pasoActual = 'carrito'
+  claveIntento = null
   if (botonConfirmarCompra) {
     botonConfirmarCompra.addEventListener('click', confirmarCompra)
   }
+  botonContinuar?.addEventListener('click', irAEntrega)
+  botonVolverCarrito?.addEventListener('click', () => mostrarPaso('carrito'))
+  // Al cerrar el panel tras una compra, la próxima vez se abre en el carrito.
+  seccionCarrito?.addEventListener?.('hidden.bs.offcanvas', () => {
+    if (pasoActual === 'confirmacion') mostrarPaso('carrito')
+  })
+}
+
+/** Muestra un paso del checkout y marca el avance en la barra de pasos. */
+export function mostrarPaso(paso) {
+  if (!PASOS_CHECKOUT.includes(paso)) return
+  pasoActual = paso
+  const indice = PASOS_CHECKOUT.indexOf(paso)
+  PASOS_CHECKOUT.forEach((nombre, i) => {
+    const seccion = document.querySelector(`#checkout-paso-${nombre}`)
+    if (seccion) seccion.hidden = nombre !== paso
+    const marca = document.querySelector(`#checkout-pasos [data-paso="${nombre}"]`)
+    if (marca) {
+      marca.classList.toggle('is-done', i < indice)
+      if (nombre === paso) marca.setAttribute('aria-current', 'step')
+      else marca.removeAttribute('aria-current')
+    }
+  })
+  if (paso !== 'carrito' && estadoCarrito) {
+    estadoCarrito.className = 'small mb-2'
+    estadoCarrito.textContent = ''
+  }
+}
+
+export function pasoCheckoutActual() {
+  return pasoActual
+}
+
+function irAEntrega() {
+  if (!esClienteAutenticado()) {
+    mostrarToast('Inicia sesión o crea una cuenta para completar tu compra.', 'info')
+    window.location.href = '/login.html'
+    return
+  }
+  mostrarPaso('entrega')
+  campoDestinatario?.focus?.()
+}
+
+function metodoPagoElegido() {
+  return document.querySelector('input[name="checkout-metodo-pago"]:checked')?.value || 'PRUEBA_APROBADA'
+}
+
+/** Resumen "Tu pedido" del paso 2 con lo que hay en el carrito. */
+function pintarResumen(carrito) {
+  if (totalCheckout) totalCheckout.textContent = formatoPrecio(carrito.total)
+  if (!resumenCheckout) return
+  resumenCheckout.replaceChildren(...carrito.productos.map((producto) => {
+    const fila = document.createElement('li')
+    fila.className = 'd-flex justify-content-between gap-2 py-1 border-bottom'
+    const nombre = document.createElement('span')
+    nombre.textContent = `${producto.nombre} × ${producto.cantidad}`
+    const subtotal = document.createElement('span')
+    subtotal.className = 'fw-semibold text-nowrap'
+    subtotal.textContent = formatoPrecio(producto.subtotal)
+    fila.append(nombre, subtotal)
+    return fila
+  }))
+}
+
+/** Paso 3 (boceto "Compra confirmada"): número, estado, total, pago y entrega del pedido. */
+function pintarConfirmacion(pedido) {
+  if (!pasoConfirmacion) return
+  const el = (etiqueta, clase = '', texto = '') => {
+    const nodo = document.createElement(etiqueta)
+    if (clase) nodo.className = clase
+    if (texto) nodo.textContent = texto
+    return nodo
+  }
+  const icono = el('div', 'checkout-confirmado-icono mx-auto mb-3')
+  icono.setAttribute('aria-hidden', 'true')
+  icono.textContent = '✓'
+  const titulo = el('h3', 'h4 fw-bold text-center mb-2', '¡Compra confirmada!')
+  const mensaje = el('p', 'text-center text-secondary small mb-3')
+  mensaje.append(
+    `Tu pedido ${numeroPedido(pedido.idPedido)} está `,
+    el('span', 'badge text-bg-warning', pedido.estado || 'PENDIENTE'),
+    '. Te avisaremos en Notificaciones cuando almacén lo prepare.'
+  )
+  const datos = el('dl', 'checkout-confirmado-datos small mb-3')
+  const filas = [
+    ['Total', formatoPrecio(pedido.total)],
+    ['Pago', describirPago(pedido)],
+    ['Entrega en', pedido.direccionEnvio || 'Sin dirección indicada']
+  ]
+  if (pedido.destinatario) filas.push(['Recibe', pedido.destinatario])
+  for (const [clave, valor] of filas) {
+    datos.append(el('dt', '', clave), el('dd', '', valor))
+  }
+  const verPedido = el('button', 'btn btn-primary w-100 mb-2', 'Ver mi pedido')
+  verPedido.type = 'button'
+  verPedido.addEventListener('click', () => {
+    obtenerOffcanvas()?.hide?.()
+    mostrarPaso('carrito')
+    window.location.hash = '#/pedidos'
+  })
+  const seguir = el('button', 'btn btn-outline-primary w-100', 'Seguir comprando')
+  seguir.type = 'button'
+  seguir.addEventListener('click', () => {
+    obtenerOffcanvas()?.hide?.()
+    mostrarPaso('carrito')
+  })
+  pasoConfirmacion.replaceChildren(icono, titulo, mensaje, datos, verPedido, seguir)
 }
 
 function mostrarError(error) {
@@ -153,16 +288,21 @@ export function mostrarCarrito(carrito) {
     drawerCount.textContent = `${totalItems} ${totalItems === 1 ? 'ítem' : 'ítems'}`
   }
 
-  // Ajustar estado y texto del botón de checkout según autenticación
-  if (botonConfirmarCompra && textoConfirmarCompra) {
-    if (!esClienteAutenticado()) {
-      textoConfirmarCompra.textContent = 'Iniciar sesión para pagar'
-      botonConfirmarCompra.disabled = carrito.productos.length === 0
-    } else {
-      textoConfirmarCompra.textContent = 'Confirmar compra con pago simulado'
-      botonConfirmarCompra.disabled = compraEnProceso || carrito.productos.length === 0
-    }
+  // Paso 1: el invitado debe iniciar sesión; el cliente continúa a "Entrega y pago".
+  const vacio = carrito.productos.length === 0
+  if (botonContinuar) botonContinuar.disabled = vacio
+  if (textoContinuar) {
+    textoContinuar.textContent = esClienteAutenticado() ? 'Continuar con la entrega' : 'Iniciar sesión para pagar'
   }
+  // Paso 2: el botón muestra el total que se va a pagar.
+  ultimoTotal = carrito.total
+  if (botonConfirmarCompra) {
+    botonConfirmarCompra.disabled = !esClienteAutenticado() || compraEnProceso || vacio
+  }
+  if (textoConfirmarCompra && !compraEnProceso) textoConfirmarCompra.textContent = textoBotonPagar(carrito.total)
+  pintarResumen(carrito)
+  const paso = pasoTrasActualizarCarrito(pasoActual, carrito.productos.length)
+  if (paso !== pasoActual) mostrarPaso(paso)
 
   if (carrito.productos.length === 0) {
     estadoCarrito.className = 'small mb-0'
@@ -304,8 +444,11 @@ export function ocultarCarrito() {
   const drawerCount = document.querySelector('#cart-drawer-count')
   if (drawerCount) drawerCount.textContent = '0 ítems'
   if (botonConfirmarCompra) botonConfirmarCompra.disabled = true
+  if (botonContinuar) botonContinuar.disabled = true
   if (spinnerConfirmarCompra?.classList) spinnerConfirmarCompra.classList.add('d-none')
-  if (textoConfirmarCompra) textoConfirmarCompra.textContent = 'Confirmar compra con pago simulado'
+  if (textoConfirmarCompra) textoConfirmarCompra.textContent = textoBotonPagar(0)
+  claveIntento = null
+  mostrarPaso('carrito')
 }
 
 async function confirmarCompra() {
@@ -324,14 +467,18 @@ async function confirmarCompra() {
   let payload
   try {
     payload = construirPayloadConfirmacion({
+      claveConfirmacion: claveIntento,
       destinatario: destinatarioValor,
-      direccionEnvio: direccionValor
+      direccionEnvio: direccionValor,
+      metodoPago: metodoPagoElegido()
     })
   } catch (errorValidacion) {
     mostrarError(errorValidacion)
     mostrarToast(errorValidacion.message, 'advertencia')
     return
   }
+  // La misma clave viaja en los reintentos de este intento (idempotencia en CheckoutFacade).
+  claveIntento = payload.claveConfirmacion || null
 
   compraEnProceso = true
   if (botonConfirmarCompra) botonConfirmarCompra.disabled = true
@@ -339,26 +486,35 @@ async function confirmarCompra() {
   if (textoConfirmarCompra) textoConfirmarCompra.textContent = 'Procesando pago...'
   estadoCarrito.className = 'alert alert-secondary py-2 small mb-2'
   estadoCarrito.textContent = 'Procesando pago simulado...'
+  let confirmado = false
   try {
     const respuesta = await apiRequest('/api/pedidos/confirmar', {
       method: 'POST',
       json: payload
     })
     const cuerpo = await respuesta.json()
+    confirmado = true
+    claveIntento = null
     if (campoDestinatario) campoDestinatario.value = ''
     if (campoDireccion) campoDireccion.value = ''
+    pintarConfirmacion({ destinatario: payload.destinatario, direccionEnvio: payload.direccionEnvio, ...cuerpo })
+    mostrarPaso('confirmacion')
+    pasoConfirmacion?.focus?.()
     await cargarCarrito()
-    estadoCarrito.className = 'alert alert-success py-2 small mb-2'
-    estadoCarrito.textContent = `Compra confirmada. Se creó el pedido #${cuerpo.idPedido}.`
-    mostrarToast(`¡Compra confirmada! Pedido #${cuerpo.idPedido} generado.`, 'exito')
+    mostrarToast(`¡Compra confirmada! Pedido ${numeroPedido(cuerpo.idPedido)} generado.`, 'exito')
     document.dispatchEvent(new CustomEvent('retail:pedido-confirmado', { detail: cuerpo }))
   } catch (error) {
-    mostrarError(error)
+    if (!conservarClaveTrasError(error)) claveIntento = null
+    const mensaje = mensajeErrorCompra(error)
+    if (estadoCarrito) {
+      estadoCarrito.className = `alert ${error?.status === 402 ? 'alert-warning' : 'alert-danger'} py-2 small mb-2`
+      estadoCarrito.textContent = mensaje
+    }
     mostrarToast(`No se pudo procesar la compra: ${error.message}`, 'error')
   } finally {
     compraEnProceso = false
     if (spinnerConfirmarCompra?.classList) spinnerConfirmarCompra.classList.add('d-none')
-    if (textoConfirmarCompra) textoConfirmarCompra.textContent = 'Confirmar compra con pago simulado'
+    if (textoConfirmarCompra) textoConfirmarCompra.textContent = textoBotonPagar(confirmado ? 0 : ultimoTotal)
     if (botonConfirmarCompra) {
       botonConfirmarCompra.disabled = !listaCarrito || listaCarrito.querySelectorAll('.cart-item').length === 0
     }

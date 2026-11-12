@@ -23,6 +23,12 @@ public final class ClienteHttp {
     private final HttpClient http;
     private String tokenCsrf;
 
+    /** Intento de inicio de sesión que devuelve la respuesta tal cual (incluidos 401 y 429). */
+    public Respuesta intentarIniciarSesion(String correo, String clave) {
+        renovarCsrf();
+        return post("/api/auth/login", "{\"correo\":\"" + correo + "\",\"clave\":\"" + clave + "\"}");
+    }
+
     public record Respuesta(int estado, String cuerpo) {
         /** Primer valor numérico del campo indicado en el JSON de la respuesta. */
         public long campoNumerico(String campo) {

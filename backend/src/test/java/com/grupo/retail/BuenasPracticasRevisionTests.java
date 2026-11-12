@@ -1,5 +1,6 @@
 package com.grupo.retail;
 
+import com.grupo.retail.service.AuditoriaService;
 import com.grupo.retail.controller.AuthController;
 import com.grupo.retail.dao.CategoriaDAO;
 import com.grupo.retail.dao.InventarioDAO;
@@ -51,7 +52,7 @@ class BuenasPracticasRevisionTests {
         when(dao.buscarPorCorreo("nadie@example.com")).thenReturn(Optional.empty());
         when(encoder.encode(anyString())).thenReturn("$2a$10$senuelo");
 
-        Optional<Usuario> resultado = new UsuarioService(dao, encoder, mock(EjecutorTransaccion.class))
+        Optional<Usuario> resultado = new UsuarioService(dao, encoder, mock(EjecutorTransaccion.class), mock(AuditoriaService.class))
                 .autenticarCliente(new InicioSesion("nadie@example.com", "ClaveSegura1"));
 
         assertTrue(resultado.isEmpty());
@@ -64,7 +65,7 @@ class BuenasPracticasRevisionTests {
         PasswordEncoder encoder = mock(PasswordEncoder.class);
         when(dao.buscarPorCorreo(anyString())).thenReturn(Optional.empty());
         when(encoder.encode(anyString())).thenReturn("$2a$10$senuelo");
-        UsuarioService servicio = new UsuarioService(dao, encoder, mock(EjecutorTransaccion.class));
+        UsuarioService servicio = new UsuarioService(dao, encoder, mock(EjecutorTransaccion.class), mock(AuditoriaService.class));
 
         servicio.autenticarCliente(new InicioSesion("uno@example.com", "ClaveSegura1"));
         servicio.autenticarCliente(new InicioSesion("dos@example.com", "ClaveSegura1"));
@@ -79,7 +80,7 @@ class BuenasPracticasRevisionTests {
         when(dao.buscarPorCorreo("ana@example.com")).thenReturn(Optional.of(new CredencialesUsuario(ANA_INACTIVA, "$hash")));
         when(encoder.matches("ClaveSegura1", "$hash")).thenReturn(true);
 
-        Optional<Usuario> resultado = new UsuarioService(dao, encoder, mock(EjecutorTransaccion.class))
+        Optional<Usuario> resultado = new UsuarioService(dao, encoder, mock(EjecutorTransaccion.class), mock(AuditoriaService.class))
                 .autenticarCliente(new InicioSesion("ana@example.com", "ClaveSegura1"));
 
         assertTrue(resultado.isEmpty());
@@ -90,7 +91,7 @@ class BuenasPracticasRevisionTests {
     void elLoginCuentaLosFallosYTrasCincoResponde429SinConsultarLaClave() {
         UsuarioService servicio = mock(UsuarioService.class);
         when(servicio.autenticarCliente(any())).thenReturn(Optional.empty());
-        AuthController controller = new AuthController(servicio, mock(SesionAutenticada.class), new LimitadorIntentosLogin());
+        AuthController controller = new AuthController(servicio, mock(SesionAutenticada.class), new LimitadorIntentosLogin(), mock(AuditoriaService.class));
         InicioSesion datos = new InicioSesion("ana@example.com", "ClaveIncorrecta");
 
         for (int i = 0; i < LimitadorIntentosLogin.MAX_FALLOS; i++) {
@@ -109,7 +110,7 @@ class BuenasPracticasRevisionTests {
         InicioSesion buena = new InicioSesion("ana@example.com", "ClaveSegura1");
         when(servicio.autenticarCliente(mala)).thenReturn(Optional.empty());
         when(servicio.autenticarCliente(buena)).thenReturn(Optional.of(ANA));
-        AuthController controller = new AuthController(servicio, mock(SesionAutenticada.class), new LimitadorIntentosLogin());
+        AuthController controller = new AuthController(servicio, mock(SesionAutenticada.class), new LimitadorIntentosLogin(), mock(AuditoriaService.class));
 
         for (int i = 0; i < LimitadorIntentosLogin.MAX_FALLOS - 1; i++) {
             controller.iniciarSesion(mala, new MockHttpServletRequest());
@@ -125,7 +126,7 @@ class BuenasPracticasRevisionTests {
     @Test
     void unRangoDePreciosInvertidoSeRechazaSinConsultarLaBase() {
         ProductoDAO dao = mock(ProductoDAO.class);
-        ProductoService servicio = new ProductoService(dao, mock(CategoriaDAO.class), mock(InventarioDAO.class), mock(EjecutorTransaccion.class));
+        ProductoService servicio = new ProductoService(dao, mock(CategoriaDAO.class), mock(InventarioDAO.class), mock(EjecutorTransaccion.class), mock(AuditoriaService.class));
 
         IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
                 () -> servicio.listarProductos(null, null, new BigDecimal("100"), new BigDecimal("50")));
@@ -137,7 +138,7 @@ class BuenasPracticasRevisionTests {
     @Test
     void unRangoDePreciosValidoConsultaLaBase() {
         ProductoDAO dao = mock(ProductoDAO.class);
-        new ProductoService(dao, mock(CategoriaDAO.class), mock(InventarioDAO.class), mock(EjecutorTransaccion.class))
+        new ProductoService(dao, mock(CategoriaDAO.class), mock(InventarioDAO.class), mock(EjecutorTransaccion.class), mock(AuditoriaService.class))
                 .listarProductos("mouse", null, new BigDecimal("50"), new BigDecimal("50"));
         verify(dao).listarTodos(eq("mouse"), eq(null), eq(new BigDecimal("50")), eq(new BigDecimal("50")));
     }

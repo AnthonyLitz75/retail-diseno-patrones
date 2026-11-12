@@ -1,5 +1,6 @@
 package com.grupo.retail;
 
+import com.grupo.retail.service.AuditoriaService;
 import com.grupo.retail.dao.CategoriaDAO;
 import com.grupo.retail.dao.InventarioDAO;
 import com.grupo.retail.dao.PagoDAO;
@@ -69,7 +70,7 @@ class TransaccionesEnServiciosTests {
         NuevoProducto datos = new NuevoProducto("Mouse inalámbrico M170", "Mouse", new BigDecimal("49.00"), 12);
         when(productos.insertar(conexion, datos)).thenReturn(Optional.of(mouse(12)));
 
-        new ProductoService(productos, mock(CategoriaDAO.class), inventario, ejecutor()).crearProducto(datos, 3L);
+        new ProductoService(productos, mock(CategoriaDAO.class), inventario, ejecutor(), mock(AuditoriaService.class)).crearProducto(datos, 3L);
 
         ArgumentCaptor<RegistroMovimiento> movimiento = ArgumentCaptor.forClass(RegistroMovimiento.class);
         verify(inventario).registrarMovimiento(eq(conexion), movimiento.capture());
@@ -85,7 +86,7 @@ class TransaccionesEnServiciosTests {
         NuevoProducto datos = new NuevoProducto("Mouse", "Mouse", new BigDecimal("49.00"), 0);
         when(productos.insertar(conexion, datos)).thenReturn(Optional.of(mouse(0)));
 
-        new ProductoService(productos, mock(CategoriaDAO.class), inventario, ejecutor()).crearProducto(datos, 3L);
+        new ProductoService(productos, mock(CategoriaDAO.class), inventario, ejecutor(), mock(AuditoriaService.class)).crearProducto(datos, 3L);
 
         verifyNoInteractions(inventario);
     }
@@ -95,7 +96,7 @@ class TransaccionesEnServiciosTests {
         ProductoDAO productos = mock(ProductoDAO.class);
         NuevoProducto datos = new NuevoProducto("Mouse", "No existe", new BigDecimal("49.00"), 5);
         when(productos.insertar(conexion, datos)).thenReturn(Optional.empty());
-        ProductoService servicio = new ProductoService(productos, mock(CategoriaDAO.class), inventario, ejecutor());
+        ProductoService servicio = new ProductoService(productos, mock(CategoriaDAO.class), inventario, ejecutor(), mock(AuditoriaService.class));
 
         IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
                 () -> servicio.crearProducto(datos, 3L));
@@ -106,11 +107,27 @@ class TransaccionesEnServiciosTests {
     }
 
     @Test
+    void crearProductoConCodigoRepetidoResponde400SinInsertar() throws Exception {
+        ProductoDAO productos = mock(ProductoDAO.class);
+        NuevoProducto datos = new NuevoProducto("Mouse", "Mouse", new BigDecimal("49.00"), 5,
+                "PA-0006", null, null, null, null, false);
+        when(productos.existeSku(conexion, "PA-0006")).thenReturn(true);
+        ProductoService servicio = new ProductoService(productos, mock(CategoriaDAO.class), inventario, ejecutor(), mock(AuditoriaService.class));
+
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                () -> servicio.crearProducto(datos, 3L));
+
+        assertEquals("Ya existe un producto con el código PA-0006", error.getMessage());
+        verify(productos, never()).insertar(any(), any());
+        verify(conexion).rollback();
+    }
+
+    @Test
     void ajustarStockRegistraLaDiferenciaComoAjuste() throws Exception {
         ProductoDAO productos = mock(ProductoDAO.class);
         when(productos.bloquearActivo(conexion, 6L)).thenReturn(Optional.of(mouse(10)));
 
-        Optional<Producto> resultado = new ProductoService(productos, mock(CategoriaDAO.class), inventario, ejecutor())
+        Optional<Producto> resultado = new ProductoService(productos, mock(CategoriaDAO.class), inventario, ejecutor(), mock(AuditoriaService.class))
                 .actualizarStock(6L, 7, "Conteo físico", 4L);
 
         assertEquals(7, resultado.orElseThrow().stock());
@@ -127,7 +144,7 @@ class TransaccionesEnServiciosTests {
         ProductoDAO productos = mock(ProductoDAO.class);
         when(productos.bloquearActivo(conexion, 6L)).thenReturn(Optional.of(mouse(10)));
 
-        Optional<Producto> resultado = new ProductoService(productos, mock(CategoriaDAO.class), inventario, ejecutor())
+        Optional<Producto> resultado = new ProductoService(productos, mock(CategoriaDAO.class), inventario, ejecutor(), mock(AuditoriaService.class))
                 .actualizarStock(6L, 10, "Sin cambios", 4L);
 
         assertEquals(10, resultado.orElseThrow().stock());
@@ -139,7 +156,7 @@ class TransaccionesEnServiciosTests {
         ProductoDAO productos = mock(ProductoDAO.class);
         when(productos.bloquearActivo(conexion, 6L)).thenReturn(Optional.empty());
 
-        assertTrue(new ProductoService(productos, mock(CategoriaDAO.class), inventario, ejecutor())
+        assertTrue(new ProductoService(productos, mock(CategoriaDAO.class), inventario, ejecutor(), mock(AuditoriaService.class))
                 .actualizarStock(6L, 3, "Conteo", 4L).isEmpty());
         verifyNoInteractions(inventario);
     }

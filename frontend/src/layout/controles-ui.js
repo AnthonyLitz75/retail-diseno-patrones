@@ -5,6 +5,7 @@
 
 import { generarSlug } from "../router/enrutador.js";
 import { esFavorito } from "../catalogo/favoritos.js";
+import { enlacesCategorias, pintarChipsCategorias } from "../catalogo/explorar.js";
 
 /**
  * Configura los controles interactivos complementarios de la interfaz.
@@ -99,6 +100,11 @@ export function configurarControlesUI({
 
         menuCategoriasDropdown.append(li);
       });
+      // Inicio: chips "Compra por categoría" con el mismo árbol del menú.
+      pintarChipsCategorias(
+        document.querySelector("#chips-categorias-inicio"),
+        enlacesCategorias(categoriasArbol),
+      );
     } catch (error) {
       console.warn("No se pudo cargar el árbol de categorías:", error);
     }

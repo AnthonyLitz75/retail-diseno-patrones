@@ -8,9 +8,9 @@ import {
 } from '../src/utilidades/navegacion.js'
 
 test('determinarVistasPorRol asigna vistas específicas según privilegios del rol', () => {
-  assert.deepEqual(determinarVistasPorRol('ADMIN'), ['administracion', 'tienda', 'pedidos', 'inventario'])
+  assert.deepEqual(determinarVistasPorRol('ADMIN'), ['administracion', 'productos', 'tienda', 'pedidos', 'inventario'])
   assert.deepEqual(determinarVistasPorRol('ALMACEN'), ['pedidos', 'inventario', 'tienda'])
-  assert.deepEqual(determinarVistasPorRol('VENDEDOR'), ['tienda', 'consultas', 'pedidos', 'inventario'])
+  assert.deepEqual(determinarVistasPorRol('VENDEDOR'), ['tienda', 'productos', 'consultas', 'pedidos', 'inventario'])
   assert.deepEqual(determinarVistasPorRol('CLIENTE'), ['tienda', 'pedidos', 'atencion'])
   assert.deepEqual(determinarVistasPorRol('SOPORTE'), ['soporte', 'tienda'])
   assert.deepEqual(determinarVistasPorRol(null), ['tienda'])

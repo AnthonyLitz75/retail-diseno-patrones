@@ -27,7 +27,7 @@ import {
   hayCarritoInvitado,
 } from "./carrito/carrito-invitado.js";
 import { crearPanelAdministracion } from "./administracion/panel-administracion.js";
-import { mostrarToast } from "./utilidades/notificaciones.js";
+import { mostrarConfirmacion, mostrarToast } from "./utilidades/notificaciones.js";
 
 // Módulos especializados refactorizados (Hitos 1 a 6)
 import { configurarModalStock } from "./modales/modal-stock.js";
@@ -35,7 +35,7 @@ import { configurarModalPrecio } from "./modales/modal-precio.js";
 import { configurarModalPreguntas } from "./modales/modal-preguntas.js";
 import { configurarModalReclamaciones } from "./modales/modal-reclamaciones.js";
 import { configurarModalEditarProducto } from "./modales/modal-editar-producto.js";
-import { crearListaDesactivados } from "./catalogo/productos-desactivados.js";
+import { crearPanelProductos } from "./catalogo/panel-productos.js";
 import { configurarPanelInventario } from "./inventario/inventario-vista.js";
 import { configurarBandejaNotificaciones } from "./notificaciones/bandeja-vista.js";
 import { configurarControladorPedidos } from "./pedidos/pedidos-controlador.js";
@@ -47,6 +47,7 @@ import { configurarEnrutadorSPA } from "./router/router.js";
 import { configurarPortalSoporte } from "./soporte/soporte-vista.js";
 import { configurarMiAtencion } from "./atencion/mi-atencion.js";
 import { crearPanelIncidencias } from "./administracion/incidencias-vista.js";
+import { crearPanelAuditoria } from "./administracion/auditoria-vista.js";
 import { ROL, ROLES_CATALOGO, ROLES_INVENTARIO } from "./utilidades/constantes.js";
 
 // 1. Montaje del Layout Semántico Principal
@@ -74,6 +75,7 @@ const { abrirModalStock } = configurarModalStock({
   mostrarToast,
   onStockActualizado: async (prod) => {
     await catalogoCtrl.cargarProductos();
+    await refrescarPanelProductos();
     if (document.querySelector("#contenedor-historial-stock")?.children.length > 0) {
       await inventarioCtrl.cargarMovimientos(prod);
     }
@@ -86,6 +88,7 @@ const { abrirModalPrecio } = configurarModalPrecio({
   mostrarToast,
   onPrecioActualizado: async () => {
     await catalogoCtrl.cargarProductos();
+    await refrescarPanelProductos();
   },
 });
 
@@ -101,15 +104,32 @@ const { abrirModalPreguntas } = configurarModalPreguntas({
 
 configurarModalReclamaciones({ Modal, mostrarToast });
 
-// RF16 (spec 007): ficha del producto, desactivación y lista de desactivados para reactivar
-const productosDesactivados = crearListaDesactivados({
+// Vista "Productos" del personal (boceto del panel): tabla con pestañas Activos /
+// Desactivados / Stock bajo y el menú Gestionar; reactivar es una acción de la tabla.
+const panelProductos = crearPanelProductos({
   apiRequest,
+  obtenerUsuario: () => estado.usuarioSesion,
+  obtenerCallbacks: () => ({
+    onCargarMovimientos: (prod) => {
+      sesionCtrl.cambiarVista("inventario");
+      void inventarioCtrl.cargarMovimientos(prod);
+    },
+    onAbrirModalStock: (prod) => abrirModalStock(prod),
+    onAbrirModalPrecio: (prod) => abrirModalPrecio(prod),
+    onAbrirModalEditar: (prod) => abrirModalEditarProducto(prod),
+  }),
+  confirmar: (opciones) => mostrarConfirmacion(opciones),
   mostrarToast,
-  onReactivado: async () => {
+  alCambiarEstado: async () => {
     await catalogoCtrl.cargarProductos();
   },
 });
-document.querySelector("#seccion-gestion-productos .card-body")?.append(productosDesactivados.element);
+document.querySelector("#seccion-gestion-productos .card-body")?.append(panelProductos.element);
+/** Recarga la tabla de productos solo si está a la vista (tras precio, stock o ficha). */
+async function refrescarPanelProductos() {
+  if (document.querySelector("#vista-productos")?.hidden === false) await panelProductos.cargar();
+}
+document.addEventListener("retail:producto-creado", () => void refrescarPanelProductos());
 
 const { abrirModalEditarProducto } = configurarModalEditarProducto({
   apiRequest,
@@ -117,7 +137,7 @@ const { abrirModalEditarProducto } = configurarModalEditarProducto({
   mostrarToast,
   onProductoActualizado: async () => {
     await catalogoCtrl.cargarProductos();
-    await productosDesactivados.cargar();
+    await refrescarPanelProductos();
   },
 });
 
@@ -128,6 +148,12 @@ const panelAdministracion = crearPanelAdministracion(apiRequest, async () => {
 });
 document.querySelector("#vista-administracion")?.append(panelAdministracion.element);
 const panelIncidencias = crearPanelIncidencias(apiRequest, mostrarToast);
+const panelAuditoria = crearPanelAuditoria(apiRequest);
+panelAdministracion.agregarSeccion({
+  id: "auditoria",
+  etiqueta: "Auditoría",
+  elemento: panelAuditoria.element,
+});
 panelAdministracion.agregarSeccion({
   id: "incidencias",
   etiqueta: "Incidencias",
@@ -335,6 +361,7 @@ const sesionCtrl = configurarSesionYVistas({
       tienda: document.querySelector("#vista-tienda"),
       pedidos: document.querySelector("#vista-pedidos"),
       inventario: document.querySelector("#vista-inventario"),
+      productos: document.querySelector("#vista-productos"),
       administracion: document.querySelector("#vista-administracion"),
       consultas: document.querySelector("#vista-consultas"),
       soporte: document.querySelector("#vista-soporte"),
@@ -355,7 +382,7 @@ const sesionCtrl = configurarSesionYVistas({
     hayCarritoInvitado,
     onCambioVista: (vista, rol) => {
       if (estado.usuarioSesion) {
-        if (vista === "tienda" && ROLES_CATALOGO.includes(rol)) void productosDesactivados.cargar();
+        if (vista === "productos" && ROLES_CATALOGO.includes(rol)) void panelProductos.cargar();
         else if (vista === "pedidos") void pedidosCtrl.cargarPedidos();
         else if (vista === "inventario" && ROLES_INVENTARIO.includes(rol)) void inventarioCtrl.iniciarPanelInventario();
         else if (vista === "consultas" && rol === ROL.VENDEDOR) void vendedorCtrl.cargarPreguntasVendedor();
@@ -363,6 +390,7 @@ const sesionCtrl = configurarSesionYVistas({
           void panelAdministracion.cargar();
           panelIncidencias.element.hidden = false;
           void panelIncidencias.cargar();
+          void panelAuditoria.cargar();
         }
         else if (vista === "soporte" && rol === ROL.SOPORTE) void portalSoporte.cargar();
         else if (vista === "atencion" && rol === ROL.CLIENTE) void miAtencion.cargar();

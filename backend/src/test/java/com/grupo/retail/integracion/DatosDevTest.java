@@ -36,9 +36,10 @@ class DatosDevTest extends BaseIntegracionPostgres {
                 }
             }
 
-            // Verificar los 32 productos demo
+            // Verificar los 32 productos demo (PA-0001 a PA-0032). Otros tests crean productos
+            // con código generado PA-NNNN en la misma base, así que no basta con LIKE 'PA-%'.
             try (PreparedStatement stmt = conn.prepareStatement(
-                    "SELECT COUNT(*) FROM producto WHERE sku LIKE 'PA-%'")) {
+                    "SELECT COUNT(*) FROM producto WHERE sku BETWEEN 'PA-0001' AND 'PA-0032' AND length(sku) = 7")) {
                 try (ResultSet rs = stmt.executeQuery()) {
                     assertTrue(rs.next());
                     assertEquals(32, rs.getInt(1), "Deben cargarse los 32 productos demo del catalogo");

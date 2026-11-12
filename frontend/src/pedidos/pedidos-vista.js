@@ -118,6 +118,10 @@ export function crearTarjetaPedido(
       </div>
       <span class="badge ${estadoBadgeClass} border px-2 py-1">${estadoTexto}</span>
     `;
+    // Boceto "Mis compras": copiar el código para pegarlo en la web del transportista.
+    if (pedido.envio.codigoSeguimiento) {
+      envioBox.querySelector?.("strong.font-monospace")?.after?.(" ", crearBotonCopiarCodigo(pedido.envio.codigoSeguimiento));
+    }
     cuerpo.append(envioBox);
   }
 
@@ -346,6 +350,12 @@ export function mostrarPedidos(
     estadoPedidos.textContent = `Pedidos encontrados: ${pedidos.length}`;
   }
 
+  // Boceto "Mis pedidos": filtros por estado con su conteo (solo si hay más de un estado).
+  const filtros = contarPedidosPorFiltro(pedidos);
+  if (filtros.length > 2) {
+    listaPedidos.append(crearFiltrosPedidos(filtros, listaPedidos, estadoPedidos));
+  }
+
   for (const pedido of pedidos) {
     const tarjeta = crearTarjetaPedido(pedido, {
       esCliente,
@@ -355,8 +365,82 @@ export function mostrarPedidos(
       crearAtencion,
       onAbrirDespacho,
     });
+    tarjeta.dataset.estado = pedido.estado || "";
     listaPedidos.append(tarjeta);
   }
+}
+
+/** Filtros de la lista de pedidos, en el orden del ciclo de vida (patrón State). */
+export const FILTROS_PEDIDOS = Object.freeze([
+  { clave: "TODOS", etiqueta: "Todos" },
+  { clave: ESTADO_PEDIDO.PENDIENTE, etiqueta: "Pendiente" },
+  { clave: ESTADO_PEDIDO.EN_PREPARACION, etiqueta: "En preparación" },
+  { clave: ESTADO_PEDIDO.DESPACHADO, etiqueta: "En camino" },
+  { clave: ESTADO_PEDIDO.ENTREGADO, etiqueta: "Entregado" },
+  { clave: ESTADO_PEDIDO.CANCELADO, etiqueta: "Cancelado" },
+]);
+
+/** "Todos" más cada estado que tenga al menos un pedido, con su total. */
+export function contarPedidosPorFiltro(pedidos) {
+  const lista = Array.isArray(pedidos) ? pedidos : [];
+  return FILTROS_PEDIDOS
+    .map((filtro) => ({
+      ...filtro,
+      total: filtro.clave === "TODOS" ? lista.length : lista.filter((p) => p.estado === filtro.clave).length,
+    }))
+    .filter((filtro) => filtro.clave === "TODOS" || filtro.total > 0);
+}
+
+/** Grupo de botones que muestra solo las tarjetas del estado elegido. */
+export function crearFiltrosPedidos(filtros, listaPedidos, estadoPedidos = null) {
+  const grupo = document.createElement("div");
+  grupo.className = "filtros-pedidos";
+  grupo.setAttribute("role", "group");
+  grupo.setAttribute("aria-label", "Filtrar pedidos por estado");
+  const botones = filtros.map((filtro) => {
+    const boton = document.createElement("button");
+    boton.type = "button";
+    boton.className = "filtro-pedido";
+    boton.dataset.filtro = filtro.clave;
+    boton.textContent = `${filtro.etiqueta} · ${filtro.total}`;
+    boton.setAttribute("aria-pressed", String(filtro.clave === "TODOS"));
+    boton.addEventListener("click", () => {
+      for (const otro of botones) otro.setAttribute("aria-pressed", String(otro === boton));
+      listaPedidos.querySelectorAll(".order-card").forEach((tarjeta) => {
+        tarjeta.hidden = filtro.clave !== "TODOS" && tarjeta.dataset.estado !== filtro.clave;
+      });
+      if (estadoPedidos) {
+        estadoPedidos.textContent = filtro.clave === "TODOS"
+          ? `Pedidos encontrados: ${filtro.total}`
+          : `Mostrando ${filtro.total} de ${filtros[0].total} pedidos (${filtro.etiqueta.toLowerCase()})`;
+      }
+    });
+    return boton;
+  });
+  grupo.append(...botones);
+  return grupo;
+}
+
+/** Botón "Copiar código" del seguimiento; avisa si el navegador no permite copiar. */
+export function crearBotonCopiarCodigo(codigo, portapapeles = globalThis.navigator?.clipboard) {
+  const boton = document.createElement("button");
+  boton.type = "button";
+  boton.className = "btn btn-link btn-sm p-0 align-baseline boton-copiar-codigo";
+  boton.textContent = "Copiar código";
+  boton.setAttribute("aria-label", `Copiar el código de seguimiento ${codigo}`);
+  boton.addEventListener("click", async () => {
+    try {
+      if (!portapapeles?.writeText) throw new Error("sin portapapeles");
+      await portapapeles.writeText(codigo);
+      boton.textContent = "¡Copiado!";
+    } catch {
+      boton.textContent = "Selecciónalo y cópialo";
+    }
+    setTimeout(() => {
+      boton.textContent = "Copiar código";
+    }, 2000);
+  });
+  return boton;
 }
 
 /**
