@@ -123,7 +123,7 @@ public class CheckoutFacade {
         //    correo simulado salen solo después del commit.
         publicadorEventos.publicar(conexion, new EventoPedido(
                 pedido.idPedido(), usuarioId, null, ESTADO_INICIAL,
-                OffsetDateTime.now(), MOTIVO_CONFIRMACION));
+                OffsetDateTime.now(), MOTIVO_CONFIRMACION, usuarioId));
         return pedido;
     }
 

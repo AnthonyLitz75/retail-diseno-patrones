@@ -47,6 +47,7 @@ import { configurarEnrutadorSPA } from "./router/router.js";
 import { configurarPortalSoporte } from "./soporte/soporte-vista.js";
 import { configurarMiAtencion } from "./atencion/mi-atencion.js";
 import { crearPanelIncidencias } from "./administracion/incidencias-vista.js";
+import { crearPanelAuditoria } from "./administracion/auditoria-vista.js";
 import { ROL, ROLES_CATALOGO, ROLES_INVENTARIO } from "./utilidades/constantes.js";
 
 // 1. Montaje del Layout Semántico Principal
@@ -128,6 +129,12 @@ const panelAdministracion = crearPanelAdministracion(apiRequest, async () => {
 });
 document.querySelector("#vista-administracion")?.append(panelAdministracion.element);
 const panelIncidencias = crearPanelIncidencias(apiRequest, mostrarToast);
+const panelAuditoria = crearPanelAuditoria(apiRequest);
+panelAdministracion.agregarSeccion({
+  id: "auditoria",
+  etiqueta: "Auditoría",
+  elemento: panelAuditoria.element,
+});
 panelAdministracion.agregarSeccion({
   id: "incidencias",
   etiqueta: "Incidencias",
@@ -363,6 +370,7 @@ const sesionCtrl = configurarSesionYVistas({
           void panelAdministracion.cargar();
           panelIncidencias.element.hidden = false;
           void panelIncidencias.cargar();
+          void panelAuditoria.cargar();
         }
         else if (vista === "soporte" && rol === ROL.SOPORTE) void portalSoporte.cargar();
         else if (vista === "atencion" && rol === ROL.CLIENTE) void miAtencion.cargar();

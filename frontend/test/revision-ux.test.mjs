@@ -109,3 +109,12 @@ test("en móvil el avance del pedido es vertical y el WhatsApp mide 44 px", () =
   const movil = base.slice(base.indexOf("@media (max-width: 575.98px)"));
   assert.match(movil, /\.floating-whatsapp-pill \{[^}]*width: 44px;[^}]*height: 44px;/);
 });
+
+test("el atributo hidden gana a las utilidades d-flex de Bootstrap (paginaciones ocultas)", () => {
+  const base = leer("../src/css/base.css");
+  assert.match(base, /\[hidden\]\s*\{\s*display:\s*none\s*!important;?\s*\}/);
+  // style.css (que importa base.css) se carga después de Bootstrap, así que la regla gana.
+  const main = leer("../src/main.js");
+  assert.ok(main.indexOf('import "./style.css"') > main.indexOf("bootstrap.min.css"));
+  assert.match(renderizarCatalogoLayout(), /id="paginacion-movimientos" class="d-flex[^"]*"[^>]*hidden/);
+});

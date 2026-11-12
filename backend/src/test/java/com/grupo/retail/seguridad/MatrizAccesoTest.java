@@ -180,6 +180,9 @@ public class MatrizAccesoTest extends BaseIntegracionPostgres {
                 new DefinicionRuta("GET", "/api/admin/reportes/ventas.csv", false, false, Set.of("ADMIN"), null),
                 new DefinicionRuta("GET", "/api/admin/reportes/inventario.csv", false, false, Set.of("ADMIN"), null),
                 new DefinicionRuta("GET", "/api/admin/reportes/movimientos.csv", false, false, Set.of("ADMIN"), null),
+                new DefinicionRuta("GET", "/api/admin/auditoria", false, false, Set.of("ADMIN"), null),
+                new DefinicionRuta("GET", "/api/admin/auditoria/acciones", false, false, Set.of("ADMIN"), null),
+                new DefinicionRuta("GET", "/api/admin/auditoria/exportar.csv", false, false, Set.of("ADMIN"), null),
 
                 // 10. Atención y soporte (spec 006)
                 new DefinicionRuta("POST", "/api/pedidos/1/reclamos", false, false, Set.of("CLIENTE"), "{}"),

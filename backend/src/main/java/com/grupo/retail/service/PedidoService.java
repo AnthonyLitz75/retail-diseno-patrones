@@ -140,7 +140,7 @@ public class PedidoService {
             }
             publicadorEventos.publicar(conexion, new EventoPedido(
                     pedidoId, pedido.clienteId(), pedido.estado(), cancelado.nombre(),
-                    OffsetDateTime.now(), MOTIVO_CANCELACION));
+                    OffsetDateTime.now(), MOTIVO_CANCELACION, responsableId));
             return null;
         });
     }
@@ -180,7 +180,7 @@ public class PedidoService {
                     conexion, pedidoId, nuevoEstado.nombre(), responsableId, comentario, envio);
             publicadorEventos.publicar(conexion, new EventoPedido(
                     pedidoId, pedido.clienteId(), pedido.estado(), nuevoEstado.nombre(),
-                    OffsetDateTime.now(), comentario));
+                    OffsetDateTime.now(), comentario, responsableId));
             return null;
         });
     }

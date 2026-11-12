@@ -1,5 +1,7 @@
 package com.grupo.retail.service;
 
+import com.grupo.retail.model.EventoAuditoria;
+import com.grupo.retail.model.AccionAuditoria;
 import com.grupo.retail.model.Rol;
 import com.grupo.retail.dao.UsuarioDAO;
 import com.grupo.retail.dto.ActualizarRolUsuario;
@@ -28,12 +30,14 @@ public class UsuarioService {
     private volatile String hashSenuelo;
 
     private final EjecutorTransaccion ejecutorTransaccion;
+    private final AuditoriaService auditoriaService;
 
     public UsuarioService(UsuarioDAO usuarioDAO, PasswordEncoder passwordEncoder,
-            EjecutorTransaccion ejecutorTransaccion) {
+            EjecutorTransaccion ejecutorTransaccion, AuditoriaService auditoriaService) {
         this.usuarioDAO = usuarioDAO;
         this.passwordEncoder = passwordEncoder;
         this.ejecutorTransaccion = ejecutorTransaccion;
+        this.auditoriaService = auditoriaService;
     }
 
     public Usuario registrarCliente(RegistroCliente datos) {
@@ -43,12 +47,15 @@ public class UsuarioService {
         return usuarioDAO.registrar(nombre, correo, claveHash);
     }
 
-    public Usuario registrarPersonal(RegistroPersonal datos) {
+    public Usuario registrarPersonal(RegistroPersonal datos, Long administradorId) {
         String rol = validarRol(datos.rol());
         String nombre = datos.nombre().trim();
         String correo = datos.correo().trim().toLowerCase(Locale.ROOT);
         String claveHash = passwordEncoder.encode(datos.clave());
-        return usuarioDAO.registrarPersonal(nombre, correo, claveHash, rol);
+        Usuario creado = usuarioDAO.registrarPersonal(nombre, correo, claveHash, rol);
+        auditoriaService.registrarAparte(EventoAuditoria.de(administradorId, AccionAuditoria.CUENTA_CREADA,
+                USUARIO, creado.idUsuario(), creado.correo() + " como " + creado.rol()));
+        return creado;
     }
 
     public List<Usuario> listarUsuarios() {
@@ -71,8 +78,11 @@ public class UsuarioService {
             if (actual.rol().equals(rol)) {
                 return actual;
             }
-            return usuarioDAO.cambiarRol(conexion, usuarioId, rol)
+            Usuario actualizado = usuarioDAO.cambiarRol(conexion, usuarioId, rol)
                     .orElseThrow(() -> new NoSuchElementException("No existe la cuenta activa"));
+            auditoriaService.registrar(conexion, EventoAuditoria.de(administradorId, AccionAuditoria.ROL_CAMBIADO,
+                    USUARIO, usuarioId, actual.correo() + ": " + actual.rol() + " → " + rol));
+            return actualizado;
         });
     }
 
@@ -89,9 +99,13 @@ public class UsuarioService {
             if (!usuarioDAO.marcarInactivo(conexion, usuarioId)) {
                 throw new NoSuchElementException("No existe la cuenta activa");
             }
+            auditoriaService.registrar(conexion, EventoAuditoria.de(administradorId, AccionAuditoria.CUENTA_DESACTIVADA,
+                    USUARIO, usuarioId, actual.correo() + " (" + actual.rol() + ")"));
             return null;
         });
     }
+
+    private static final String USUARIO = "USUARIO";
 
     private void validarNoCambiarPropioRol(Long usuarioId, Long administradorId, String nuevoRol) {
         if (usuarioId.equals(administradorId) && !Rol.ADMIN.es(nuevoRol)) {

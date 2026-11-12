@@ -57,7 +57,7 @@ public class ReclamoService {
             Reclamo reclamo = reclamoDAO.insertar(
                     conexion, pedidoId, clienteId, datos.motivo().strip(), datos.descripcion().strip());
             avisar(conexion, reclamo, null, "RECLAMO_REGISTRADO",
-                    "Registramos tu reclamo #" + reclamo.id() + "; Soporte lo atenderá pronto");
+                    "Registramos tu reclamo #" + reclamo.id() + "; Soporte lo atenderá pronto", clienteId);
             return reclamo;
         });
     }
@@ -97,7 +97,7 @@ public class ReclamoService {
             boolean resuelto = destino == EstadoReclamo.RESUELTO;
             avisar(conexion, actualizado, reclamo.estado(),
                     resuelto ? "RECLAMO_RESUELTO" : "RECLAMO_RESPONDIDO",
-                    (resuelto ? "Resolvimos tu reclamo #" : "Respondimos tu reclamo #") + reclamo.id());
+                    (resuelto ? "Resolvimos tu reclamo #" : "Respondimos tu reclamo #") + reclamo.id(), soporteId);
             return actualizado;
         });
     }
@@ -109,7 +109,7 @@ public class ReclamoService {
             reclamo.estado().validarTransicion(EstadoReclamo.ESCALADO);
             Reclamo actualizado = reclamoDAO.guardar(conexion, reclamo.escalado(datos.motivoEscalamiento().strip()));
             avisar(conexion, actualizado, reclamo.estado(), "RECLAMO_ESCALADO",
-                    "Tu reclamo #" + reclamo.id() + " pasó a revisión de un administrador");
+                    "Tu reclamo #" + reclamo.id() + " pasó a revisión de un administrador", soporteId);
             return actualizado;
         });
     }
@@ -129,7 +129,7 @@ public class ReclamoService {
                     conexion, reclamo.resueltoPorAdmin(adminId, datos.resolucion().strip(), destino));
             if (destino == EstadoReclamo.RESUELTO) {
                 avisar(conexion, actualizado, reclamo.estado(), "RECLAMO_RESUELTO",
-                        "Resolvimos tu reclamo #" + reclamo.id());
+                        "Resolvimos tu reclamo #" + reclamo.id(), adminId);
             }
             return actualizado;
         });
@@ -179,11 +179,11 @@ public class ReclamoService {
         }
     }
 
-    private void avisar(Connection conexion, Reclamo reclamo, EstadoReclamo anterior, String evento, String mensaje)
-            throws SQLException {
+    private void avisar(Connection conexion, Reclamo reclamo, EstadoReclamo anterior, String evento, String mensaje,
+            long actorId) throws SQLException {
         publicadorEventos.publicar(conexion, new EventoPedido(
                 reclamo.pedidoId(), reclamo.clienteId(),
                 anterior == null ? null : PREFIJO_EVENTO + anterior.name(),
-                evento, OffsetDateTime.now(), mensaje));
+                evento, OffsetDateTime.now(), mensaje, actorId));
     }
 }

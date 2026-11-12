@@ -1,5 +1,7 @@
 package com.grupo.retail.service;
 
+import com.grupo.retail.model.EventoAuditoria;
+import com.grupo.retail.model.AccionAuditoria;
 import com.grupo.retail.dao.CategoriaDAO;
 import com.grupo.retail.dto.SolicitudCategoria;
 import com.grupo.retail.model.Categoria;
@@ -11,10 +13,14 @@ import java.util.Optional;
 
 @Service
 public class CategoriaService {
-    private final CategoriaDAO categoriaDAO;
+    private static final String CATEGORIA = "CATEGORIA";
 
-    public CategoriaService(CategoriaDAO categoriaDAO) {
+    private final CategoriaDAO categoriaDAO;
+    private final AuditoriaService auditoriaService;
+
+    public CategoriaService(CategoriaDAO categoriaDAO, AuditoriaService auditoriaService) {
         this.categoriaDAO = categoriaDAO;
+        this.auditoriaService = auditoriaService;
     }
 
     public List<Categoria> listarTodas() {
@@ -25,16 +31,27 @@ public class CategoriaService {
         return categoriaDAO.listarArbol();
     }
 
-    public Categoria crear(SolicitudCategoria solicitud) {
-        return categoriaDAO.crear(normalizar(solicitud.nombre()));
+    public Categoria crear(SolicitudCategoria solicitud, Long administradorId) {
+        Categoria creada = categoriaDAO.crear(normalizar(solicitud.nombre()));
+        auditoriaService.registrarAparte(EventoAuditoria.de(administradorId, AccionAuditoria.CATEGORIA_CREADA,
+                CATEGORIA, creada.idCategoria(), creada.nombre()));
+        return creada;
     }
 
-    public Optional<Categoria> actualizarNombre(Long id, SolicitudCategoria solicitud) {
-        return categoriaDAO.actualizarNombre(id, normalizar(solicitud.nombre()));
+    public Optional<Categoria> actualizarNombre(Long id, SolicitudCategoria solicitud, Long administradorId) {
+        Optional<Categoria> actualizada = categoriaDAO.actualizarNombre(id, normalizar(solicitud.nombre()));
+        actualizada.ifPresent(categoria -> auditoriaService.registrarAparte(EventoAuditoria.de(administradorId,
+                AccionAuditoria.CATEGORIA_RENOMBRADA, CATEGORIA, categoria.idCategoria(),
+                "Nuevo nombre: " + categoria.nombre())));
+        return actualizada;
     }
 
-    public Optional<Categoria> actualizarEstado(Long id, boolean activa) {
-        return categoriaDAO.actualizarEstado(id, activa);
+    public Optional<Categoria> actualizarEstado(Long id, boolean activa, Long administradorId) {
+        Optional<Categoria> actualizada = categoriaDAO.actualizarEstado(id, activa);
+        actualizada.ifPresent(categoria -> auditoriaService.registrarAparte(EventoAuditoria.de(administradorId,
+                activa ? AccionAuditoria.CATEGORIA_ACTIVADA : AccionAuditoria.CATEGORIA_DESACTIVADA,
+                CATEGORIA, categoria.idCategoria(), categoria.nombre())));
+        return actualizada;
     }
 
     private String normalizar(String nombre) {

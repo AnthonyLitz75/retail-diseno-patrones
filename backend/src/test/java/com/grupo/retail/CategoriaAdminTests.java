@@ -1,5 +1,6 @@
 package com.grupo.retail;
 
+import com.grupo.retail.service.AuditoriaService;
 import com.grupo.retail.controller.CategoriaAdminController;
 import com.grupo.retail.dao.CategoriaDAO;
 import com.grupo.retail.dao.ProductoDAO;
@@ -49,7 +50,7 @@ class CategoriaAdminTests {
     @Test
     void crearNormalizaNombreYDevuelve201() {
         CategoriaService service = mock(CategoriaService.class);
-        when(service.crear(new SolicitudCategoria(" Audio ")))
+        when(service.crear(new SolicitudCategoria(" Audio "), 4L))
                 .thenReturn(new Categoria(7L, "Audio", true));
 
         var respuesta = controller(service).crear(
@@ -57,15 +58,15 @@ class CategoriaAdminTests {
 
         assertEquals(201, respuesta.getStatusCode().value());
         assertEquals("/api/admin/categorias/7", respuesta.getHeaders().getLocation().toString());
-        verify(service).crear(new SolicitudCategoria(" Audio "));
+        verify(service).crear(new SolicitudCategoria(" Audio "), 4L);
     }
 
     @Test
     void actualizacionesInexistentesDevuelven404() {
         CategoriaService service = mock(CategoriaService.class);
-        when(service.actualizarNombre(88L, new SolicitudCategoria("Audio")))
+        when(service.actualizarNombre(88L, new SolicitudCategoria("Audio"), 4L))
                 .thenReturn(Optional.empty());
-        when(service.actualizarEstado(88L, false)).thenReturn(Optional.empty());
+        when(service.actualizarEstado(88L, false, 4L)).thenReturn(Optional.empty());
         CategoriaAdminController controller = controller(service);
         var solicitud = solicitud(4L, "ADMIN");
 
@@ -88,12 +89,12 @@ class CategoriaAdminTests {
     @Test
     void servicioEliminaEspaciosYRechazaNombreInvalidoAntesDeDAO() {
         CategoriaDAO dao = mock(CategoriaDAO.class);
-        CategoriaService service = new CategoriaService(dao);
+        CategoriaService service = new CategoriaService(dao, mock(AuditoriaService.class));
         when(dao.crear("Audio")).thenReturn(new Categoria(1L, "Audio", true));
 
-        service.crear(new SolicitudCategoria("  Audio  "));
+        service.crear(new SolicitudCategoria("  Audio  "), 4L);
         assertThrows(IllegalArgumentException.class,
-                () -> service.crear(new SolicitudCategoria(" ")));
+                () -> service.crear(new SolicitudCategoria(" "), 4L));
         verify(dao).crear("Audio");
     }
 

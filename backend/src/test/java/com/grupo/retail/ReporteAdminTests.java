@@ -1,5 +1,8 @@
 package com.grupo.retail;
 
+import com.grupo.retail.service.SesionEmpleado;
+import com.grupo.retail.service.AuditoriaService;
+import org.springframework.mock.web.MockHttpServletRequest;
 import com.grupo.retail.controller.ReporteAdminController;
 import com.grupo.retail.dao.ReporteDAO;
 import com.grupo.retail.model.ResumenAdministrativo;
@@ -27,7 +30,7 @@ class ReporteAdminTests {
         var esperado = new ResumenAdministrativo(3, new BigDecimal("120.00"), 4, 17,
                 new BigDecimal("450.00"), Map.of("ENTRADA", 2L), Map.of("PENDIENTE", 3L), 1, List.of());
         when(service.obtenerResumen("2026-10-01", null)).thenReturn(esperado);
-        assertEquals(esperado, new ReporteAdminController(service).resumen("2026-10-01", null));
+        assertEquals(esperado, controlador(service).resumen("2026-10-01", null));
     }
 
     @Test
@@ -37,7 +40,7 @@ class ReporteAdminTests {
                 OffsetDateTime.parse("2026-10-01T10:00:00-05:00"), "ENTREGADO",
                 "Cliente \"Uno\"", new BigDecimal("54.90"))));
 
-        var respuesta = new ReporteAdminController(service).exportarVentas(null, null);
+        var respuesta = controlador(service).exportarVentas(null, null, new MockHttpServletRequest());
         String csv = new String(respuesta.getBody(), StandardCharsets.UTF_8);
 
         assertEquals(200, respuesta.getStatusCode().value());
@@ -56,7 +59,7 @@ class ReporteAdminTests {
                 new VentaReporte(1, fecha, "ENTREGADO", "=cmd|'/C calc'!A0", new BigDecimal("10.00")),
                 new VentaReporte(2, fecha, "ENTREGADO", "@macro", new BigDecimal("40.00"))));
 
-        String csv = new String(new ReporteAdminController(service).exportarVentas(null, null).getBody(),
+        String csv = new String(controlador(service).exportarVentas(null, null, new MockHttpServletRequest()).getBody(),
                 StandardCharsets.UTF_8);
 
         assertTrue(csv.contains("\"'=cmd|'/C calc'!A0\""), csv);
@@ -86,5 +89,10 @@ class ReporteAdminTests {
         assertEquals(OffsetDateTime.parse("2026-10-01T23:59:59.999999-05:00"), hasta.getValue(),
                 "El último microsegundo del día: PostgreSQL no lo redondea al día siguiente");
         verify(dao, never()).listarMovimientos(any(), any());
+    }
+
+    /** La auditoría de descargas se simula: estas pruebas miran solo el CSV. */
+    private static ReporteAdminController controlador(ReporteService service) {
+        return new ReporteAdminController(service, mock(AuditoriaService.class), mock(SesionEmpleado.class));
     }
 }

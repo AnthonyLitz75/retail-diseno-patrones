@@ -40,7 +40,7 @@ public class UsuarioAdminController {
     public ResponseEntity<Usuario> crear(
             @Valid @RequestBody RegistroPersonal solicitud,
             HttpServletRequest peticion) {
-        Usuario creado = usuarioService.registrarPersonal(solicitud);
+        Usuario creado = usuarioService.registrarPersonal(solicitud, sesionEmpleado.obtenerId(peticion));
         return ResponseEntity.created(URI.create("/api/admin/usuarios/" + creado.idUsuario()))
                 .body(creado);
     }

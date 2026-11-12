@@ -108,7 +108,7 @@ public class DevolucionService {
             }
             Devolucion devolucion = devolucionDAO.buscar(conexion, devolucionId);
             avisar(conexion, devolucion, null, EstadoDevolucion.SOLICITADA,
-                    "Registramos tu solicitud de devolución #" + devolucionId);
+                    "Registramos tu solicitud de devolución #" + devolucionId, clienteId);
             return devolucion;
         });
     }
@@ -135,7 +135,7 @@ public class DevolucionService {
             Devolucion actualizada = devolucionDAO.buscar(conexion, devolucionId);
             avisar(conexion, actualizada, devolucion.estado(), destino, destino == EstadoDevolucion.APROBADA
                     ? "Aprobamos tu devolución #" + devolucionId + "; envíanos los productos"
-                    : "Tu devolución #" + devolucionId + " fue rechazada");
+                    : "Tu devolución #" + devolucionId + " fue rechazada", soporteId);
             return actualizada;
         });
     }
@@ -174,7 +174,7 @@ public class DevolucionService {
 
             Devolucion cerrada = devolucionDAO.buscar(conexion, devolucionId);
             avisar(conexion, cerrada, devolucion.estado(), EstadoDevolucion.CERRADA,
-                    "Cerramos tu devolución #" + devolucionId + "; reembolsamos S/ " + importe.toPlainString());
+                    "Cerramos tu devolución #" + devolucionId + "; reembolsamos S/ " + importe.toPlainString(), soporteId);
             return cerrada;
         });
     }
@@ -220,10 +220,10 @@ public class DevolucionService {
     }
 
     private void avisar(Connection conexion, Devolucion devolucion, EstadoDevolucion anterior,
-            EstadoDevolucion nuevo, String mensaje) throws SQLException {
+            EstadoDevolucion nuevo, String mensaje, long actorId) throws SQLException {
         publicadorEventos.publicar(conexion, new EventoPedido(
                 devolucion.pedidoId(), devolucion.clienteId(),
                 anterior == null ? null : PREFIJO_EVENTO + anterior.name(),
-                PREFIJO_EVENTO + nuevo.name(), OffsetDateTime.now(), mensaje));
+                PREFIJO_EVENTO + nuevo.name(), OffsetDateTime.now(), mensaje, actorId));
     }
 }

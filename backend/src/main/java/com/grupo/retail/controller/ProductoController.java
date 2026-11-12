@@ -83,8 +83,8 @@ public class ProductoController {
 
     @PutMapping("/productos/{id}/precio")
     public ResponseEntity<Producto> actualizarPrecio(
-            @PathVariable Long id, @Valid @RequestBody ActualizarPrecio datos) {
-        return productoService.actualizarPrecio(id, datos.precio())
+            @PathVariable Long id, @Valid @RequestBody ActualizarPrecio datos, HttpServletRequest solicitud) {
+        return productoService.actualizarPrecio(id, datos.precio(), sesionEmpleado.obtenerId(solicitud))
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
@@ -108,14 +108,16 @@ public class ProductoController {
 
     /** RF16: edita nombre, marca, descripción, imagen y categoría (ADMIN y VENDEDOR). */
     @PutMapping("/productos/{id}")
-    public Producto editarFicha(@PathVariable Long id, @Valid @RequestBody EditarProducto datos) {
-        return productoService.editarFicha(id, datos);
+    public Producto editarFicha(@PathVariable Long id, @Valid @RequestBody EditarProducto datos,
+            HttpServletRequest solicitud) {
+        return productoService.editarFicha(id, datos, sesionEmpleado.obtenerId(solicitud));
     }
 
     /** RF16: activa o desactiva el producto; nunca lo borra (ADMIN y VENDEDOR). */
     @PatchMapping("/productos/{id}/estado")
-    public Producto cambiarEstado(@PathVariable Long id, @Valid @RequestBody CambiarEstadoProducto datos) {
-        return productoService.cambiarEstado(id, datos.activo());
+    public Producto cambiarEstado(@PathVariable Long id, @Valid @RequestBody CambiarEstadoProducto datos,
+            HttpServletRequest solicitud) {
+        return productoService.cambiarEstado(id, datos.activo(), sesionEmpleado.obtenerId(solicitud));
     }
 
     @GetMapping("/productos/{id}/movimientos")

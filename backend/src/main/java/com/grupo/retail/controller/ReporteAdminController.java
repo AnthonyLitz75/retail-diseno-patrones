@@ -1,23 +1,24 @@
 package com.grupo.retail.controller;
 
+import static com.grupo.retail.reportes.RespuestaCsv.adjunto;
+import static com.grupo.retail.reportes.RespuestaCsv.fecha;
+import jakarta.servlet.http.HttpServletRequest;
+import com.grupo.retail.service.SesionEmpleado;
+import com.grupo.retail.service.AuditoriaService;
+import com.grupo.retail.model.EventoAuditoria;
+import com.grupo.retail.model.AccionAuditoria;
 import com.grupo.retail.model.InventarioReporte;
 import com.grupo.retail.model.MovimientoReporte;
 import com.grupo.retail.model.ResumenAdministrativo;
 import com.grupo.retail.model.VentaReporte;
 import com.grupo.retail.reportes.EscritorCsv;
 import com.grupo.retail.service.ReporteService;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.nio.charset.StandardCharsets;
-import java.time.OffsetDateTime;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 /**
@@ -29,17 +30,16 @@ import java.util.List;
 @RequestMapping("/api/admin/reportes")
 public class ReporteAdminController {
 
-    /** Marca de orden de bytes: Excel la usa para detectar UTF-8. */
-    private static final String BOM = String.valueOf((char) 0xFEFF);
-    private static final MediaType CSV_UTF8 = new MediaType("text", "csv", StandardCharsets.UTF_8);
-    /** Fechas legibles en Excel y en la hora de la tienda (la base las devuelve en UTC). */
-    private static final DateTimeFormatter FECHA_CSV =
-            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZoneId.of("America/Lima"));
 
     private final ReporteService reporteService;
+    private final AuditoriaService auditoriaService;
+    private final SesionEmpleado sesionEmpleado;
 
-    public ReporteAdminController(ReporteService reporteService) {
+    public ReporteAdminController(ReporteService reporteService, AuditoriaService auditoriaService,
+            SesionEmpleado sesionEmpleado) {
         this.reporteService = reporteService;
+        this.auditoriaService = auditoriaService;
+        this.sesionEmpleado = sesionEmpleado;
     }
 
     @GetMapping("/resumen")
@@ -52,20 +52,36 @@ public class ReporteAdminController {
     @GetMapping(value = "/ventas.csv", produces = "text/csv")
     public ResponseEntity<byte[]> exportarVentas(
             @RequestParam(required = false) String desde,
-            @RequestParam(required = false) String hasta) {
-        return adjunto("ventas.csv", generarCsvVentas(reporteService.listarVentas(desde, hasta)));
+            @RequestParam(required = false) String hasta,
+            HttpServletRequest peticion) {
+        String csv = generarCsvVentas(reporteService.listarVentas(desde, hasta));
+        registrarDescarga(peticion, "ventas.csv", desde, hasta);
+        return adjunto("ventas.csv", csv);
     }
 
     @GetMapping(value = "/movimientos.csv", produces = "text/csv")
     public ResponseEntity<byte[]> exportarMovimientos(
             @RequestParam(required = false) String desde,
-            @RequestParam(required = false) String hasta) {
-        return adjunto("movimientos.csv", generarCsvMovimientos(reporteService.listarMovimientos(desde, hasta)));
+            @RequestParam(required = false) String hasta,
+            HttpServletRequest peticion) {
+        String csv = generarCsvMovimientos(reporteService.listarMovimientos(desde, hasta));
+        registrarDescarga(peticion, "movimientos.csv", desde, hasta);
+        return adjunto("movimientos.csv", csv);
     }
 
     @GetMapping(value = "/inventario.csv", produces = "text/csv")
-    public ResponseEntity<byte[]> exportarInventario() {
-        return adjunto("inventario.csv", generarCsvInventario(reporteService.listarInventario()));
+    public ResponseEntity<byte[]> exportarInventario(HttpServletRequest peticion) {
+        String csv = generarCsvInventario(reporteService.listarInventario());
+        registrarDescarga(peticion, "inventario.csv", null, null);
+        return adjunto("inventario.csv", csv);
+    }
+
+    /** Las descargas de datos de la tienda quedan en la auditoría (quién, qué y qué periodo). */
+    private void registrarDescarga(HttpServletRequest peticion, String archivo, String desde, String hasta) {
+        String periodo = desde == null && hasta == null ? "sin filtro de fechas"
+                : "del " + (desde == null ? "inicio" : desde) + " al " + (hasta == null ? "hoy" : hasta);
+        auditoriaService.registrarAparte(EventoAuditoria.de(sesionEmpleado.obtenerId(peticion),
+                AccionAuditoria.REPORTE_DESCARGADO, "REPORTE", null, archivo + " (" + periodo + ")"));
     }
 
     static String generarCsvVentas(List<VentaReporte> ventas) {
@@ -86,14 +102,4 @@ public class ReporteAdminController {
         return csv.toString();
     }
 
-    private static String fecha(OffsetDateTime valor) {
-        return valor == null ? null : FECHA_CSV.format(valor);
-    }
-
-    private static ResponseEntity<byte[]> adjunto(String nombre, String csv) {
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + nombre)
-                .contentType(CSV_UTF8)
-                .body((BOM + csv).getBytes(StandardCharsets.UTF_8));
-    }
 }

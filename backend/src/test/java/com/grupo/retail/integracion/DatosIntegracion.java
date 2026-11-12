@@ -58,6 +58,24 @@ public final class DatosIntegracion {
                 pedidoId, estado);
     }
 
+    /** Registros de auditoría de esa acción para un correo (actor o correo intentado). */
+    public int auditoriasDe(String accion, String correo) {
+        return contar("SELECT COUNT(*) FROM registro_auditoria WHERE accion = ? AND usuario_correo = ?",
+                accion, correo);
+    }
+
+    /** Detalle del último registro de esa acción sobre una entidad. */
+    public String detalleAuditoria(String accion, String entidad, long entidadId) {
+        return texto("SELECT detalle FROM registro_auditoria WHERE accion = ? AND entidad = ? AND entidad_id = ? "
+                + "ORDER BY id_auditoria DESC LIMIT 1", accion, entidad, entidadId);
+    }
+
+    /** Correo del actor del último registro de esa acción sobre una entidad. */
+    public String actorAuditoria(String accion, String entidad, long entidadId) {
+        return texto("SELECT usuario_correo FROM registro_auditoria WHERE accion = ? AND entidad = ? AND entidad_id = ? "
+                + "ORDER BY id_auditoria DESC LIMIT 1", accion, entidad, entidadId);
+    }
+
     public int notificacionesDe(long usuarioId, long pedidoId, String estado) {
         return contar("SELECT COUNT(*) FROM notificacion WHERE usuario_id = ? AND pedido_id = ? AND estado = ?",
                 usuarioId, pedidoId, estado);

@@ -1,5 +1,6 @@
 package com.grupo.retail;
 
+import com.grupo.retail.service.AuditoriaService;
 import com.grupo.retail.controller.UsuarioAdminController;
 import com.grupo.retail.dao.UsuarioDAO;
 import com.grupo.retail.dto.ActualizarRolUsuario;
@@ -57,14 +58,14 @@ class UsuarioAdminTests {
     void crearPersonalNormalizaCorreoYEncriptaClaveAntesDePersistir() {
         UsuarioDAO dao = mock(UsuarioDAO.class);
         PasswordEncoder encoder = mock(PasswordEncoder.class);
-        UsuarioService servicio = new UsuarioService(dao, encoder, mock(EjecutorTransaccion.class));
+        UsuarioService servicio = new UsuarioService(dao, encoder, mock(EjecutorTransaccion.class), mock(AuditoriaService.class));
         RegistroPersonal datos = new RegistroPersonal(
                 "  Vendedora  ", "  VENDEDORA@example.com ", "clave-segura", "VENDEDOR");
         when(encoder.encode("clave-segura")).thenReturn("bcrypt-hash");
         when(dao.registrarPersonal("Vendedora", "vendedora@example.com", "bcrypt-hash", "VENDEDOR"))
                 .thenReturn(new Usuario(7L, "Vendedora", "vendedora@example.com", "VENDEDOR", true, null));
 
-        Usuario creado = servicio.registrarPersonal(datos);
+        Usuario creado = servicio.registrarPersonal(datos, 1L);
 
         assertEquals("VENDEDOR", creado.rol());
         verify(dao).registrarPersonal("Vendedora", "vendedora@example.com", "bcrypt-hash", "VENDEDOR");
@@ -83,17 +84,17 @@ class UsuarioAdminTests {
     @Test
     void noSePermiteCrearRolesFueraDeLaListaDePersonal() {
         UsuarioDAO dao = mock(UsuarioDAO.class);
-        UsuarioService servicio = new UsuarioService(dao, mock(PasswordEncoder.class), mock(EjecutorTransaccion.class));
+        UsuarioService servicio = new UsuarioService(dao, mock(PasswordEncoder.class), mock(EjecutorTransaccion.class), mock(AuditoriaService.class));
         RegistroPersonal datos = new RegistroPersonal("Cliente", "c@example.com", "clave-segura", "ROL_INVALIDO");
 
-        assertThrows(ResponseStatusException.class, () -> servicio.registrarPersonal(datos));
+        assertThrows(ResponseStatusException.class, () -> servicio.registrarPersonal(datos, 1L));
         verify(dao, never()).registrarPersonal(anyString(), anyString(), anyString(), anyString());
     }
 
     @Test
     void administradorNoPuedeDesactivarseNiQuitarseSuRol() throws Exception {
         UsuarioDAO dao = mock(UsuarioDAO.class);
-        UsuarioService servicio = new UsuarioService(dao, mock(PasswordEncoder.class), mock(EjecutorTransaccion.class));
+        UsuarioService servicio = new UsuarioService(dao, mock(PasswordEncoder.class), mock(EjecutorTransaccion.class), mock(AuditoriaService.class));
 
         assertThrows(OperacionAdminNoPermitidaException.class,
                 () -> servicio.desactivar(4L, 4L));
@@ -238,6 +239,6 @@ class UsuarioAdminTests {
     /** Servicio con DAO y transacción reales sobre JDBC simulado. */
     private static UsuarioService servicioSobre(ProveedorConexiones proveedor) {
         return new UsuarioService(new UsuarioDAO(proveedor), mock(PasswordEncoder.class),
-                new EjecutorTransaccion(proveedor));
+                new EjecutorTransaccion(proveedor), mock(AuditoriaService.class));
     }
 }

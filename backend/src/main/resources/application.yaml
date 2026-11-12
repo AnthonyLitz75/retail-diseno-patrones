@@ -4,8 +4,6 @@ spring:
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/retail_diseno_patrones}
     username: ${DB_USER:postgres}
-    # Sin valor por defecto: si falta DB_PASSWORD el backend no arranca, en lugar de
-    # intentar con una contraseña conocida.
     password: ${DB_PASSWORD}
   flyway:
     enabled: true
