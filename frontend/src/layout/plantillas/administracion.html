@@ -13,7 +13,8 @@
       </div>
       <div class="col-12 col-md-3">
         <label class="form-label" for="personal-clave">Contraseña temporal</label>
-        <input id="personal-clave" class="form-control" type="password" minlength="8" maxlength="72" autocomplete="new-password" required>
+        <input id="personal-clave" class="form-control" type="password" minlength="8" maxlength="72" autocomplete="new-password" placeholder="Con mayúscula y número" aria-describedby="ayuda-personal-clave" required>
+        <span id="ayuda-personal-clave" class="visually-hidden">8 a 72 caracteres, con al menos una mayúscula y un número.</span>
       </div>
       <div class="col-6 col-md-2">
         <label class="form-label" for="personal-rol">Rol inicial</label>

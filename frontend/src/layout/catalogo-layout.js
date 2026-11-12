@@ -14,6 +14,7 @@ export function renderizarCatalogoLayout({ heroHtml = '' } = {}) {
   <main class="container py-4 storefront">
     <nav id="navegacion-modulos" class="nav nav-pills modulo-tabs mb-4 gap-2 flex-wrap" role="tablist" aria-label="Módulos de la tienda" hidden>
       <button class="nav-link active" id="tab-tienda" type="button" role="tab" data-vista="tienda" aria-selected="true">Tienda</button>
+      <button class="nav-link" id="tab-productos" type="button" role="tab" data-vista="productos" aria-selected="false" hidden>Productos</button>
       <button class="nav-link" id="tab-pedidos" type="button" role="tab" data-vista="pedidos" aria-selected="false" hidden>Pedidos</button>
       <button class="nav-link" id="tab-inventario" type="button" role="tab" data-vista="inventario" aria-selected="false" hidden>Inventario</button>
       <button class="nav-link" id="tab-administracion" type="button" role="tab" data-vista="administracion" aria-selected="false" hidden>Administración</button>
@@ -52,6 +53,12 @@ export function renderizarCatalogoLayout({ heroHtml = '' } = {}) {
       <!-- BLOQUE VITRINA COMERCIAL INICIO (RF-04: visible en #/) -->
       <div id="bloque-vitrina-inicio">
         ${heroHtml}
+
+        <!-- Boceto "Inicio": accesos directos a cada categoría (se muestra al cargar el árbol) -->
+        <section id="seccion-compra-categoria" class="mb-5" aria-labelledby="titulo-compra-categoria" hidden>
+          <h2 id="titulo-compra-categoria" class="section-title mb-3">COMPRA POR CATEGORÍA</h2>
+          <nav id="chips-categorias-inicio" class="chips-categorias" aria-label="Categorías de la tienda"></nav>
+        </section>
 
         <!-- 4. Sección Destacados: hasta 8 productos en grilla con enlace "Ver más →" (RF-04) -->
         <section id="seccion-destacados" class="mb-5" aria-labelledby="titulo-productos-destacados">
@@ -151,6 +158,7 @@ export function renderizarCatalogoLayout({ heroHtml = '' } = {}) {
               <span>Ver todo el catálogo</span>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
             </a>
+            <p id="resumen-catalogo-inicio" class="text-white-50 small mt-3 mb-0"></p>
           </div>
         </section>
       </div>
@@ -168,41 +176,6 @@ export function renderizarCatalogoLayout({ heroHtml = '' } = {}) {
           <div id="categorias-destacadas" class="category-pills" aria-label="Filtrar por categoría"></div>
         </section>
 
-        <section id="seccion-gestion-productos" class="card shadow-sm mb-4" aria-labelledby="titulo-formulario" hidden>
-          <div class="card-body">
-            <h2 id="titulo-formulario" class="h4">Agregar producto</h2>
-
-            <form id="form-producto" class="row g-3">
-              <div class="col-12 col-md-3">
-                <label for="nombre-producto" class="form-label">Nombre</label>
-                <input id="nombre-producto" class="form-control" type="text" required maxlength="120">
-              </div>
-
-              <div class="col-12 col-md-3">
-                <label for="categoria-producto" class="form-label">Categoría</label>
-                <select id="categoria-producto" class="form-select" required>
-                  <option value="">Selecciona una categoría</option>
-                </select>
-              </div>
-
-              <div class="col-12 col-md-2">
-                <label for="precio-producto" class="form-label">Precio (S/)</label>
-                <input id="precio-producto" class="form-control" type="number" min="0.01" step="0.01" required>
-              </div>
-
-              <div class="col-12 col-md-2">
-                <label for="stock-producto" class="form-label">Stock inicial</label>
-                <input id="stock-producto" class="form-control" type="number" min="0" step="1" required>
-              </div>
-
-              <div class="col-12 col-md-2 d-flex align-items-end">
-                <button class="btn btn-primary w-100" type="submit">Agregar</button>
-              </div>
-            </form>
-
-            <p id="resultado-formulario" class="mt-3 mb-0" role="status"></p>
-          </div>
-        </section>
 
         <!-- Barra compacta de filtros sin controles duplicados -->
         <section class="catalog-toolbar card shadow-sm border-0 mb-3" aria-label="Filtros del catálogo">
@@ -347,6 +320,138 @@ export function renderizarCatalogoLayout({ heroHtml = '' } = {}) {
       </section>
     </div>
 
+    <!-- Vista Productos del personal (boceto "Panel de personal - productos"): tabla y alta de productos -->
+    <div id="vista-productos" class="modulo-vista" hidden>
+    <section id="seccion-gestion-productos" class="card shadow-sm mb-4" aria-labelledby="titulo-formulario">
+      <div class="card-body">
+        <div class="d-flex flex-wrap align-items-start justify-content-between gap-2">
+          <div>
+            <h2 id="titulo-formulario" class="h4 mb-1">Productos</h2>
+            <p id="resumen-gestion-productos" class="small text-secondary mb-0">Publica, edita, ajusta o reactiva los productos del catálogo.</p>
+          </div>
+          <button id="boton-nuevo-producto" class="btn btn-primary" type="button"
+                  aria-expanded="false" aria-controls="panel-nuevo-producto">+ Nuevo producto</button>
+        </div>
+
+        <div id="panel-nuevo-producto" class="nuevo-producto mt-3" hidden>
+          <h3 class="h5 mb-1">Nuevo producto</h3>
+          <p class="small text-secondary">Completa la ficha para publicarlo en la tienda. Los campos con <span class="text-danger">*</span> son obligatorios.</p>
+
+          <form id="form-producto" class="row g-3" novalidate>
+            <div class="col-12 col-lg-8 d-grid gap-3">
+              <fieldset class="nuevo-producto-grupo">
+                <legend>Información básica</legend>
+                <p class="nuevo-producto-ayuda">Datos con los que el cliente identificará el producto.</p>
+                <div class="row g-3">
+                  <div class="col-12 col-md-6">
+                    <label for="sku-producto" class="form-label">Código del producto</label>
+                    <input id="sku-producto" class="form-control text-uppercase" type="text" maxlength="30"
+                           placeholder="PA-0033" autocomplete="off" aria-describedby="ayuda-sku-producto">
+                    <div id="ayuda-sku-producto" class="form-text">Opcional y único. Si lo dejas vacío se genera al guardar.</div>
+                    <div class="invalid-feedback" data-campo="sku"></div>
+                  </div>
+                  <div class="col-12 col-md-6">
+                    <label for="marca-producto" class="form-label">Marca</label>
+                    <input id="marca-producto" class="form-control" type="text" maxlength="80" placeholder="Ej.: Logitech">
+                    <div class="invalid-feedback" data-campo="marca"></div>
+                  </div>
+                  <div class="col-12">
+                    <label for="nombre-producto" class="form-label">Nombre <span class="text-danger">*</span></label>
+                    <input id="nombre-producto" class="form-control" type="text" required maxlength="120"
+                           placeholder="Ej.: Teclado mecánico 60% RGB">
+                    <div class="invalid-feedback" data-campo="nombre"></div>
+                  </div>
+                  <div class="col-12">
+                    <label for="categoria-producto" class="form-label">Categoría <span class="text-danger">*</span></label>
+                    <select id="categoria-producto" class="form-select" required aria-describedby="ayuda-categoria-producto">
+                      <option value="">Selecciona una categoría</option>
+                    </select>
+                    <div id="ayuda-categoria-producto" class="form-text">Las categorías desactivadas no aparecen en la lista.</div>
+                    <div class="invalid-feedback" data-campo="categoria"></div>
+                  </div>
+                  <div class="col-12">
+                    <label for="descripcion-producto" class="form-label">Descripción</label>
+                    <textarea id="descripcion-producto" class="form-control" rows="3" maxlength="1000"
+                              placeholder="Describe el producto en 2 o 3 frases."></textarea>
+                    <div class="invalid-feedback" data-campo="descripcion"></div>
+                  </div>
+                </div>
+              </fieldset>
+
+              <fieldset class="nuevo-producto-grupo">
+                <legend>Imagen</legend>
+                <p class="nuevo-producto-ayuda">Fondo blanco y encuadre uniforme para que todas las tarjetas se vean iguales.</p>
+                <label for="imagen-producto" class="form-label">Dirección (URL) de la imagen</label>
+                <input id="imagen-producto" class="form-control" type="url" maxlength="255"
+                       placeholder="https://… o /img/productos/…" aria-describedby="ayuda-imagen-producto">
+                <div id="ayuda-imagen-producto" class="form-text">Formatos JPG, PNG o WebP. Sin imagen se usa una ilustración de la categoría.</div>
+                <div class="invalid-feedback" data-campo="imagen"></div>
+              </fieldset>
+
+              <fieldset class="nuevo-producto-grupo">
+                <legend>Precio e inventario</legend>
+                <p class="nuevo-producto-ayuda">Importes en soles con dos decimales.</p>
+                <div class="row g-3">
+                  <div class="col-12 col-md-4">
+                    <label for="precio-producto" class="form-label">Precio (S/) <span class="text-danger">*</span></label>
+                    <input id="precio-producto" class="form-control" type="number" min="0.01" step="0.01" required inputmode="decimal">
+                    <div class="invalid-feedback" data-campo="precio"></div>
+                  </div>
+                  <div class="col-12 col-md-4">
+                    <label for="precio-anterior-producto" class="form-label">Precio anterior (S/)</label>
+                    <input id="precio-anterior-producto" class="form-control" type="number" min="0.01" step="0.01"
+                           inputmode="decimal" aria-describedby="ayuda-precio-anterior-producto">
+                    <div id="ayuda-precio-anterior-producto" class="form-text">Opcional. Si es mayor que el precio, se muestra como descuento.</div>
+                    <div class="invalid-feedback" data-campo="precioAnterior"></div>
+                  </div>
+                  <div class="col-12 col-md-4">
+                    <label for="stock-producto" class="form-label">Stock de apertura <span class="text-danger">*</span></label>
+                    <input id="stock-producto" class="form-control" type="number" min="0" step="1" required inputmode="numeric">
+                    <div class="invalid-feedback" data-campo="stock"></div>
+                  </div>
+                </div>
+                <p class="alert alert-info small mt-3 mb-0">
+                  El stock de apertura se registra automáticamente como un movimiento de <strong>ENTRADA</strong> en el kardex.
+                  Después, cualquier corrección se hace con «Ajustar stock» indicando el motivo.
+                </p>
+              </fieldset>
+            </div>
+
+            <div class="col-12 col-lg-4 d-grid gap-3 align-content-start">
+              <section class="nuevo-producto-grupo" aria-labelledby="titulo-publicacion">
+                <h4 id="titulo-publicacion" class="nuevo-producto-titulo">Publicación</h4>
+                <div class="form-check mb-3">
+                  <input id="nuevo-producto" class="form-check-input" type="checkbox">
+                  <label for="nuevo-producto" class="form-check-label">
+                    Marcar como Nuevo
+                    <span class="d-block small text-secondary">Aparece en el carrusel de nuevos productos.</span>
+                  </label>
+                </div>
+                <p class="small text-secondary">El producto se publica activo: los clientes lo ven en la tienda.</p>
+                <div class="d-grid gap-2">
+                  <button class="btn btn-primary" type="submit">Publicar producto</button>
+                  <button id="cancelar-nuevo-producto" class="btn btn-outline-secondary" type="button">Cancelar</button>
+                </div>
+              </section>
+
+              <section class="nuevo-producto-grupo" aria-labelledby="titulo-vista-previa">
+                <h4 id="titulo-vista-previa" class="nuevo-producto-titulo">Vista previa</h4>
+                <p class="nuevo-producto-ayuda">Así se verá la tarjeta en la tienda.</p>
+                <div id="vista-previa-producto" class="nuevo-producto-vista-previa" inert aria-hidden="true"></div>
+              </section>
+
+              <p class="alert alert-warning small mb-0">
+                <strong>Recuerda:</strong> si cambias el precio después de una venta, los pedidos anteriores conservan el precio con el que se compraron.
+              </p>
+            </div>
+          </form>
+        </div>
+
+        <p id="resultado-formulario" class="mt-3 mb-0" role="status"></p>
+      </div>
+    </section>
+    </div>
+
     <!-- Vista Administración -->
     <div id="vista-administracion" class="modulo-vista" hidden></div>
 
@@ -380,35 +485,82 @@ export function renderizarCatalogoLayout({ heroHtml = '' } = {}) {
         <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Cerrar carrito"></button>
       </div>
       <div class="offcanvas-body d-flex flex-column p-3">
+        <!-- Pasos del checkout (boceto "Confirmar compra"): Carrito → Entrega y pago → Confirmación -->
+        <ol id="checkout-pasos" class="checkout-pasos" aria-label="Pasos de la compra">
+          <li data-paso="carrito" aria-current="step"><span class="checkout-paso-numero">1</span><span class="checkout-paso-texto">Carrito</span></li>
+          <li data-paso="entrega"><span class="checkout-paso-numero">2</span><span class="checkout-paso-texto">Entrega y pago</span></li>
+          <li data-paso="confirmacion"><span class="checkout-paso-numero">3</span><span class="checkout-paso-texto">Confirmación</span></li>
+        </ol>
         <p id="estado-carrito" class="small mb-2" role="status" aria-live="polite"></p>
-        <ul id="productos-carrito" class="list-group list-group-flush flex-grow-1 overflow-y-auto mb-3"></ul>
-        <div class="cart-drawer-footer border-top pt-3 mt-auto">
-          <div class="mb-2">
-            <label for="checkout-destinatario" class="form-label small fw-semibold mb-1 text-secondary">Destinatario</label>
-            <input id="checkout-destinatario" class="form-control form-control-sm" type="text" maxlength="120" placeholder="Nombre de quien recibe (opcional)">
-          </div>
-          <div class="mb-3">
-            <label for="checkout-direccion" class="form-label small fw-semibold mb-1 text-secondary">Dirección de entrega</label>
-            <input id="checkout-direccion" class="form-control form-control-sm" type="text" maxlength="250" placeholder="Dirección de envío (opcional)">
-          </div>
-          <div class="cart-order-summary bg-light rounded-3 p-3 mb-3 border">
-            <div class="d-flex justify-content-between align-items-center small text-secondary mb-1">
-              <span>Envío nacional:</span>
-              <span class="text-success fw-semibold">Gratis</span>
+
+        <!-- Paso 1: Carrito -->
+        <section id="checkout-paso-carrito" class="checkout-paso d-flex flex-column flex-grow-1" aria-label="Paso 1: carrito">
+          <ul id="productos-carrito" class="list-group list-group-flush flex-grow-1 overflow-y-auto mb-3"></ul>
+          <div class="cart-drawer-footer border-top pt-3 mt-auto">
+            <div class="cart-order-summary bg-light rounded-3 p-3 mb-3 border">
+              <div class="d-flex justify-content-between align-items-center small text-secondary mb-1">
+                <span>Envío nacional:</span>
+                <span class="text-success fw-semibold">Gratis</span>
+              </div>
+              <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+                <span class="fw-bold text-dark">Total:</span>
+                <span id="total-carrito" class="fs-5 fw-bold text-primary">S/ 0.00</span>
+              </div>
             </div>
-            <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+            <button id="continuar-checkout" class="btn btn-primary w-100 py-2 fw-semibold" type="button" disabled>
+              <span id="continuar-checkout-texto">Continuar con la entrega</span>
+            </button>
+            <p class="small text-secondary text-center mt-2 mb-0">Tu carrito no reserva stock: la disponibilidad se vuelve a validar al confirmar.</p>
+          </div>
+        </section>
+
+        <!-- Paso 2: Entrega y pago -->
+        <section id="checkout-paso-entrega" class="checkout-paso d-flex flex-column flex-grow-1" aria-label="Paso 2: entrega y pago" hidden>
+          <div class="flex-grow-1 overflow-y-auto">
+            <h3 class="h6 fw-bold mb-2">Dirección de entrega</h3>
+            <div class="mb-2">
+              <label for="checkout-destinatario" class="form-label small fw-semibold mb-1 text-secondary">Destinatario</label>
+              <input id="checkout-destinatario" class="form-control form-control-sm" type="text" maxlength="120" autocomplete="name" placeholder="Nombre de quien recibe (opcional)">
+            </div>
+            <div class="mb-3">
+              <label for="checkout-direccion" class="form-label small fw-semibold mb-1 text-secondary">Dirección</label>
+              <input id="checkout-direccion" class="form-control form-control-sm" type="text" maxlength="250" autocomplete="street-address" placeholder="Calle, número y distrito (opcional)">
+            </div>
+
+            <fieldset class="mb-3">
+              <legend class="h6 fw-bold mb-2">Método de pago</legend>
+              <p class="alert alert-warning py-2 small mb-2">Pago simulado de la demo: no se solicitan tarjetas ni se cobra dinero real.</p>
+              <label class="checkout-metodo">
+                <input class="form-check-input" type="radio" name="checkout-metodo-pago" value="PRUEBA_APROBADA" checked>
+                <span><strong class="d-block">Pago de prueba aprobado</strong><span class="small text-secondary">La compra se registra y el pago queda APROBADO.</span></span>
+              </label>
+              <label class="checkout-metodo">
+                <input class="form-check-input" type="radio" name="checkout-metodo-pago" value="PRUEBA_RECHAZADA">
+                <span><strong class="d-block">Pago de prueba rechazado</strong><span class="small text-secondary">Para probar qué ocurre cuando el pago falla: no se crea el pedido.</span></span>
+              </label>
+            </fieldset>
+
+            <h3 class="h6 fw-bold mb-2">Tu pedido</h3>
+            <ul id="checkout-resumen" class="list-unstyled small mb-0"></ul>
+          </div>
+          <div class="cart-drawer-footer border-top pt-3 mt-3">
+            <div class="d-flex justify-content-between align-items-center mb-3">
               <span class="fw-bold text-dark">Total a pagar:</span>
-              <span id="total-carrito" class="fs-5 fw-bold text-primary">S/ 0.00</span>
+              <span id="checkout-total" class="fs-5 fw-bold text-primary">S/ 0.00</span>
             </div>
+            <button id="confirmar-compra" class="btn btn-success w-100 py-2 fw-semibold d-flex align-items-center justify-content-center gap-2 shadow-sm" type="button" disabled>
+              <span id="confirmar-compra-spinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+              <span id="confirmar-compra-texto">Confirmar y pagar</span>
+            </button>
+            <p class="small text-secondary text-center mt-2 mb-0">
+              Si haces clic dos veces por error, la compra no se duplica.
+              <button id="volver-carrito" class="btn btn-link btn-sm p-0 align-baseline" type="button">Volver al carrito</button>
+            </p>
           </div>
-          <button id="confirmar-compra" class="btn btn-success w-100 py-2 fw-semibold d-flex align-items-center justify-content-center gap-2 shadow-sm" type="button" disabled>
-            <span id="confirmar-compra-spinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-shield-lock" viewBox="0 0 16 16" aria-hidden="true">
-              <path d="M5.072.56C6.157.265 7.31 0 8 0s1.843.265 2.928.56c1.11.3 2.229.655 2.887.87a1.54 1.54 0 0 1 1.044 1.262c.596 4.477-.787 7.795-2.465 9.99a11.8 11.8 0 0 1-2.517 2.453 7 7 0 0 1-1.048.625c-.28.132-.581.24-.829.24s-.548-.108-.829-.24a7 7 0 0 1-1.048-.625 11.8 11.8 0 0 1-2.517-2.453C1.928 10.487.545 7.169 1.141 2.692A1.54 1.54 0 0 1 2.185 1.43 63 63 0 0 1 5.072.56m3.672 3.942a.5.5 0 0 0-.744 0L5.354 7.146a.5.5 0 1 0 .708.708l1.438-1.438v3.084a.5.5 0 0 0 1 0V6.416l1.438 1.438a.5.5 0 0 0 .708-.708z"/>
-            </svg>
-            <span id="confirmar-compra-texto">Confirmar compra con pago simulado</span>
-          </button>
-        </div>
+        </section>
+
+        <!-- Paso 3: Confirmación (boceto "Compra confirmada") -->
+        <section id="checkout-paso-confirmacion" class="checkout-paso flex-grow-1" aria-label="Paso 3: confirmación" tabindex="-1" hidden></section>
       </div>
     </div>
   </main>

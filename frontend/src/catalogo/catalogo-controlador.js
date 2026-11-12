@@ -16,6 +16,8 @@ import {
   renderizarChipsFiltrosActivos as renderizarChipsFiltrosActivosVista,
 } from "./catalogo-vista.js";
 import { generarSkeletonCards } from "./skeleton-loader.js";
+import { configurarFormularioProducto } from "./formulario-producto.js";
+import { resumenCatalogo } from "./explorar.js";
 import { ROL } from "../utilidades/constantes.js";
 
 /**
@@ -181,6 +183,8 @@ export function configurarControladorCatalogo({
 
   function poblarVitrinaInicio(productos) {
     if (typeof document === "undefined") return;
+    const resumen = document.querySelector("#resumen-catalogo-inicio");
+    if (resumen) resumen.textContent = resumenCatalogo(productos);
     poblarVitrinaInicioVista(productos, {
       gridDestacados,
       trackNuevos: document.querySelector("#carrusel-nuevos-track"),
@@ -412,60 +416,19 @@ export function configurarControladorCatalogo({
     botonLimpiarFiltros.addEventListener("click", reiniciarFiltrosCatalogo);
   }
 
-  // Formulario de agregar producto para staff/admin
-  if (formulario) {
-    formulario.addEventListener("submit", async (evento) => {
-      evento.preventDefault();
-
-      const boton = formulario.querySelector('button[type="submit"]');
-      if (boton) boton.disabled = true;
-
-      if (resultadoFormulario) {
-        resultadoFormulario.className = "mt-3 mb-0 text-secondary";
-        resultadoFormulario.textContent = "Guardando producto...";
+  // Formulario "Nuevo producto" del personal (ficha completa con vista previa)
+  configurarFormularioProducto({
+    formulario,
+    resultado: resultadoFormulario,
+    apiRequest,
+    alCrear: async (producto) => {
+      if (typeof mostrarToast === "function") {
+        mostrarToast(`Producto "${producto.nombre}" publicado en el catálogo.`, "exito");
       }
-
-      const inputNombre = document.querySelector("#nombre-producto");
-      const inputPrecio = document.querySelector("#precio-producto");
-      const inputStock = document.querySelector("#stock-producto");
-
-      const nuevoProducto = {
-        nombre: inputNombre ? inputNombre.value.trim() : "",
-        categoria: categoriaProducto ? categoriaProducto.value : "",
-        precio: inputPrecio ? Number(inputPrecio.value) : 0,
-        stock: inputStock ? Number(inputStock.value) : 0,
-      };
-
-      try {
-        await apiRequest("/api/productos", {
-          method: "POST",
-          json: nuevoProducto,
-        });
-
-        if (resultadoFormulario) {
-          resultadoFormulario.className = "mt-3 mb-0 text-success";
-          resultadoFormulario.textContent = "Producto agregado correctamente.";
-        }
-        if (typeof mostrarToast === "function") {
-          mostrarToast(`Producto "${nuevoProducto.nombre}" agregado al catálogo.`, "exito");
-        }
-
-        formulario.reset();
-        if (campoBusqueda) campoBusqueda.value = "";
-        await cargarProductos();
-      } catch (error) {
-        if (resultadoFormulario) {
-          resultadoFormulario.className = "mt-3 mb-0 text-danger";
-          resultadoFormulario.textContent = `No se pudo agregar el producto. ${error.message}`;
-        }
-        if (typeof mostrarToast === "function") {
-          mostrarToast(`No se pudo agregar el producto: ${error.message}`, "error");
-        }
-      } finally {
-        if (boton) boton.disabled = false;
-      }
-    });
-  }
+      if (campoBusqueda) campoBusqueda.value = "";
+      await cargarProductos();
+    },
+  });
 
   return {
     cargarProductos,

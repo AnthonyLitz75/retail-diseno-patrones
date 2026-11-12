@@ -3,6 +3,7 @@ export const VISTAS_DISPONIBLES = {
   tienda: { id: 'vista-tienda', tabId: 'tab-tienda' },
   pedidos: { id: 'vista-pedidos', tabId: 'tab-pedidos' },
   inventario: { id: 'vista-inventario', tabId: 'tab-inventario' },
+  productos: { id: 'vista-productos', tabId: 'tab-productos' },
   administracion: { id: 'vista-administracion', tabId: 'tab-administracion' },
   consultas: { id: 'vista-consultas', tabId: 'tab-consultas' },
   soporte: { id: 'vista-soporte', tabId: 'tab-soporte' },
@@ -12,11 +13,11 @@ export const VISTAS_DISPONIBLES = {
 export function determinarVistasPorRol(rol) {
   switch (rol) {
     case ROL.ADMIN:
-      return ['administracion', 'tienda', 'pedidos', 'inventario']
+      return ['administracion', 'productos', 'tienda', 'pedidos', 'inventario']
     case ROL.ALMACEN:
       return ['pedidos', 'inventario', 'tienda']
     case ROL.VENDEDOR:
-      return ['tienda', 'consultas', 'pedidos', 'inventario']
+      return ['tienda', 'productos', 'consultas', 'pedidos', 'inventario']
     case ROL.SOPORTE:
       return ['soporte', 'tienda']
     case ROL.CLIENTE:
@@ -43,6 +44,7 @@ export function obtenerEtiquetaPestaña(vista, rol) {
   const etiquetas = {
     tienda: rol === ROL.ALMACEN ? 'Catálogo' : 'Tienda',
     pedidos: rol === ROL.CLIENTE ? 'Mis compras' : 'Gestión de pedidos',
+    productos: 'Productos',
     inventario: 'Inventario y kardex',
     administracion: 'Administración',
     consultas: 'Consultas de clientes',
@@ -50,6 +52,11 @@ export function obtenerEtiquetaPestaña(vista, rol) {
     atencion: 'Mi atención'
   }
   return etiquetas[vista] || vista
+}
+
+/** El personal (no el cliente) con más de un módulo usa el menú lateral en escritorio. */
+export function usaMenuLateral(rol, vistas = determinarVistasPorRol(rol)) {
+  return Boolean(rol) && rol !== ROL.CLIENTE && vistas.length > 1
 }
 
 export function esVistaPermitida(vista, rol) {

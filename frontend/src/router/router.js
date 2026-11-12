@@ -10,6 +10,7 @@ import {
   construirBreadcrumbs,
 } from "./enrutador.js";
 import { renderizarVistaDetalleProducto } from "../catalogo/detalle-producto.js";
+import { crearSeccionRelacionados, seleccionarRelacionados } from "../catalogo/explorar.js";
 import { resolverImagenProducto } from "../catalogo/imagen-producto.js";
 import { esFavorito, alternarFavorito } from "../catalogo/favoritos.js";
 import { esRutaProtegida, evaluarAcceso } from "./guardas.js";
@@ -94,12 +95,38 @@ export function configurarEnrutadorSPA({
     });
   }
 
+  // El menú del personal (sesion.js) y el router comparten los contenedores de vistas: al
+  // mostrar la tienda se pasa por cambiarVista para ocultar el módulo activo y marcar el menú.
+  // En la primera carga sin ruta (#/) se respeta la vista con la que arranca el rol (p. ej.
+  // Administración); antes se veían la tienda y ese módulo a la vez.
+  let primeraRuta = true;
+
+  function moduloActivoFueraDeTienda() {
+    if (typeof document === "undefined") return null;
+    return document.querySelector(
+      ".modulo-vista:not([hidden]):not(#vista-tienda):not(#vista-404):not(#vista-detalle-producto)",
+    );
+  }
+
+  function mostrarTienda({ respetarVistaDelRol = false } = {}) {
+    if (respetarVistaDelRol && moduloActivoFueraDeTienda()) return;
+    if (moduloActivoFueraDeTienda() && typeof cambiarVista === "function") cambiarVista("tienda");
+    if (vistaTienda) vistaTienda.hidden = false;
+  }
+
+  /** Detalle de producto y 404 se muestran solos: se oculta cualquier módulo abierto. */
+  function ocultarModulos() {
+    if (moduloActivoFueraDeTienda() && typeof cambiarVista === "function") cambiarVista("tienda");
+  }
+
   async function manejarRutaHash() {
     const hash =
       typeof window !== "undefined" && window.location.hash
         ? window.location.hash
         : "#/";
     const rutaInfo = parsearRuta(hash);
+    const esPrimeraRuta = primeraRuta;
+    primeraRuta = false;
 
     // Guarda de cliente (spec 007, T003): en rutas protegidas se espera a conocer la sesión
     // para no mandar al login a alguien que sí la tiene y recién está cargando.
@@ -121,7 +148,7 @@ export function configurarEnrutadorSPA({
     if (vistaDetalleProducto) vistaDetalleProducto.hidden = true;
 
     if (rutaInfo.tipo === "inicio") {
-      if (vistaTienda) vistaTienda.hidden = false;
+      mostrarTienda({ respetarVistaDelRol: esPrimeraRuta });
       if (bloqueVitrinaInicio) bloqueVitrinaInicio.hidden = false;
       if (bloqueCatalogoCompleto) bloqueCatalogoCompleto.hidden = true;
       if (contenedorBreadcrumbs) contenedorBreadcrumbs.hidden = true;
@@ -135,7 +162,7 @@ export function configurarEnrutadorSPA({
     }
 
     if (rutaInfo.tipo === "catalogo") {
-      if (vistaTienda) vistaTienda.hidden = false;
+      mostrarTienda();
       if (bloqueVitrinaInicio) bloqueVitrinaInicio.hidden = true;
       if (bloqueCatalogoCompleto) bloqueCatalogoCompleto.hidden = false;
       const crumbs = construirBreadcrumbs(rutaInfo, estado.categoriasArbol);
@@ -168,7 +195,7 @@ export function configurarEnrutadorSPA({
       }
 
       if (hallazgo && hallazgo.categoria) {
-        if (vistaTienda) vistaTienda.hidden = false;
+        mostrarTienda();
         if (bloqueVitrinaInicio) bloqueVitrinaInicio.hidden = true;
         if (bloqueCatalogoCompleto) bloqueCatalogoCompleto.hidden = false;
         const crumbs = construirBreadcrumbs(rutaInfo, estado.categoriasArbol);
@@ -193,7 +220,7 @@ export function configurarEnrutadorSPA({
     }
 
     if (rutaInfo.tipo === "buscar") {
-      if (vistaTienda) vistaTienda.hidden = false;
+      mostrarTienda();
       if (bloqueVitrinaInicio) bloqueVitrinaInicio.hidden = true;
       if (bloqueCatalogoCompleto) bloqueCatalogoCompleto.hidden = false;
       const crumbs = construirBreadcrumbs(rutaInfo, estado.categoriasArbol);
@@ -228,6 +255,7 @@ export function configurarEnrutadorSPA({
       });
 
       if (producto) {
+        ocultarModulos();
         if (vistaTienda) vistaTienda.hidden = true;
         if (vista404) vista404.hidden = true;
 
@@ -266,6 +294,11 @@ export function configurarEnrutadorSPA({
             },
           });
           vistaDetalleProducto.append(detalleDOM);
+          // Boceto "Detalle de producto": alternativas de la misma categoría.
+          const relacionados = crearSeccionRelacionados(
+            seleccionarRelacionados(producto, estado.productosDisponibles),
+          );
+          if (relacionados) vistaDetalleProducto.append(relacionados);
           vistaDetalleProducto.hidden = false;
           if (typeof window !== "undefined") {
             window.scrollTo({ top: 0, behavior: "smooth" });
@@ -298,7 +331,7 @@ export function configurarEnrutadorSPA({
 
     // Secciones o anclas (#seccion-... o #productos)
     if (hash.startsWith("#seccion-") || hash === "#productos") {
-      if (vistaTienda) vistaTienda.hidden = false;
+      mostrarTienda();
       if (vistaDetalleProducto) vistaDetalleProducto.hidden = true;
       if (vista404) vista404.hidden = true;
       if (hash === "#productos") {
@@ -317,6 +350,7 @@ export function configurarEnrutadorSPA({
     }
 
     // Ruta desconocida (404)
+    ocultarModulos();
     if (vistaTienda) vistaTienda.hidden = true;
     if (vistaDetalleProducto) vistaDetalleProducto.hidden = true;
     if (vista404) vista404.hidden = false;

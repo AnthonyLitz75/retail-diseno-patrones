@@ -60,9 +60,15 @@ public class ProductoService {
         return productoDAO.buscarPorId(id);
     }
 
-    /** Crea el producto y, si trae stock inicial, deja su movimiento ENTRADA en la misma transacción. */
+    /**
+     * Crea el producto y, si trae stock inicial, deja su movimiento ENTRADA en la misma transacción.
+     * El código (SKU) debe ser único; sin código se genera PA-NNNN.
+     */
     public Producto crearProducto(NuevoProducto datos, Long responsableId) {
         return ejecutorTransaccion.ejecutar("No se pudo crear el producto y registrar su stock inicial", conexion -> {
+            if (datos.sku() != null && productoDAO.existeSku(conexion, datos.sku())) {
+                throw new IllegalArgumentException("Ya existe un producto con el código " + datos.sku());
+            }
             Producto creado = productoDAO.insertar(conexion, datos)
                     .orElseThrow(() -> new IllegalArgumentException(
                             "La categoría seleccionada no existe o está inactiva"));

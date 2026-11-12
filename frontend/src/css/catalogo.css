@@ -786,3 +786,77 @@
 .catalog-price-input-group {
   max-width: 120px;
 }
+
+/* ==========================================================================
+   Explorar la tienda: chips de categorías y productos relacionados (bocetos)
+   ========================================================================== */
+.chips-categorias {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.chip-categoria {
+  padding: 0.5rem 1.1rem;
+  border: 1.5px solid var(--retail-border);
+  border-radius: 999px;
+  background: var(--retail-surface);
+  color: var(--retail-ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.chip-categoria:hover,
+.chip-categoria:focus-visible {
+  border-color: var(--retail-blue);
+  color: var(--retail-blue);
+}
+
+.relacionados-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.relacionado-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  height: 100%;
+  padding: 0.85rem;
+  border: 1px solid var(--retail-border);
+  border-radius: 0.75rem;
+  background: var(--retail-surface);
+  color: var(--retail-ink);
+  text-decoration: none;
+  box-shadow: var(--retail-shadow);
+}
+
+.relacionado-card:hover,
+.relacionado-card:focus-visible {
+  border-color: var(--retail-blue);
+  box-shadow: var(--retail-shadow-hover);
+}
+
+.relacionado-card img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: contain;
+}
+
+.relacionado-nombre {
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.relacionado-precio {
+  font-weight: 700;
+  color: var(--retail-blue);
+}
+
+.relacionado-precio-anterior,
+.relacionado-stock {
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: var(--retail-muted);
+}

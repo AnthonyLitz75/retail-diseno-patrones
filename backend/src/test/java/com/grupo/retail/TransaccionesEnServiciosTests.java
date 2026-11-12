@@ -107,6 +107,22 @@ class TransaccionesEnServiciosTests {
     }
 
     @Test
+    void crearProductoConCodigoRepetidoResponde400SinInsertar() throws Exception {
+        ProductoDAO productos = mock(ProductoDAO.class);
+        NuevoProducto datos = new NuevoProducto("Mouse", "Mouse", new BigDecimal("49.00"), 5,
+                "PA-0006", null, null, null, null, false);
+        when(productos.existeSku(conexion, "PA-0006")).thenReturn(true);
+        ProductoService servicio = new ProductoService(productos, mock(CategoriaDAO.class), inventario, ejecutor(), mock(AuditoriaService.class));
+
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                () -> servicio.crearProducto(datos, 3L));
+
+        assertEquals("Ya existe un producto con el código PA-0006", error.getMessage());
+        verify(productos, never()).insertar(any(), any());
+        verify(conexion).rollback();
+    }
+
+    @Test
     void ajustarStockRegistraLaDiferenciaComoAjuste() throws Exception {
         ProductoDAO productos = mock(ProductoDAO.class);
         when(productos.bloquearActivo(conexion, 6L)).thenReturn(Optional.of(mouse(10)));

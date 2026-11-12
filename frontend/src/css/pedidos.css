@@ -381,3 +381,27 @@
   border-radius: 999px;
   letter-spacing: 0.04em;
 }
+
+/* Boceto "Mis pedidos": filtros por estado con su conteo */
+.filtros-pedidos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.filtro-pedido {
+  padding: 0.4rem 0.95rem;
+  border: 1.5px solid var(--retail-border);
+  border-radius: 999px;
+  background: var(--retail-surface);
+  color: var(--retail-ink);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.filtro-pedido[aria-pressed="true"] {
+  border-color: var(--retail-navy);
+  background: var(--retail-navy);
+  color: var(--retail-surface);
+}

@@ -95,6 +95,34 @@ export function tarjetasResumen(resumen) {
   ];
 }
 
+/**
+ * Los cuatro indicadores de la cabecera de Administración (boceto del panel), sin rango de
+ * fechas: lo que el administrador revisa primero al entrar.
+ * @returns {{etiqueta: string, valor: string, nota: string}[]}
+ */
+export function indicadoresDestacados(resumen = {}) {
+  const pendientes = resumen.pedidosPorEstado?.PENDIENTE ?? 0;
+  const escalados = resumen.escalados ?? 0;
+  return [
+    { etiqueta: "Ventas netas", valor: soles(resumen.ventasNetas), nota: "Sin pedidos cancelados" },
+    {
+      etiqueta: "Pedidos vendidos",
+      valor: String(resumen.pedidosVendidos ?? 0),
+      nota: pendientes === 1 ? "1 pendiente de preparar" : `${pendientes} pendientes de preparar`,
+    },
+    {
+      etiqueta: "Reclamos escalados",
+      valor: String(escalados),
+      nota: escalados === 0 ? "Ninguno abierto" : "Abiertos, revisa Incidencias",
+    },
+    {
+      etiqueta: "Valor del inventario",
+      valor: soles(resumen.valorInventario),
+      nota: `${resumen.unidadesEnStock ?? 0} unidades · ${resumen.productosActivos ?? 0} productos`,
+    },
+  ];
+}
+
 export async function cargarResumenAdmin(apiRequest, consulta) {
   return (
     await apiRequest(

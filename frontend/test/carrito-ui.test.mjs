@@ -5,7 +5,8 @@ import {
   establecerUsuarioSesion,
   abrirCarrito,
   ocultarCarrito,
-  mostrarCarrito
+  mostrarCarrito,
+  pasoCheckoutActual
 } from '../src/carrito/carrito.js'
 
 // Entorno simulado de DOM mínimo para Node.js
@@ -115,7 +116,14 @@ function setupMockDOM() {
     campoDestinatario: new MockDOMElement('input', 'checkout-destinatario'),
     campoDireccion: new MockDOMElement('input', 'checkout-direccion'),
     contadorCarrito: new MockDOMElement('span', 'contador-carrito'),
-    drawerCount: new MockDOMElement('span', 'cart-drawer-count')
+    drawerCount: new MockDOMElement('span', 'cart-drawer-count'),
+    botonContinuar: new MockDOMElement('button', 'continuar-checkout'),
+    textoContinuar: new MockDOMElement('span', 'continuar-checkout-texto'),
+    checkoutTotal: new MockDOMElement('span', 'checkout-total'),
+    checkoutResumen: new MockDOMElement('ul', 'checkout-resumen'),
+    pasoCarrito: new MockDOMElement('section', 'checkout-paso-carrito'),
+    pasoEntrega: new MockDOMElement('section', 'checkout-paso-entrega'),
+    pasoConfirmacion: new MockDOMElement('section', 'checkout-paso-confirmacion')
   }
 
   const bodyElement = new MockDOMElement('body')
@@ -140,6 +148,13 @@ function setupMockDOM() {
         case '#checkout-direccion': return elements.campoDireccion
         case '#contador-carrito': return elements.contadorCarrito
         case '#cart-drawer-count': return elements.drawerCount
+        case '#continuar-checkout': return elements.botonContinuar
+        case '#continuar-checkout-texto': return elements.textoContinuar
+        case '#checkout-total': return elements.checkoutTotal
+        case '#checkout-resumen': return elements.checkoutResumen
+        case '#checkout-paso-carrito': return elements.pasoCarrito
+        case '#checkout-paso-entrega': return elements.pasoEntrega
+        case '#checkout-paso-confirmacion': return elements.pasoConfirmacion
         default: return null
       }
     }
@@ -176,32 +191,38 @@ test('mostrarCarrito renderiza estado vacío cuando no hay ítems', () => {
   assert.equal(dom.contadorCarrito.textContent, '0')
   assert.equal(dom.drawerCount.textContent, '0 ítems')
   assert.ok(dom.botonConfirmarCompra.disabled, 'El botón de compra debe estar deshabilitado')
-  assert.equal(dom.textoConfirmarCompra.textContent, 'Iniciar sesión para pagar')
+  assert.ok(dom.botonContinuar.disabled, 'Sin productos no se puede pasar a la entrega')
+  assert.equal(dom.textoContinuar.textContent, 'Iniciar sesión para pagar')
   assert.equal(dom.listaCarrito.children.length, 1, 'Debe insertar el contenedor de empty state')
   assert.ok(dom.listaCarrito.children[0].className.includes('cart-empty-state-drawer'))
 })
 
-test('mostrarCarrito adapta el botón de compra según rol CLIENTE autenticado vs invitado', () => {
+test('mostrarCarrito adapta los botones del checkout según rol CLIENTE autenticado vs invitado', () => {
   const dom = setupMockDOM()
   inicializarCarrito()
 
-  // 1. Invitado
+  // 1. Invitado: puede avanzar (lo lleva a iniciar sesión) pero no pagar
   establecerUsuarioSesion(null)
   mostrarCarrito({
     total: 100,
     productos: [{ productoId: 1, nombre: 'Item 1', cantidad: 1, stockDisponible: 5, precio: 100, subtotal: 100 }]
   })
-  assert.equal(dom.textoConfirmarCompra.textContent, 'Iniciar sesión para pagar')
-  assert.equal(dom.botonConfirmarCompra.disabled, false)
+  assert.equal(dom.textoContinuar.textContent, 'Iniciar sesión para pagar')
+  assert.equal(dom.botonContinuar.disabled, false)
+  assert.equal(dom.botonConfirmarCompra.disabled, true)
 
-  // 2. Cliente Autenticado
+  // 2. Cliente autenticado: continúa a la entrega y el botón de pago muestra el total
   establecerUsuarioSesion({ id: 10, nombre: 'Carlos', rol: 'CLIENTE' })
   mostrarCarrito({
     total: 100,
     productos: [{ productoId: 1, nombre: 'Item 1', cantidad: 1, stockDisponible: 5, precio: 100, subtotal: 100 }]
   })
-  assert.equal(dom.textoConfirmarCompra.textContent, 'Confirmar compra con pago simulado')
+  assert.equal(dom.textoContinuar.textContent, 'Continuar con la entrega')
+  // formatoPrecio separa "S/" del importe con un espacio no separable (U+00A0).
+  assert.equal(dom.textoConfirmarCompra.textContent, 'Confirmar y pagar S/ 100.00')
   assert.equal(dom.botonConfirmarCompra.disabled, false)
+  assert.equal(dom.checkoutTotal.textContent, 'S/ 100.00')
+  assert.equal(dom.checkoutResumen.children.length, 1, 'El resumen "Tu pedido" lista cada producto')
 })
 
 test('mostrarCarrito renderiza productos con steppers, límites de stock y subtotales en Soles', () => {
@@ -326,6 +347,67 @@ test('confirmarCompra mantiene deshabilitado el botonConfirmarCompra cuando el c
     assert.equal(dom.listaCarrito.children.length, 1)
     // El botón de confirmar compra debe quedar DESHABILITADO porque el carrito está vacío
     assert.equal(dom.botonConfirmarCompra.disabled, true, 'El botón de compra debe estar deshabilitado al quedar el carrito vacío')
+  } finally {
+    globalThis.fetch = originalFetch
+  }
+})
+
+test('checkout: tras pagar se ve la confirmación; un pago rechazado deja el carrito y otra clave; sin respuesta se reintenta con la misma', async () => {
+  const dom = setupMockDOM()
+  inicializarCarrito()
+  establecerUsuarioSesion({ id: 10, nombre: 'Carlos', rol: 'CLIENTE' })
+  const carritoLleno = { total: 100, productos: [{ productoId: 1, nombre: 'Item 1', cantidad: 1, stockDisponible: 5, precio: 100, subtotal: 100 }] }
+  mostrarCarrito(carritoLleno)
+  dom.botonContinuar.eventListeners.click[0]()
+  assert.equal(pasoCheckoutActual(), 'entrega')
+  assert.equal(dom.pasoEntrega.hidden, false)
+  assert.equal(dom.pasoCarrito.hidden, true)
+
+  const claves = []
+  const respuestas = ['rechazo', 'sin-red', 'ok']
+  const json = (status, cuerpo) => ({
+    ok: status < 400,
+    status,
+    headers: new Headers({ 'content-type': 'application/json' }),
+    json: async () => cuerpo,
+    text: async () => JSON.stringify(cuerpo),
+    clone() { return this }
+  })
+  const originalFetch = globalThis.fetch
+  globalThis.fetch = async (url, opciones = {}) => {
+    if (url.includes('/api/pedidos/confirmar')) {
+      claves.push(JSON.parse(opciones.body).claveConfirmacion)
+      const tipo = respuestas.shift()
+      if (tipo === 'rechazo') return json(402, { error: 'Pago rechazado por el proveedor simulado' })
+      if (tipo === 'sin-red') throw new TypeError('Failed to fetch')
+      return json(201, { idPedido: 6, estado: 'PENDIENTE', total: 100, estadoPago: 'APROBADO' })
+    }
+    if (url.includes('/api/carrito')) {
+      return json(200, respuestas.length === 0 ? { total: 0, productos: [] } : carritoLleno)
+    }
+    throw new Error('URL no mockeada: ' + url)
+  }
+
+  try {
+    const pagar = dom.botonConfirmarCompra.eventListeners.click[0]
+    await pagar()
+    assert.equal(pasoCheckoutActual(), 'entrega', 'un pago rechazado no avanza')
+    assert.match(dom.estadoCarrito.textContent, /no se creó ningún pedido/)
+
+    await pagar()
+    assert.equal(pasoCheckoutActual(), 'entrega')
+    assert.match(dom.estadoCarrito.textContent, /revisa Mis compras/)
+
+    await pagar()
+    assert.equal(pasoCheckoutActual(), 'confirmacion')
+    assert.equal(dom.pasoConfirmacion.hidden, false)
+    const titulo = dom.pasoConfirmacion._findChild(el => el.textContent === '¡Compra confirmada!')
+    assert.ok(titulo, 'La confirmación muestra el título del boceto')
+
+    assert.equal(claves.length, 3)
+    assert.notEqual(claves[0], claves[1], 'tras un 402 (respuesta definitiva) se usa una clave nueva')
+    assert.equal(claves[1], claves[2], 'sin respuesta del servidor se reintenta con la misma clave')
+    assert.equal(dom.botonConfirmarCompra.disabled, true, 'con el carrito vacío no se puede volver a pagar')
   } finally {
     globalThis.fetch = originalFetch
   }

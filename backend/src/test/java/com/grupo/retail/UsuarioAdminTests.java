@@ -75,7 +75,8 @@ class UsuarioAdminTests {
     void dtoValidaRolDeAltaYDatosObligatorios() {
         try (var factory = Validation.buildDefaultValidatorFactory()) {
             var validator = factory.getValidator();
-            assertEquals(4, validator.validate(new RegistroPersonal(
+            // nombre, correo, rol y dos de la clave "corta": longitud y mayúscula/número (ReglasClave)
+            assertEquals(5, validator.validate(new RegistroPersonal(
                     " ", "correo-invalido", "corta", "ROL_INVALIDO")).size());
             assertEquals(1, validator.validate(new ActualizarRolUsuario("ROL_INVALIDO")).size());
         }

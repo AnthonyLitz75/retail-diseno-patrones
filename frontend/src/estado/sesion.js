@@ -8,6 +8,7 @@ import {
   obtenerVistaInicial,
   obtenerEtiquetaPestaña,
   esVistaPermitida,
+  usaMenuLateral,
 } from "../utilidades/navegacion.js";
 import { ROL, ROLES_CATALOGO, ROLES_OPERACION } from "../utilidades/constantes.js"
 
@@ -87,6 +88,14 @@ export function configurarSesionYVistas({
         contenedor.hidden = nombre !== vista;
       }
     });
+    // El detalle de producto y el 404 son parte de la tienda: al abrir otro módulo desde
+    // ellos no deben quedar visibles debajo.
+    if (vista !== "tienda" && typeof document !== "undefined") {
+      for (const selector of ["#vista-detalle-producto", "#vista-404"]) {
+        const contenedor = document.querySelector?.(selector);
+        if (contenedor) contenedor.hidden = true;
+      }
+    }
 
     if (
       !conservarHash &&
@@ -105,14 +114,18 @@ export function configurarSesionYVistas({
   function actualizarPestañasPorRol(rol) {
     if (!navModulos) return;
 
+    // Boceto del panel del personal: en pantallas grandes los módulos van en un menú lateral.
+    const contenedor = navModulos.closest?.("main");
     if (!rol) {
       navModulos.hidden = true;
+      contenedor?.classList.remove("con-menu-lateral");
       cambiarVista("tienda", { conservarHash: true });
       return;
     }
 
     const vistasPermitidas = determinarVistasPorRol(rol);
     navModulos.hidden = vistasPermitidas.length <= 1;
+    contenedor?.classList.toggle("con-menu-lateral", usaMenuLateral(rol, vistasPermitidas));
 
     if (typeof document !== "undefined") {
       const tabs = document.querySelectorAll("#navegacion-modulos [data-vista]");
