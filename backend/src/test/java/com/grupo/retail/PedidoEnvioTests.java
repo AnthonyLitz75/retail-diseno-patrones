@@ -1,20 +1,24 @@
 package com.grupo.retail;
 
 import com.grupo.retail.controller.PedidoController;
+import com.grupo.retail.dao.InventarioDAO;
+import com.grupo.retail.dao.PagoDAO;
 import com.grupo.retail.dao.PedidoDAO;
 import com.grupo.retail.dao.UsuarioDAO;
 import com.grupo.retail.dto.SolicitudDespachoPedido;
 import com.grupo.retail.exception.CodigoSeguimientoDuplicadoException;
 import com.grupo.retail.facade.CheckoutFacade;
 import com.grupo.retail.model.EnvioPedido;
-import com.grupo.retail.patterns.singleton.ProveedorConexiones;
-import com.grupo.retail.service.PedidoService;
-import com.grupo.retail.transaccion.EjecutorTransaccion;
 import com.grupo.retail.model.PedidoBloqueado;
 import com.grupo.retail.patterns.observer.PublicadorEventosPedido;
+import com.grupo.retail.patterns.pago.PuertoPago;
+import com.grupo.retail.patterns.singleton.ProveedorConexiones;
+import com.grupo.retail.service.PedidoService;
 import com.grupo.retail.service.SesionAutenticada;
 import com.grupo.retail.service.SesionCliente;
 import com.grupo.retail.service.SesionEmpleado;
+import com.grupo.retail.transaccion.EjecutorTransaccion;
+
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Validation;
 import org.junit.jupiter.api.Test;
@@ -44,7 +48,7 @@ class PedidoEnvioTests {
         Connection conexion = mock(Connection.class);
         when(dao.bloquearEstadoPedido(conexion, 15L, null)).thenReturn(Optional.of(new PedidoBloqueado("EN_PREPARACION", 42L)));
 
-        new PedidoService(dao, ejecutorSobre(conexion), mock(PublicadorEventosPedido.class)).despacharPedido(15L, 8L, "Olva", "OLV-2048");
+        new PedidoService(dao, mock(PagoDAO.class), mock(InventarioDAO.class), mock(PuertoPago.class), ejecutorSobre(conexion), mock(PublicadorEventosPedido.class)).despacharPedido(15L, 8L, "Olva", "OLV-2048");
 
         verify(dao).registrarTransicion(conexion, 15L, "DESPACHADO", 8L,
                 "Pedido despachado por almacén", new EnvioPedido("Olva", "OLV-2048", null));
@@ -55,7 +59,7 @@ class PedidoEnvioTests {
     void despachoExigeDatosYQueStateAutoriceLaTransicion() throws Exception {
         PedidoDAO dao = mock(PedidoDAO.class);
         Connection conexion = mock(Connection.class);
-        PedidoService service = new PedidoService(dao, ejecutorSobre(conexion), mock(PublicadorEventosPedido.class));
+        PedidoService service = new PedidoService(dao, mock(PagoDAO.class), mock(InventarioDAO.class), mock(PuertoPago.class), ejecutorSobre(conexion), mock(PublicadorEventosPedido.class));
         assertThrows(IllegalArgumentException.class,
                 () -> service.despacharPedido(15L, 8L, "  ", "OLV-2048"));
         verifyNoInteractions(conexion);
@@ -75,7 +79,7 @@ class PedidoEnvioTests {
         when(dao.bloquearEstadoPedido(conexion, 15L, null)).thenReturn(Optional.empty());
 
         assertThrows(java.util.NoSuchElementException.class,
-                () -> new PedidoService(dao, ejecutorSobre(conexion), mock(PublicadorEventosPedido.class)).prepararPedido(15L, 8L));
+                () -> new PedidoService(dao, mock(PagoDAO.class), mock(InventarioDAO.class), mock(PuertoPago.class), ejecutorSobre(conexion), mock(PublicadorEventosPedido.class)).prepararPedido(15L, 8L));
         verify(dao, never()).registrarTransicion(any(), anyLong(), anyString(), anyLong(), anyString(), any());
     }
 
@@ -89,7 +93,7 @@ class PedidoEnvioTests {
 
         // GlobalExceptionHandler responde 409 a esta excepción.
         assertThrows(CodigoSeguimientoDuplicadoException.class,
-                () -> new PedidoService(dao, ejecutorSobre(conexion), mock(PublicadorEventosPedido.class)).despacharPedido(15L, 8L, "Olva", "OLV-2048"));
+                () -> new PedidoService(dao, mock(PagoDAO.class), mock(InventarioDAO.class), mock(PuertoPago.class), ejecutorSobre(conexion), mock(PublicadorEventosPedido.class)).despacharPedido(15L, 8L, "Olva", "OLV-2048"));
         verify(conexion).rollback();
         verify(conexion, never()).commit();
     }

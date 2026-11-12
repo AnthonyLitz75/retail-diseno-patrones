@@ -2,16 +2,18 @@ package com.grupo.retail;
 
 import com.grupo.retail.controller.InventarioController;
 import com.grupo.retail.dao.InventarioDAO;
+import com.grupo.retail.dao.UsuarioDAO;
 import com.grupo.retail.dto.LineaEntradaInventario;
 import com.grupo.retail.dto.SolicitudEntradaInventario;
 import com.grupo.retail.model.MovimientoInventario;
 import com.grupo.retail.patterns.singleton.ProveedorConexiones;
 import com.grupo.retail.service.InventarioService;
 import com.grupo.retail.service.SesionAutenticada;
-import com.grupo.retail.dao.UsuarioDAO;
 import com.grupo.retail.service.SesionEmpleado;
-import org.junit.jupiter.api.Test;
+import com.grupo.retail.transaccion.EjecutorTransaccion;
+
 import jakarta.validation.Validation;
+import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.web.server.ResponseStatusException;
@@ -25,9 +27,9 @@ import java.util.NoSuchElementException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.startsWith;
@@ -66,22 +68,22 @@ class InventarioTests {
         }
     }
     @Test
-    void servicioRechazaProductosDuplicadosAntesDePersistir() {
+    void servicioRechazaProductosDuplicadosAntesDePersistir() throws Exception {
         InventarioDAO dao = mock(InventarioDAO.class);
-        InventarioService servicio = new InventarioService(dao);
+        InventarioService servicio = new InventarioService(dao, mock(EjecutorTransaccion.class));
         List<LineaEntradaInventario> lineas = List.of(
                 new LineaEntradaInventario(3L, 1),
                 new LineaEntradaInventario(3L, 2));
 
         assertThrows(IllegalArgumentException.class,
                 () -> servicio.registrarEntradas(lineas, "Recepción", 7L));
-        verify(dao, never()).registrarEntradas(anyList(), anyString(), any());
+        verify(dao, never()).bloquearStockActivo(any(), anyLong());
     }
 
     @Test
     void servicioRechazaRangoDeFechasInvertido() {
         InventarioDAO dao = mock(InventarioDAO.class);
-        InventarioService servicio = new InventarioService(dao);
+        InventarioService servicio = new InventarioService(dao, mock(EjecutorTransaccion.class));
         OffsetDateTime desde = OffsetDateTime.parse("2026-10-16T12:00:00-05:00");
         OffsetDateTime hasta = desde.minusDays(1);
 
@@ -93,7 +95,7 @@ class InventarioTests {
     @Test
     void servicioRechazaIdentificadorDeProductoNoPositivo() {
         InventarioDAO dao = mock(InventarioDAO.class);
-        InventarioService servicio = new InventarioService(dao);
+        InventarioService servicio = new InventarioService(dao, mock(EjecutorTransaccion.class));
 
         assertThrows(IllegalArgumentException.class,
                 () -> servicio.listarMovimientos(0L, null, null));
@@ -140,7 +142,7 @@ class InventarioTests {
         when(resultadoMovimientoMenor.getObject("fecha", OffsetDateTime.class)).thenReturn(fecha);
         when(resultadoMovimientoMayor.getObject("fecha", OffsetDateTime.class)).thenReturn(fecha);
 
-        List<MovimientoInventario> movimientos = new InventarioDAO(proveedor).registrarEntradas(
+        List<MovimientoInventario> movimientos = new InventarioService(new InventarioDAO(proveedor), new EjecutorTransaccion(proveedor)).registrarEntradas(
                 List.of(new LineaEntradaInventario(9L, 5), new LineaEntradaInventario(2L, 3)),
                 "Recepción OC-123", 77L);
 
@@ -171,7 +173,7 @@ class InventarioTests {
         when(filaPrimera.next()).thenReturn(true);
         when(filaSegunda.next()).thenReturn(false);
 
-        assertThrows(NoSuchElementException.class, () -> new InventarioDAO(proveedor)
+        assertThrows(NoSuchElementException.class, () -> new InventarioService(new InventarioDAO(proveedor), new EjecutorTransaccion(proveedor))
                 .registrarEntradas(List.of(new LineaEntradaInventario(8L, 2),
                         new LineaEntradaInventario(2L, 1)), "Recepción", 77L));
 

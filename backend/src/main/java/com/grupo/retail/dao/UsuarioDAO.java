@@ -2,7 +2,6 @@ package com.grupo.retail.dao;
 
 import com.grupo.retail.exception.ErrorAccesoDatosException;
 import com.grupo.retail.exception.CorreoYaRegistradoException;
-import com.grupo.retail.exception.OperacionAdminNoPermitidaException;
 import com.grupo.retail.model.CredencialesUsuario;
 import com.grupo.retail.model.Usuario;
 import com.grupo.retail.patterns.singleton.ProveedorConexiones;
@@ -101,103 +100,58 @@ public class UsuarioDAO {
         }
     }
 
-    public Optional<Usuario> actualizarRol(Long usuarioId, String rol) {
-        String sqlBuscar = """
-                SELECT id_usuario, nombre, correo, rol, activo, fecha_alta
-                FROM usuario
-                WHERE id_usuario = ? AND activo = TRUE
-                FOR UPDATE
-                """;
-        String sqlActualizar = """
-                UPDATE usuario SET rol = ?
-                WHERE id_usuario = ? AND activo = TRUE
-                RETURNING id_usuario, nombre, correo, rol, activo, fecha_alta
-                """;
-        try (Connection conexion = proveedorConexiones.obtenerConexion()) {
-            conexion.setAutoCommit(false);
-            try {
-                List<Long> administradores = bloquearAdministradoresActivos(conexion);
-                Usuario actual = buscarBloqueado(conexion, sqlBuscar, usuarioId).orElse(null);
-                if (actual == null) {
-                    conexion.commit();
-                    return Optional.empty();
-                }
-                validarInvarianteUltimoAdminParaCambioRol(actual, rol, administradores.size());
-                if (actual.rol().equals(rol)) {
-                    conexion.commit();
-                    return Optional.of(actual);
-                }
-                try (PreparedStatement consulta = conexion.prepareStatement(sqlActualizar)) {
-                    consulta.setString(1, rol);
-                    consulta.setLong(2, usuarioId);
-                    try (ResultSet resultado = consulta.executeQuery()) {
-                        if (!resultado.next()) {
-                            conexion.commit();
-                            return Optional.empty();
-                        }
-                        Usuario actualizado = mapearUsuario(resultado);
-                        conexion.commit();
-                        return Optional.of(actualizado);
-                    }
-                }
-            } catch (SQLException | RuntimeException error) {
-                conexion.rollback();
-                throw error;
+    private static final String BLOQUEAR_ACTIVO_SQL = """
+            SELECT id_usuario, nombre, correo, rol, activo, fecha_alta
+            FROM usuario
+            WHERE id_usuario = ? AND activo = TRUE
+            FOR UPDATE
+            """;
+    private static final String CAMBIAR_ROL_SQL = """
+            UPDATE usuario SET rol = ?
+            WHERE id_usuario = ? AND activo = TRUE
+            RETURNING id_usuario, nombre, correo, rol, activo, fecha_alta
+            """;
+    private static final String DESACTIVAR_SQL = "UPDATE usuario SET activo = FALSE WHERE id_usuario = ? AND activo = TRUE";
+
+    /**
+     * Bloquea a todos los administradores activos (en orden de id) y devuelve cuántos son.
+     * El servicio lo llama antes de bloquear la cuenta objetivo para proteger al último ADMIN.
+     */
+    public int bloquearAdministradoresActivos(Connection conexion) throws SQLException {
+        int total = 0;
+        try (PreparedStatement consulta = conexion.prepareStatement(BLOQUEAR_ADMINS);
+                ResultSet resultado = consulta.executeQuery()) {
+            while (resultado.next()) {
+                total++;
             }
-        } catch (SQLException error) {
-            throw new ErrorAccesoDatosException("No se pudo actualizar el rol", error);
         }
+        return total;
     }
 
-    public boolean desactivar(Long usuarioId) {
-        String sqlBuscar = """
-                SELECT id_usuario, nombre, correo, rol, activo, fecha_alta
-                FROM usuario
-                WHERE id_usuario = ? AND activo = TRUE
-                FOR UPDATE
-                """;
-        String sqlDesactivar = """
-                UPDATE usuario SET activo = FALSE
-                WHERE id_usuario = ? AND activo = TRUE
-                """;
-        try (Connection conexion = proveedorConexiones.obtenerConexion()) {
-            conexion.setAutoCommit(false);
-            try {
-                List<Long> administradores = bloquearAdministradoresActivos(conexion);
-                Usuario actual = buscarBloqueado(conexion, sqlBuscar, usuarioId).orElse(null);
-                if (actual == null) {
-                    conexion.commit();
-                    return false;
-                }
-                validarInvarianteUltimoAdminParaDesactivacion(actual, administradores.size());
-                try (PreparedStatement consulta = conexion.prepareStatement(sqlDesactivar)) {
-                    consulta.setLong(1, usuarioId);
-                    boolean desactivado = consulta.executeUpdate() == 1;
-                    conexion.commit();
-                    return desactivado;
-                }
-            } catch (SQLException | RuntimeException error) {
-                conexion.rollback();
-                throw error;
+    /** Bloquea una cuenta activa; vacío si no existe o ya está desactivada. */
+    public Optional<Usuario> bloquearActivo(Connection conexion, long usuarioId) throws SQLException {
+        try (PreparedStatement consulta = conexion.prepareStatement(BLOQUEAR_ACTIVO_SQL)) {
+            consulta.setLong(1, usuarioId);
+            try (ResultSet resultado = consulta.executeQuery()) {
+                return resultado.next() ? Optional.of(mapearUsuario(resultado)) : Optional.empty();
             }
-        } catch (SQLException error) {
-            throw new ErrorAccesoDatosException("No se pudo desactivar la cuenta", error);
         }
     }
 
-    private void validarInvarianteUltimoAdminParaCambioRol(
-            Usuario actual, String nuevoRol, int totalAdminsActivos) {
-        if ("ADMIN".equals(actual.rol()) && !"ADMIN".equals(nuevoRol) && totalAdminsActivos <= 1) {
-            throw new OperacionAdminNoPermitidaException(
-                    "No se puede cambiar el rol del último administrador activo");
+    public Optional<Usuario> cambiarRol(Connection conexion, long usuarioId, String rol) throws SQLException {
+        try (PreparedStatement consulta = conexion.prepareStatement(CAMBIAR_ROL_SQL)) {
+            consulta.setString(1, rol);
+            consulta.setLong(2, usuarioId);
+            try (ResultSet resultado = consulta.executeQuery()) {
+                return resultado.next() ? Optional.of(mapearUsuario(resultado)) : Optional.empty();
+            }
         }
     }
 
-    private void validarInvarianteUltimoAdminParaDesactivacion(
-            Usuario actual, int totalAdminsActivos) {
-        if ("ADMIN".equals(actual.rol()) && totalAdminsActivos <= 1) {
-            throw new OperacionAdminNoPermitidaException(
-                    "No se puede desactivar el último administrador activo");
+    public boolean marcarInactivo(Connection conexion, long usuarioId) throws SQLException {
+        try (PreparedStatement consulta = conexion.prepareStatement(DESACTIVAR_SQL)) {
+            consulta.setLong(1, usuarioId);
+            return consulta.executeUpdate() == 1;
         }
     }
 
@@ -234,27 +188,6 @@ public class UsuarioDAO {
             }
         } catch (SQLException error) {
             throw new ErrorAccesoDatosException("No se pudo consultar la cuenta", error);
-        }
-    }
-
-    private List<Long> bloquearAdministradoresActivos(Connection conexion) throws SQLException {
-        List<Long> ids = new ArrayList<>();
-        try (PreparedStatement consulta = conexion.prepareStatement(BLOQUEAR_ADMINS);
-                ResultSet resultado = consulta.executeQuery()) {
-            while (resultado.next()) {
-                ids.add(resultado.getLong("id_usuario"));
-            }
-        }
-        return ids;
-    }
-
-    private Optional<Usuario> buscarBloqueado(Connection conexion, String sql, Long usuarioId)
-            throws SQLException {
-        try (PreparedStatement consulta = conexion.prepareStatement(sql)) {
-            consulta.setLong(1, usuarioId);
-            try (ResultSet resultado = consulta.executeQuery()) {
-                return resultado.next() ? Optional.of(mapearUsuario(resultado)) : Optional.empty();
-            }
         }
     }
 

@@ -16,6 +16,7 @@ import {
   renderizarChipsFiltrosActivos as renderizarChipsFiltrosActivosVista,
 } from "./catalogo-vista.js";
 import { generarSkeletonCards } from "./skeleton-loader.js";
+import { ROL } from "../utilidades/constantes.js";
 
 /**
  * Configura los flujos y eventos del catálogo.
@@ -315,14 +316,15 @@ export function configurarControladorCatalogo({
       estado.productosDisponibles = productos;
       actualizarVistaCatalogo({ resetearPagina: true });
       poblarVitrinaInicio(productos);
-    } catch {
+    } catch (error) {
       if (solicitudActual !== solicitudCatalogo) return;
+      console.error("No se pudo cargar el catálogo", error);
       if (contenedor) contenedor.removeAttribute("aria-busy");
       if (estadoCatalogo) {
         estadoCatalogo.className = "alert alert-danger my-3 py-2 px-3 small";
         estadoCatalogo.innerHTML = `
           <div class="d-flex align-items-center justify-content-between gap-2">
-            <span>No se pudo conectar con el catálogo. Comprueba que el backend de Spring Boot esté activo en el puerto 8081.</span>
+            <span>No pudimos cargar el catálogo. Revisa tu conexión e inténtalo de nuevo en unos segundos.</span>
             <button id="btn-reintentar-catalogo" class="btn btn-sm btn-outline-danger" type="button">Reintentar</button>
           </div>
         `;
@@ -336,7 +338,7 @@ export function configurarControladorCatalogo({
   }
 
   async function cargarPreguntasCliente() {
-    if (estado.usuarioSesion?.rol !== "CLIENTE") {
+    if (estado.usuarioSesion?.rol !== ROL.CLIENTE) {
       estado.preguntasCliente = [];
       return;
     }

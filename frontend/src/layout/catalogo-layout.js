@@ -256,7 +256,7 @@ export function renderizarCatalogoLayout({ heroHtml = '' } = {}) {
 
         <!-- Barra de estado y chips de filtros activos -->
         <div id="barra-estado-filtros" class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
-          <p id="estado" class="fw-bold text-dark small mb-0" role="status">Cargando productos...</p>
+          <p id="estado-catalogo" class="fw-bold text-dark small mb-0" role="status">Cargando productos...</p>
           <div id="chips-filtros-activos" class="d-flex flex-wrap align-items-center gap-2"></div>
         </div>
 
@@ -337,10 +337,11 @@ export function renderizarCatalogoLayout({ heroHtml = '' } = {}) {
             <p id="estado-movimientos" class="small text-secondary mt-2 mb-2" role="status" aria-live="polite"></p>
             <div class="table-responsive">
               <table class="table table-sm align-middle mb-0">
-                <thead><tr><th>Fecha</th><th>Producto</th><th>Movimiento</th><th>Motivo</th><th>Responsable (ID)</th><th class="text-end">Cantidad</th></tr></thead>
+                <thead><tr><th scope="col">Fecha</th><th scope="col">Producto</th><th scope="col">Movimiento</th><th scope="col">Motivo</th><th scope="col">Responsable</th><th scope="col" class="text-end">Cantidad</th></tr></thead>
                 <tbody id="lista-movimientos"></tbody>
               </table>
             </div>
+            <nav id="paginacion-movimientos" class="d-flex align-items-center justify-content-end gap-2 mt-2" aria-label="Páginas de movimientos" hidden></nav>
           </section>
         </div>
       </section>

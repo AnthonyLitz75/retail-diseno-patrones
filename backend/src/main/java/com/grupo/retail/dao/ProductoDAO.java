@@ -138,55 +138,38 @@ public class ProductoDAO {
         }
     }
 
-    public Producto crear(NuevoProducto datos, Long responsableId) {
-        String productoSql = """
-                INSERT INTO producto (nombre, categoria, categoria_id, precio, stock, activo)
-                SELECT ?, c.nombre, c.id_categoria, ?, ?, TRUE
-                FROM categoria c
-                WHERE c.nombre = ? AND c.activa = TRUE
-                RETURNING id, sku, nombre, marca, categoria, categoria_id, descripcion, precio, precio_anterior, stock, nuevo, imagen, activo
-                """;
-        String movimientoSql = """
-                INSERT INTO movimiento_inventario
-                    (producto_id, tipo, cantidad_firmada, motivo, usuario_responsable_id)
-                VALUES (?, 'ENTRADA', ?, 'Stock inicial al crear producto', ?)
-                """;
+    private static final String INSERTAR_PRODUCTO_SQL = """
+            INSERT INTO producto (nombre, categoria, categoria_id, precio, stock, activo)
+            SELECT ?, c.nombre, c.id_categoria, ?, ?, TRUE
+            FROM categoria c
+            WHERE c.nombre = ? AND c.activa = TRUE
+            RETURNING id, sku, nombre, marca, categoria, categoria_id, descripcion, precio, precio_anterior, stock, nuevo, imagen, activo
+            """;
+    private static final String BLOQUEAR_ACTIVO_SQL = SELECT_PRODUCTOS + " WHERE p.id = ? AND p.activo = TRUE FOR UPDATE OF p";
 
-        try (Connection conexion = proveedorConexiones.obtenerConexion()) {
-            conexion.setAutoCommit(false);
-            try {
-                Producto creado;
-                try (PreparedStatement consulta = conexion.prepareStatement(productoSql)) {
-                    consulta.setString(1, datos.nombre().trim());
-                    consulta.setBigDecimal(2, datos.precio());
-                    consulta.setInt(3, datos.stock());
-                    consulta.setString(4, datos.categoria());
-                    try (ResultSet resultado = consulta.executeQuery()) {
-                        if (!resultado.next()) {
-                            throw new IllegalArgumentException(
-                                     "La categoría seleccionada no existe o está inactiva");
-                        }
-                        creado = mapearProducto(resultado);
-                    }
-                }
-
-                if (datos.stock() > 0) {
-                    try (PreparedStatement movimiento = conexion.prepareStatement(movimientoSql)) {
-                        movimiento.setLong(1, creado.id());
-                        movimiento.setInt(2, datos.stock());
-                        movimiento.setLong(3, responsableId);
-                        movimiento.executeUpdate();
-                    }
-                }
-                conexion.commit();
-                return creado;
-            } catch (SQLException | RuntimeException error) {
-                conexion.rollback();
-                throw error;
+    /**
+     * Inserta el producto en la categoría indicada si existe y está activa; vacío si no.
+     * El stock inicial y su movimiento los registra el servicio en la misma transacción.
+     */
+    public Optional<Producto> insertar(Connection conexion, NuevoProducto datos) throws SQLException {
+        try (PreparedStatement consulta = conexion.prepareStatement(INSERTAR_PRODUCTO_SQL)) {
+            consulta.setString(1, datos.nombre().trim());
+            consulta.setBigDecimal(2, datos.precio());
+            consulta.setInt(3, datos.stock());
+            consulta.setString(4, datos.categoria());
+            try (ResultSet resultado = consulta.executeQuery()) {
+                return resultado.next() ? Optional.of(mapearProducto(resultado)) : Optional.empty();
             }
-        } catch (SQLException error) {
-            throw new IllegalStateException(
-                    "No se pudo crear el producto y registrar su stock inicial", error);
+        }
+    }
+
+    /** Bloquea un producto activo para ajustar su stock; vacío si no existe o está inactivo. */
+    public Optional<Producto> bloquearActivo(Connection conexion, long id) throws SQLException {
+        try (PreparedStatement consulta = conexion.prepareStatement(BLOQUEAR_ACTIVO_SQL)) {
+            consulta.setLong(1, id);
+            try (ResultSet resultado = consulta.executeQuery()) {
+                return resultado.next() ? Optional.of(mapearProducto(resultado)) : Optional.empty();
+            }
         }
     }
 
@@ -213,64 +196,6 @@ public class ProductoDAO {
             return buscarPorId(conexion, id);
         } catch (SQLException error) {
             throw new ErrorAccesoDatosException("No se pudo actualizar el precio", error);
-        }
-    }
-
-    public Optional<Producto> actualizarStock(Long id, int nuevoStock, String motivo, Long responsableId) {
-        String buscarSql = SELECT_PRODUCTOS
-                + " WHERE p.id = ? AND p.activo = TRUE FOR UPDATE OF p";
-        String actualizarSql = "UPDATE producto SET stock = ? WHERE id = ?";
-        String movimientoSql = """
-                INSERT INTO movimiento_inventario
-                    (producto_id, tipo, cantidad_firmada, motivo, usuario_responsable_id)
-                VALUES (?, 'AJUSTE', ?, ?, ?)
-                """;
-
-        try (Connection conexion = proveedorConexiones.obtenerConexion()) {
-            conexion.setAutoCommit(false);
-            try {
-                Producto actual;
-                try (PreparedStatement consulta = conexion.prepareStatement(buscarSql)) {
-                    consulta.setLong(1, id);
-                    try (ResultSet resultado = consulta.executeQuery()) {
-                        if (!resultado.next()) {
-                            conexion.rollback();
-                            return Optional.empty();
-                        }
-                        actual = mapearProducto(resultado);
-                    }
-                }
-
-                int diferencia = nuevoStock - actual.stock();
-                if (diferencia == 0) {
-                    conexion.commit();
-                    return Optional.of(actual);
-                }
-
-                try (PreparedStatement actualizacion = conexion.prepareStatement(actualizarSql)) {
-                    actualizacion.setInt(1, nuevoStock);
-                    actualizacion.setLong(2, id);
-                    actualizacion.executeUpdate();
-                }
-                try (PreparedStatement movimiento = conexion.prepareStatement(movimientoSql)) {
-                    movimiento.setLong(1, id);
-                    movimiento.setInt(2, diferencia);
-                    movimiento.setString(3, motivo);
-                    movimiento.setLong(4, responsableId);
-                    movimiento.executeUpdate();
-                }
-                conexion.commit();
-                return Optional.of(new Producto(
-                        actual.id(), actual.sku(), actual.nombre(), actual.marca(),
-                        actual.categoria(), actual.categoriaId(), actual.descripcion(),
-                        actual.precio(), actual.precioAnterior(), nuevoStock,
-                        actual.nuevo(), actual.imagen(), actual.activo()));
-            } catch (SQLException | RuntimeException error) {
-                conexion.rollback();
-                throw error;
-            }
-        } catch (SQLException error) {
-            throw new ErrorAccesoDatosException("No se pudo ajustar el inventario", error);
         }
     }
 

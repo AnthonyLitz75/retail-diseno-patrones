@@ -1,5 +1,6 @@
 package com.grupo.retail;
 
+import com.grupo.retail.dao.InventarioDAO;
 import com.grupo.retail.dao.PedidoDAO;
 import com.grupo.retail.dto.SolicitudConfirmarPedido;
 import com.grupo.retail.exception.ClaveConfirmacionEnUsoException;
@@ -8,12 +9,14 @@ import com.grupo.retail.exception.StockInsuficienteException;
 import com.grupo.retail.facade.CheckoutFacade;
 import com.grupo.retail.model.PedidoConfirmado;
 import com.grupo.retail.model.ProductoEnCompra;
+import com.grupo.retail.model.RegistroMovimiento;
 import com.grupo.retail.model.ResultadoPago;
 import com.grupo.retail.patterns.observer.EventoPedido;
 import com.grupo.retail.patterns.observer.PublicadorEventosPedido;
 import com.grupo.retail.patterns.pago.PuertoPago;
 import com.grupo.retail.patterns.singleton.ProveedorConexiones;
 import com.grupo.retail.transaccion.EjecutorTransaccion;
+
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,6 +32,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.*;
 
 class PedidoConfirmacionTests {
@@ -36,6 +40,7 @@ class PedidoConfirmacionTests {
     private final Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
 
     private PedidoDAO dao;
+    private InventarioDAO inventario;
     private PuertoPago puerto;
     private Connection conexion;
     private PublicadorEventosPedido publicador;
@@ -44,13 +49,16 @@ class PedidoConfirmacionTests {
     @BeforeEach
     void setUp() throws Exception {
         dao = mock(PedidoDAO.class);
+        inventario = mock(InventarioDAO.class);
+        // Por defecto el stock alcanza; las pruebas de carrera lo cambian.
+        when(inventario.descontarStock(any(), anyLong(), anyInt())).thenReturn(true);
         puerto = mock(PuertoPago.class);
         conexion = mock(Connection.class);
         ProveedorConexiones proveedor = mock(ProveedorConexiones.class);
         when(proveedor.obtenerConexion()).thenReturn(conexion);
         // Ejecutor real sobre una conexión simulada: se verifica commit y rollback.
         publicador = mock(PublicadorEventosPedido.class);
-        facade = new CheckoutFacade(dao, puerto, new EjecutorTransaccion(proveedor), publicador);
+        facade = new CheckoutFacade(dao, inventario, puerto, new EjecutorTransaccion(proveedor), publicador);
     }
 
     @Test
@@ -111,6 +119,14 @@ class PedidoConfirmacionTests {
         orden.verify(puerto).procesar(new BigDecimal("180.50"), "PRUEBA_APROBADA");
         orden.verify(dao).registrarCompra(any(), anyLong(), any(), any(), any(), anyLong(), any(), any(), any());
         orden.verify(conexion).commit();
+        // Inventario: cada línea descuenta su stock y deja un movimiento SALIDA ligado al pedido.
+        verify(inventario).descontarStock(conexion, 1L, 2);
+        verify(inventario).descontarStock(conexion, 2L, 1);
+        var movimientos = org.mockito.ArgumentCaptor.forClass(RegistroMovimiento.class);
+        verify(inventario, org.mockito.Mockito.times(2)).registrarMovimiento(eq(conexion), movimientos.capture());
+        assertEquals(List.of(-2, -1), movimientos.getAllValues().stream().map(RegistroMovimiento::cantidadFirmada).toList());
+        assertEquals(List.of(10L, 10L), movimientos.getAllValues().stream().map(RegistroMovimiento::pedidoId).toList());
+        assertEquals(RegistroMovimiento.TipoMovimiento.SALIDA, movimientos.getValue().tipo());
         verify(conexion, never()).rollback();
 
         // Observer: la confirmación publica el evento de creación con la conexión de la compra.

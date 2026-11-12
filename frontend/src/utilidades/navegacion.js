@@ -1,3 +1,4 @@
+import { ROL } from "./constantes.js"
 export const VISTAS_DISPONIBLES = {
   tienda: { id: 'vista-tienda', tabId: 'tab-tienda' },
   pedidos: { id: 'vista-pedidos', tabId: 'tab-pedidos' },
@@ -10,15 +11,15 @@ export const VISTAS_DISPONIBLES = {
 
 export function determinarVistasPorRol(rol) {
   switch (rol) {
-    case 'ADMIN':
+    case ROL.ADMIN:
       return ['administracion', 'tienda', 'pedidos', 'inventario']
-    case 'ALMACEN':
+    case ROL.ALMACEN:
       return ['pedidos', 'inventario', 'tienda']
-    case 'VENDEDOR':
+    case ROL.VENDEDOR:
       return ['tienda', 'consultas', 'pedidos', 'inventario']
-    case 'SOPORTE':
+    case ROL.SOPORTE:
       return ['soporte', 'tienda']
-    case 'CLIENTE':
+    case ROL.CLIENTE:
       return ['tienda', 'pedidos', 'atencion']
     default:
       return ['tienda']
@@ -27,11 +28,11 @@ export function determinarVistasPorRol(rol) {
 
 export function obtenerVistaPorDefecto(rol) {
   switch (rol) {
-    case 'ADMIN':
+    case ROL.ADMIN:
       return 'administracion'
-    case 'ALMACEN':
+    case ROL.ALMACEN:
       return 'pedidos'
-    case 'SOPORTE':
+    case ROL.SOPORTE:
       return 'soporte'
     default:
       return 'tienda'
@@ -40,8 +41,8 @@ export function obtenerVistaPorDefecto(rol) {
 
 export function obtenerEtiquetaPestaña(vista, rol) {
   const etiquetas = {
-    tienda: rol === 'ALMACEN' ? 'Catálogo' : 'Tienda',
-    pedidos: rol === 'CLIENTE' ? 'Mis compras' : 'Gestión de pedidos',
+    tienda: rol === ROL.ALMACEN ? 'Catálogo' : 'Tienda',
+    pedidos: rol === ROL.CLIENTE ? 'Mis compras' : 'Gestión de pedidos',
     inventario: 'Inventario y kardex',
     administracion: 'Administración',
     consultas: 'Consultas de clientes',

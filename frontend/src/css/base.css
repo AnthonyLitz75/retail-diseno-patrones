@@ -171,6 +171,28 @@ a {
   }
 }
 
+/* Revisión UX (punto 3): en móvil el botón de WhatsApp tapaba botones y el avance del
+   pedido. Se reduce a 44 px (mínimo táctil), se pega más a la esquina y la página deja
+   un margen inferior para que el último contenido nunca quede debajo. */
+@media (max-width: 575.98px) {
+  .floating-whatsapp-pill {
+    width: 44px;
+    height: 44px;
+    bottom: 0.75rem;
+    right: 0.75rem;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);
+  }
+
+  .floating-whatsapp-pill svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  body {
+    padding-bottom: 4rem;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;

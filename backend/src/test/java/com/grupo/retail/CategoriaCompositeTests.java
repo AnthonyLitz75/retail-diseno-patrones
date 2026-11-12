@@ -1,6 +1,6 @@
 package com.grupo.retail;
 
-import com.grupo.retail.controller.InicioController;
+import com.grupo.retail.controller.ProductoController;
 import com.grupo.retail.dao.CategoriaDAO;
 import com.grupo.retail.dao.ProductoDAO;
 import com.grupo.retail.dto.CategoriaArbolDTO;
@@ -189,11 +189,11 @@ class CategoriaCompositeTests {
     }
 
     @Test
-    @DisplayName("InicioController expone el árbol de categorías con el endpoint /api/categorias/arbol")
+    @DisplayName("ProductoController expone el árbol de categorías con el endpoint /api/categorias/arbol")
     void inicioControllerExponeArbolDeCategorias() {
         ProductoService service = mock(ProductoService.class);
         SesionEmpleado sesion = mock(SesionEmpleado.class);
-        InicioController controller = new InicioController(service, sesion);
+        ProductoController controller = new ProductoController(service, sesion);
 
         CategoriaCompuesta pc = new CategoriaCompuesta(7L, "Componentes para PC", 0);
         pc.agregarSubcategoria(new CategoriaSimple(8L, "Procesadores", 3));

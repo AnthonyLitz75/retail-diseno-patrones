@@ -19,6 +19,7 @@ import {
   solicitarDevolucion,
 } from "../atencion/atencion.js";
 import { crearSeccionAtencionPedido } from "../atencion/atencion-cliente.js";
+import { ROL, ROLES_INVENTARIO, ROLES_OPERACION } from "../utilidades/constantes.js";
 
 /**
  * Configura los flujos y eventos de la sección de pedidos.
@@ -146,8 +147,8 @@ export function configurarControladorPedidos({
       return;
     }
 
-    const esCliente = estado.usuarioSesion.rol === "CLIENTE";
-    const esEmpleado = ["ADMIN", "VENDEDOR", "ALMACEN"].includes(
+    const esCliente = estado.usuarioSesion.rol === ROL.CLIENTE;
+    const esEmpleado = ROLES_INVENTARIO.includes(
       estado.usuarioSesion.rol,
     );
     if (!esCliente && !esEmpleado) {
@@ -155,7 +156,7 @@ export function configurarControladorPedidos({
       return;
     }
 
-    const esOperativo = ["ADMIN", "ALMACEN"].includes(estado.usuarioSesion.rol);
+    const esOperativo = ROLES_OPERACION.includes(estado.usuarioSesion.rol);
     const ruta = esCliente
       ? "/api/pedidos/mis-pedidos"
       : esOperativo
@@ -223,7 +224,7 @@ export function configurarControladorPedidos({
     enlaceSeguimientoFooter.addEventListener("click", (evento) => {
       evento.preventDefault();
       const estado = obtenerEstado ? obtenerEstado() : {};
-      if (estado.usuarioSesion && estado.usuarioSesion.rol === "CLIENTE") {
+      if (estado.usuarioSesion && estado.usuarioSesion.rol === ROL.CLIENTE) {
         if (typeof cambiarVista === "function") cambiarVista("pedidos");
         if (typeof document !== "undefined") {
           document.querySelector("#seccion-pedidos")?.scrollIntoView({ behavior: "smooth" });

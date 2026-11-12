@@ -1,4 +1,5 @@
 import { apiRequest } from '../api/api.js'
+import { ESTADO_PEDIDO } from '../utilidades/constantes.js'
 
 /** Spec 006: avisos de reclamos y devoluciones -> [texto, color Bootstrap, estado]. */
 const BADGES_ATENCION = {
@@ -20,31 +21,31 @@ const BADGES_ATENCION = {
 export function obtenerBadgeEstadoNotificacion(estado) {
   const normalizado = typeof estado === 'string' ? estado.trim().toUpperCase() : ''
   switch (normalizado) {
-    case 'PENDIENTE':
+    case ESTADO_PEDIDO.PENDIENTE:
       return {
         texto: 'Confirmado',
         clase: 'badge bg-info-subtle text-info-emphasis border border-info-subtle',
         estado: 'confirmado'
       }
-    case 'EN_PREPARACION':
+    case ESTADO_PEDIDO.EN_PREPARACION:
       return {
         texto: 'En preparación',
         clase: 'badge bg-warning-subtle text-warning-emphasis border border-warning-subtle',
         estado: 'preparacion'
       }
-    case 'DESPACHADO':
+    case ESTADO_PEDIDO.DESPACHADO:
       return {
         texto: 'Despachado',
         clase: 'badge bg-primary-subtle text-primary-emphasis border border-primary-subtle',
         estado: 'despachado'
       }
-    case 'ENTREGADO':
+    case ESTADO_PEDIDO.ENTREGADO:
       return {
         texto: 'Entregado',
         clase: 'badge bg-success-subtle text-success-emphasis border border-success-subtle',
         estado: 'entregado'
       }
-    case 'CANCELADO':
+    case ESTADO_PEDIDO.CANCELADO:
       return {
         texto: 'Cancelado',
         clase: 'badge bg-danger-subtle text-danger-emphasis border border-danger-subtle',

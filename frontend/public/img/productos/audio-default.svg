@@ -55,5 +55,5 @@
     <rect x="92" y="202" width="16" height="10" rx="4" fill="#020617" stroke="#00f0ff" stroke-width="1"/>
   </g>
 
-  <text x="200" y="265" text-anchor="middle" fill="#0284c7" font-family="system-ui, sans-serif" font-size="12" font-weight="700" letter-spacing="1.5">AUDIO GAMING & HIGH-FIDELITY</text>
+  <text x="200" y="265" text-anchor="middle" fill="#0284c7" font-family="system-ui, sans-serif" font-size="12" font-weight="700" letter-spacing="1.5">AUDIO GAMING &amp; HIGH-FIDELITY</text>
 </svg>

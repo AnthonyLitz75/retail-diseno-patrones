@@ -11,6 +11,7 @@ import {
   consultarMisNotificaciones,
   registrarLectura,
 } from "./bandeja-notificaciones.js";
+import { ROL } from "../utilidades/constantes.js"
 
 /**
  * Crea el elemento DOM interactivo para una notificación individual.
@@ -199,7 +200,7 @@ export function configurarBandejaNotificaciones({
 
   async function cargarNotificacionesCliente() {
     const usuario = obtenerUsuarioSesion ? obtenerUsuarioSesion() : null;
-    const esCliente = usuario?.rol === "CLIENTE";
+    const esCliente = usuario?.rol === ROL.CLIENTE;
 
     if (!esCliente) {
       if (contenedorNotificaciones) {
@@ -247,7 +248,7 @@ export function configurarBandejaNotificaciones({
         return;
       }
       const usuario = obtenerUsuarioSesion ? obtenerUsuarioSesion() : null;
-      if (usuario?.rol === "CLIENTE") {
+      if (usuario?.rol === ROL.CLIENTE) {
         void cargarNotificacionesCliente();
       }
     }, intervaloMs);
@@ -258,7 +259,7 @@ export function configurarBandejaNotificaciones({
     if (typeof document === "undefined") return;
     if (!document.hidden) {
       const usuario = obtenerUsuarioSesion ? obtenerUsuarioSesion() : null;
-      if (usuario?.rol === "CLIENTE") {
+      if (usuario?.rol === ROL.CLIENTE) {
         // Al regresar a la pestaña, refrescar de inmediato y asegurar polling
         void cargarNotificacionesCliente();
       }
@@ -282,7 +283,7 @@ export function configurarBandejaNotificaciones({
         }
         abrirMenu();
         const usuario = obtenerUsuarioSesion ? obtenerUsuarioSesion() : null;
-        if (usuario?.rol === "CLIENTE") {
+        if (usuario?.rol === ROL.CLIENTE) {
           void cargarNotificacionesCliente();
         }
       }

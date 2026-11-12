@@ -5,8 +5,13 @@ const MENSAJES_HTTP = {
   402: 'El pago fue rechazado. Revisa el medio de pago e inténtalo de nuevo.',
   404: 'No se encontró el recurso solicitado.',
   409: 'Hay un conflicto con el estado actual. Actualiza e inténtalo de nuevo.',
+  429: 'Hiciste demasiados intentos. Espera unos minutos e inténtalo de nuevo.',
   500: 'Ocurrió un error en el servidor.'
 }
+
+/** Tiempo máximo de espera de una petición; después se cancela con un mensaje claro. */
+export const TIEMPO_LIMITE_MS = 15000
+export const MENSAJE_TIEMPO_AGOTADO = 'El servidor tardó demasiado en responder. Inténtalo de nuevo.'
 
 let datosCsrf = null
 let promesaCsrf = null
@@ -97,7 +102,7 @@ export async function apiRequest(url, options = {}) {
 }
 
 async function realizarPeticion(url, options = {}, esReintento = false) {
-  const { json, headers: headersIniciales, segundoPlano: _segundoPlano, ...opcionesFetch } = options
+  const { json, headers: headersIniciales, segundoPlano: _segundoPlano, tiempoLimiteMs, ...opcionesFetch } = options
   const headers = new Headers(headersIniciales)
   const metodo = (options.method || 'GET').toUpperCase()
   const esMutacion = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(metodo)
@@ -124,11 +129,24 @@ async function realizarPeticion(url, options = {}, esReintento = false) {
     opciones.body = JSON.stringify(json)
   }
 
+  // Tiempo límite: si el backend no responde, la petición se cancela en lugar de dejar el
+  // indicador de carga girando. Respeta además la señal de cancelación de quien llama.
+  const controlador = new AbortController()
+  const temporizador = setTimeout(() => controlador.abort(), tiempoLimiteMs ?? TIEMPO_LIMITE_MS)
+  opciones.signal = opcionesFetch.signal && typeof AbortSignal.any === 'function'
+    ? AbortSignal.any([opcionesFetch.signal, controlador.signal])
+    : (opcionesFetch.signal ?? controlador.signal)
+
   let respuesta
   try {
     respuesta = await fetch(url, opciones)
   } catch (causa) {
+    if (controlador.signal.aborted) {
+      throw new ApiError(MENSAJE_TIEMPO_AGOTADO, 0, { cause: causa })
+    }
     throw new ApiError('No se pudo conectar con el servidor.', 0, { cause: causa })
+  } finally {
+    clearTimeout(temporizador)
   }
 
   if (!respuesta.ok) {

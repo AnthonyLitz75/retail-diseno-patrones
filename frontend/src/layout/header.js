@@ -43,7 +43,12 @@ export function renderizarHeader() {
           <a id="enlace-login" class="header-link-login" href="/login.html">Iniciar sesión</a>
           <a id="enlace-registro" class="btn btn-outline-primary btn-sm rounded-pill px-3" href="/register.html">Crear cuenta</a>
           <span id="usuario-activo" class="text-secondary small fw-semibold" aria-live="polite" hidden></span>
-          <button id="cerrar-sesion" class="btn btn-outline-secondary btn-sm" type="button" hidden>Cerrar sesión</button>
+          <button id="cerrar-sesion" class="btn btn-outline-secondary btn-sm header-btn-salir" type="button" hidden>
+            <svg class="header-btn-salir-icono" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/>
+            </svg>
+            <span class="header-btn-texto">Cerrar sesión</span>
+          </button>
 
           <div id="contenedor-notificaciones" class="dropdown" style="display: none;" hidden>
             <button id="btn-notificaciones" class="btn btn-outline-secondary position-relative me-1" type="button" aria-expanded="false" aria-haspopup="true" aria-label="Notificaciones de pedidos">

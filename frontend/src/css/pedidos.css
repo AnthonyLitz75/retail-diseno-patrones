@@ -166,6 +166,59 @@
   font-weight: 700;
 }
 
+/* Revisión UX (punto 2): en móvil las cuatro etiquetas no caben en una fila y se
+   montaban entre sí. Bajo 576 px el avance se dibuja en vertical: nodo a la izquierda,
+   etiqueta a la derecha y un conector por paso en lugar de la barra horizontal. */
+@media (max-width: 575.98px) {
+  .order-stepper {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .order-stepper-track {
+    display: none;
+  }
+
+  .order-step {
+    width: 100%;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.85rem;
+    padding-bottom: 1.1rem;
+    text-align: left;
+  }
+
+  .order-step:last-child {
+    padding-bottom: 0;
+  }
+
+  .order-step:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    left: 17px;
+    top: 38px;
+    bottom: 0;
+    width: 4px;
+    background: #e2e8f0;
+    border-radius: 999px;
+  }
+
+  .order-step.is-completed:not(:last-child)::after {
+    background: #2563eb;
+  }
+
+  .order-step-node {
+    position: relative;
+    z-index: 1;
+    flex-shrink: 0;
+  }
+
+  .order-step-label {
+    margin-top: 0;
+    font-size: 0.9rem;
+  }
+}
+
 /* Banner de Pedido Cancelado */
 .order-cancelled-banner {
   display: flex;

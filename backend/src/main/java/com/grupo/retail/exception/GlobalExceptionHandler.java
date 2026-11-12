@@ -1,5 +1,6 @@
 package com.grupo.retail.exception;
 
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
@@ -90,6 +91,13 @@ public class GlobalExceptionHandler {
             CarritoDesactualizadoException.class})
     public ResponseEntity<Map<String, String>> manejarConflictoDeCompra(RuntimeException error) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", error.getMessage()));
+    }
+
+    @ExceptionHandler(DemasiadosIntentosException.class)
+    public ResponseEntity<Map<String, String>> manejarDemasiadosIntentos(DemasiadosIntentosException error) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header(HttpHeaders.RETRY_AFTER, String.valueOf(error.segundosEspera()))
+                .body(Map.of("error", error.getMessage()));
     }
 
     @ExceptionHandler(PagoRechazadoException.class)

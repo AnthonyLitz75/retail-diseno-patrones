@@ -1,15 +1,25 @@
 package com.grupo.retail.service;
 
+import com.grupo.retail.dao.InventarioDAO;
+import com.grupo.retail.dao.PagoDAO;
 import com.grupo.retail.dao.PedidoDAO;
 import com.grupo.retail.model.EnvioPedido;
 import com.grupo.retail.model.PedidoBloqueado;
+import com.grupo.retail.model.LineaReposicion;
+import com.grupo.retail.model.PagoReembolsable;
+import com.grupo.retail.model.RegistroMovimiento;
+import com.grupo.retail.model.RegistroMovimiento.TipoMovimiento;
 import com.grupo.retail.model.PedidoVista;
+import com.grupo.retail.model.ResultadoPago;
 import com.grupo.retail.patterns.observer.EventoPedido;
 import com.grupo.retail.patterns.observer.PublicadorEventosPedido;
+import com.grupo.retail.patterns.pago.PuertoPago;
 import com.grupo.retail.patterns.state.EstadoPedido;
 import com.grupo.retail.transaccion.EjecutorTransaccion;
 import org.springframework.stereotype.Service;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -21,14 +31,23 @@ public class PedidoService {
     private static final String MOTIVO_CANCELACION = "Pedido cancelado; stock y pago simulado reversados";
 
     private final PedidoDAO pedidoDAO;
+    private final PagoDAO pagoDAO;
+    private final InventarioDAO inventarioDAO;
+    private final PuertoPago puertoPago;
     private final EjecutorTransaccion ejecutorTransaccion;
     private final PublicadorEventosPedido publicadorEventos;
 
     public PedidoService(
             PedidoDAO pedidoDAO,
+            PagoDAO pagoDAO,
+            InventarioDAO inventarioDAO,
+            PuertoPago puertoPago,
             EjecutorTransaccion ejecutorTransaccion,
             PublicadorEventosPedido publicadorEventos) {
         this.pedidoDAO = pedidoDAO;
+        this.pagoDAO = pagoDAO;
+        this.inventarioDAO = inventarioDAO;
+        this.puertoPago = puertoPago;
         this.ejecutorTransaccion = ejecutorTransaccion;
         this.publicadorEventos = publicadorEventos;
     }
@@ -89,6 +108,11 @@ public class PedidoService {
      * decide el patrón State con el estado real leído bajo ese bloqueo: dos cancelaciones
      * simultáneas se serializan y la segunda encuentra el pedido ya cancelado.
      * Un estado que no admite cancelar lanza IllegalStateException (409).
+     *
+     * <p>El cobro se devuelve a través de {@link PuertoPago} (Adapter), igual que en las
+     * devoluciones. El reembolso se pide al final, después de reponer stock y registrar la
+     * cancelación: si el proveedor lo rechaza, se lanza IllegalStateException y la
+     * transacción se revierte entera (el pedido sigue pendiente).</p>
      */
     private void cancelarPedido(Long pedidoId, Long clienteId, Long responsableId) {
         ejecutorTransaccion.ejecutar("No se pudo cancelar el pedido", conexion -> {
@@ -99,12 +123,42 @@ public class PedidoService {
                 return null;
             }
             EstadoPedido cancelado = EstadoPedido.desde(pedido.estado()).cancelar();
-            pedidoDAO.registrarCancelacion(conexion, pedidoId, responsableId, cancelado.nombre());
+            PagoReembolsable pago = pagoDAO.bloquearPagoAprobado(conexion, pedidoId)
+                    .orElseThrow(() -> new IllegalStateException("No se encontró un pago aprobado para reversar"));
+            reponerStock(conexion, pedidoId, responsableId);
+            if (!pagoDAO.marcarReversado(conexion, pago.id())) {
+                throw new IllegalStateException("No se encontró un pago aprobado para reversar");
+            }
+            if (!pedidoDAO.marcarCancelado(conexion, pedidoId, cancelado.nombre())) {
+                throw new IllegalStateException("El pedido dejó de estar pendiente");
+            }
+            pedidoDAO.registrarHistorial(conexion, pedidoId, cancelado.nombre(), responsableId, MOTIVO_CANCELACION);
+            ResultadoPago reembolso = puertoPago.reembolsar(pago.disponible(), pago.referencia(), null);
+            if (reembolso == null || !reembolso.aprobado()) {
+                throw new IllegalStateException("El proveedor de pago rechazó la devolución del cobro; "
+                        + "el pedido sigue pendiente");
+            }
             publicadorEventos.publicar(conexion, new EventoPedido(
                     pedidoId, pedido.clienteId(), pedido.estado(), cancelado.nombre(),
                     OffsetDateTime.now(), MOTIVO_CANCELACION));
             return null;
         });
+    }
+
+    /** Devuelve al stock las unidades del pedido y deja un movimiento CANCELACION por línea. */
+    private void reponerStock(Connection conexion, long pedidoId, Long responsableId) throws SQLException {
+        List<LineaReposicion> lineas = pedidoDAO.bloquearLineasPedido(conexion, pedidoId);
+        if (lineas.isEmpty()) {
+            throw new IllegalStateException("El pedido no tiene productos para reponer");
+        }
+        for (LineaReposicion linea : lineas) {
+            if (!inventarioDAO.sumarStock(conexion, linea.productoId(), linea.cantidad())) {
+                throw new IllegalStateException("No se pudo reponer un producto del pedido");
+            }
+            inventarioDAO.registrarMovimiento(conexion, new RegistroMovimiento(
+                    linea.productoId(), TipoMovimiento.CANCELACION, linea.cantidad(),
+                    "Reposición por cancelación del pedido #" + pedidoId, responsableId, pedidoId, null));
+        }
     }
 
     /**

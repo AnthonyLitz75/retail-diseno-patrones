@@ -27,16 +27,19 @@ import org.springframework.web.bind.annotation.RestController;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
+/**
+ * Catálogo público (productos y categorías) y gestión de productos del personal.
+ * Antes se llamaba InicioController; el nombre no decía qué hacía.
+ */
 @RestController
 @RequestMapping("/api")
-public class InicioController {
+public class ProductoController {
     private final ProductoService productoService;
     private final SesionEmpleado sesionEmpleado;
 
-    public InicioController(ProductoService productoService, SesionEmpleado sesionEmpleado) {
+    public ProductoController(ProductoService productoService, SesionEmpleado sesionEmpleado) {
         this.productoService = productoService;
         this.sesionEmpleado = sesionEmpleado;
     }
@@ -55,17 +58,12 @@ public class InicioController {
     }
 
     @GetMapping("/productos")
-    public ResponseEntity<?> listarProductos(
+    public List<Producto> listarProductos(
             @RequestParam(required = false) String nombre,
             @RequestParam(required = false) String categoria,
             @RequestParam(required = false) BigDecimal precioMin,
             @RequestParam(required = false) BigDecimal precioMax) {
-        if (precioMin != null && precioMax != null && precioMin.compareTo(precioMax) > 0) {
-            return ResponseEntity.badRequest()
-                    .body(Map.of("error", "El precio mínimo no puede superar al máximo"));
-        }
-        return ResponseEntity.ok(
-                productoService.listarProductos(nombre, categoria, precioMin, precioMax));
+        return productoService.listarProductos(nombre, categoria, precioMin, precioMax);
     }
 
     @GetMapping("/productos/{id}")
@@ -76,16 +74,11 @@ public class InicioController {
     }
 
     @PostMapping("/productos")
-    public ResponseEntity<?> crearProducto(
+    public ResponseEntity<Producto> crearProducto(
             @Valid @RequestBody NuevoProducto datos, HttpServletRequest solicitud) {
         Long responsableId = sesionEmpleado.obtenerId(solicitud);
-        try {
-            Producto creado = productoService.crearProducto(datos, responsableId);
-            URI ubicacion = URI.create("/api/productos/" + creado.id());
-            return ResponseEntity.created(ubicacion).body(creado);
-        } catch (IllegalArgumentException error) {
-            return ResponseEntity.badRequest().body(Map.of("error", error.getMessage()));
-        }
+        Producto creado = productoService.crearProducto(datos, responsableId);
+        return ResponseEntity.created(URI.create("/api/productos/" + creado.id())).body(creado);
     }
 
     @PutMapping("/productos/{id}/precio")
@@ -94,11 +87,6 @@ public class InicioController {
         return productoService.actualizarPrecio(id, datos.precio())
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
-    }
-
-    public ResponseEntity<Producto> actualizarPrecio(
-            Long id, ActualizarPrecio datos, HttpServletRequest solicitud) {
-        return actualizarPrecio(id, datos);
     }
 
     @PutMapping("/productos/{id}/stock")
@@ -133,9 +121,5 @@ public class InicioController {
     @GetMapping("/productos/{id}/movimientos")
     public List<MovimientoInventario> listarMovimientos(@PathVariable Long id) {
         return productoService.listarMovimientos(id);
-    }
-
-    public List<MovimientoInventario> listarMovimientos(Long id, HttpServletRequest solicitud) {
-        return listarMovimientos(id);
     }
 }

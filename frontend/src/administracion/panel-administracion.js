@@ -17,16 +17,14 @@ import {
   mostrarConfirmacion,
   mostrarToast,
 } from "../utilidades/notificaciones.js";
+import { etiquetarCeldas } from "../utilidades/tabla-apilable.js";
+import { crearPestanasSecciones } from "../utilidades/pestanas-secciones.js";
 import plantillaAdministracion from "../layout/plantillas/administracion.html?raw";
+import { crearElemento } from "../utilidades/dom.js";
+import { ROLES } from "../utilidades/constantes.js";
 
-const ROLES_PERSONAL = ["CLIENTE", "ADMIN", "VENDEDOR", "ALMACEN", "SOPORTE"];
 
-function crearElemento(etiqueta, clase, texto = "") {
-  const elemento = document.createElement(etiqueta);
-  if (clase) elemento.className = clase;
-  if (texto) elemento.textContent = texto;
-  return elemento;
-}
+const ETIQUETAS_COLUMNAS_CUENTAS = ["Nombre", "Correo", "Rol", "Alta", "Estado", "Acciones"];
 
 function mostrarEstado(elemento, texto, tipo = "secondary") {
   elemento.className = `small mt-2 mb-0 text-${tipo}`;
@@ -85,7 +83,7 @@ export function crearPanelAdministracion(apiRequest, alCambiarCategorias) {
       const selector = document.createElement("select");
       selector.className = "form-select form-select-sm";
       selector.setAttribute("aria-label", `Rol de ${usuario.nombre}`);
-      for (const rol of ROLES_PERSONAL) {
+      for (const rol of ROLES) {
         const opcion = crearElemento("option", "", rol);
         opcion.value = rol;
         opcion.selected = usuario.rol === rol;
@@ -176,6 +174,7 @@ export function crearPanelAdministracion(apiRequest, alCambiarCategorias) {
         acciones.append(guardar, desactivar);
       }
       fila.append(acciones);
+      etiquetarCeldas(fila, ETIQUETAS_COLUMNAS_CUENTAS);
       filas.push(fila);
     }
     tablaCuentas.replaceChildren(...filas);
@@ -485,8 +484,33 @@ export function crearPanelAdministracion(apiRequest, alCambiarCategorias) {
     });
   });
 
+  // Revisión UX (punto 8): una sección por vez, con pestañas bajo el título.
+  const pestanas = crearPestanasSecciones({
+    etiquetaGrupo: "Secciones de administración",
+    prefijo: "pestana-admin",
+  });
+  seccion.querySelector("#titulo-administracion")?.after(pestanas.element);
+  for (const [id, etiqueta] of [
+    ["cuentas", "Cuentas"],
+    ["categorias", "Categorías"],
+    ["reportes", "Reportes"],
+  ]) {
+    const elemento = seccion.querySelector(`#admin-seccion-${id}`);
+    if (elemento) pestanas.agregar({ id, etiqueta, elemento });
+  }
+
   return {
     element: seccion,
+    /**
+     * Suma como pestaña un panel construido fuera (p. ej. incidencias) y lo mueve
+     * dentro de la tarjeta de administración.
+     */
+    agregarSeccion({ id, etiqueta, elemento }) {
+      elemento.classList.add("seccion-admin-incrustada");
+      seccion.querySelector(".card-body")?.append(elemento);
+      pestanas.agregar({ id, etiqueta, elemento });
+    },
+    mostrarSeccion: (id) => pestanas.mostrar(id),
     async cargar() {
       await Promise.all([
         cargarCuentas(),

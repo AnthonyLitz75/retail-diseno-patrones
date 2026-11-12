@@ -1,6 +1,9 @@
 package com.grupo.retail.seguridad;
 
+import com.grupo.retail.integracion.BaseIntegracionPostgres;
 import com.grupo.retail.dao.UsuarioDAO;
+import com.grupo.retail.model.Usuario;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -17,10 +20,13 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
+import java.util.Optional;
 import java.util.stream.Stream;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
@@ -34,7 +40,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-public class CsrfTest {
+public class CsrfTest extends BaseIntegracionPostgres {
 
     @Autowired
     private MockMvc mockMvc;
@@ -121,7 +127,9 @@ public class CsrfTest {
     @Test
     @DisplayName("Mutación con token CSRF válido no es bloqueada por CSRF")
     void mutacionConCsrfValidoPermitida() throws Exception {
-        when(usuarioDAO.desactivar(2L)).thenReturn(true);
+        when(usuarioDAO.bloquearActivo(any(), eq(2L))).thenReturn(Optional.of(
+                new Usuario(2L, "Vendedor", "vendedor@test.com", "VENDEDOR", true, null)));
+        when(usuarioDAO.marcarInactivo(any(), eq(2L))).thenReturn(true);
 
         MockHttpSession session = new MockHttpSession();
         session.setAttribute("usuarioId", 1L);

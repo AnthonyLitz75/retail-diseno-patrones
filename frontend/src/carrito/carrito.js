@@ -1,7 +1,7 @@
 import { apiRequest } from '../api/api.js'
 import { mostrarToast } from '../utilidades/notificaciones.js'
 import { formatoPrecio } from '../utilidades/formato.js'
-import { resolverImagenProducto } from '../catalogo/imagen-producto.js'
+import { asignarImagenConRespaldo, resolverImagenProducto } from '../catalogo/imagen-producto.js'
 import { construirPayloadConfirmacion } from './checkout.js'
 import {
   deshacerUltimaAccion,
@@ -15,6 +15,7 @@ import {
   actualizarCantidadInvitado,
   quitarProductoInvitado
 } from './carrito-invitado.js'
+import { ROL } from '../utilidades/constantes.js'
 
 export { construirPayloadConfirmacion }
 
@@ -37,7 +38,7 @@ export function establecerUsuarioSesion(usuario) {
 }
 
 function esClienteAutenticado() {
-  return usuarioActual && usuarioActual.rol === 'CLIENTE'
+  return usuarioActual && usuarioActual.rol === ROL.CLIENTE
 }
 
 function obtenerOffcanvas() {
@@ -197,7 +198,7 @@ export function mostrarCarrito(carrito) {
     contenedorThumb.className = 'cart-item-thumb flex-shrink-0'
     if (imagenUrl) {
       const img = document.createElement('img')
-      img.src = imagenUrl
+      asignarImagenConRespaldo(img, imagenUrl)
       img.alt = producto.nombre || 'Producto'
       img.className = 'img-fluid'
       img.loading = 'lazy'

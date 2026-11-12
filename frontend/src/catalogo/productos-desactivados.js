@@ -6,13 +6,7 @@
  */
 
 import { cambiarEstadoProducto, listarProductosGestion } from "./gestion-producto.js";
-
-function el(etiqueta, clase = "", texto = "") {
-  const nodo = document.createElement(etiqueta);
-  if (clase) nodo.className = clase;
-  if (texto !== "") nodo.textContent = texto;
-  return nodo;
-}
+import { crearElemento as el } from "../utilidades/dom.js";
 
 export function crearListaDesactivados({ apiRequest, mostrarToast = null, onReactivado = null }) {
   const seccion = el("section", "mt-4");

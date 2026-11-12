@@ -1,27 +1,28 @@
 /**
  * Constantes de los 4 pasos del ciclo de vida del pedido en el patrón State.
  */
+import { ESTADO_PEDIDO } from "../utilidades/constantes.js"
 export const ETAPAS_PEDIDO = [
   {
-    clave: "PENDIENTE",
+    clave: ESTADO_PEDIDO.PENDIENTE,
     etiqueta: "Confirmado",
     subtitulo: "Orden recibida",
     icono: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M10.854 7.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7.5 9.793l2.646-2.647a.5.5 0 0 1 .708 0z"/><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/></svg>`
   },
   {
-    clave: "EN_PREPARACION",
+    clave: ESTADO_PEDIDO.EN_PREPARACION,
     etiqueta: "En preparación",
     subtitulo: "Empacando productos",
     icono: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8.186 1.113a.5.5 0 0 0-.372 0L1.846 3.5 8 5.961 14.154 3.5 8.186 1.113zM15 4.239l-6.5 2.6v7.922l6.5-2.6V4.24zM7.5 14.762V6.838L1 4.239v7.923l6.5 2.6zM7.443.184a1.5 1.5 0 0 1 1.114 0l7.129 2.852A.5.5 0 0 1 16 3.5v8.662a1 1 0 0 1-.629.928l-7.185 2.874a.5.5 0 0 1-.372 0L.63 13.09a1 1 0 0 1-.63-.928V3.5a.5.5 0 0 1 .314-.464L7.443.184z"/></svg>`
   },
   {
-    clave: "DESPACHADO",
+    clave: ESTADO_PEDIDO.DESPACHADO,
     etiqueta: "En camino",
     subtitulo: "En ruta de entrega",
     icono: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M0 3.5A1.5 1.5 0 0 1 1.5 2h9A1.5 1.5 0 0 1 12 3.5V5h1.02a1.5 1.5 0 0 1 1.17.563l1.481 1.85a1.5 1.5 0 0 1 .329.938V10.5a1.5 1.5 0 0 1-1.5 1.5H14a2 2 0 1 1-4 0H5a2 2 0 1 1-4 0 1 1 0 0 1-1-1V3.5zM1.5 3a.5.5 0 0 0-.5.5v7c0 .179.094.336.236.425a2 2 0 0 1 2.528 0 .5.5 0 0 0 .236-.425V3.5a.5.5 0 0 0-.5-.5h-2zm9.5 0H2v8.075a2 2 0 0 1 1 .925h6a2 2 0 0 1 1-.925V3zm1 3v2h2.55l-1.6-2H12zm2.55 3H12v2h2.5a.5.5 0 0 0 .5-.5V9.5a.5.5 0 0 0-.45-.5zM3 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm9 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>`
   },
   {
-    clave: "ENTREGADO",
+    clave: ESTADO_PEDIDO.ENTREGADO,
     etiqueta: "Entregado",
     subtitulo: "Recibido con éxito",
     icono: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425a.247.247 0 0 1 .02-.022Z"/></svg>`
@@ -41,7 +42,7 @@ const ORDEN_ESTADOS = {
  * @returns {object} Metadata del progreso del pedido
  */
 export function calcularProgresoPedido(estado) {
-  if (estado === "CANCELADO") {
+  if (estado === ESTADO_PEDIDO.CANCELADO) {
     return {
       esCancelado: true,
       porcentaje: 0,
@@ -58,7 +59,7 @@ export function calcularProgresoPedido(estado) {
 
   const pasos = ETAPAS_PEDIDO.map((etapa, idx) => {
     let estadoPaso = "pending";
-    if (idx < indiceActual || (estado === "ENTREGADO" && idx === indiceActual)) {
+    if (idx < indiceActual || (estado === ESTADO_PEDIDO.ENTREGADO && idx === indiceActual)) {
       estadoPaso = "completed";
     } else if (idx === indiceActual) {
       estadoPaso = "current";

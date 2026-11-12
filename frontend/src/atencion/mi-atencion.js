@@ -12,6 +12,7 @@ import {
   listarMisReclamos,
 } from "./atencion.js";
 import { formatoPrecio } from "../utilidades/formato.js";
+import { crearElemento as el } from "../utilidades/dom.js";
 
 /** Estado visible de una pregunta de producto. */
 export function etiquetaEstadoPregunta(pregunta) {
@@ -30,13 +31,6 @@ export function resumirAtenciones({ preguntas = [], reclamos = [], devoluciones 
       abiertos: devoluciones.filter((d) => d.estado === "SOLICITADA" || d.estado === "APROBADA").length,
     },
   };
-}
-
-function el(etiqueta, clase = "", texto = "") {
-  const nodo = document.createElement(etiqueta);
-  if (clase) nodo.className = clase;
-  if (texto !== "") nodo.textContent = texto;
-  return nodo;
 }
 
 function fecha(valor) {

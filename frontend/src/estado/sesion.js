@@ -9,6 +9,7 @@ import {
   obtenerEtiquetaPestaña,
   esVistaPermitida,
 } from "../utilidades/navegacion.js";
+import { ROL, ROLES_CATALOGO, ROLES_OPERACION } from "../utilidades/constantes.js"
 
 /**
  * Configura y orquesta el estado de sesión del usuario y el cambio dinámico de vistas.
@@ -154,9 +155,9 @@ export function configurarSesionYVistas({
     }
     if (botonCerrarSesion) botonCerrarSesion.hidden = false;
     if (enlacePedidosNav) enlacePedidosNav.hidden = false;
-    if (enlaceCarritoNav) enlaceCarritoNav.hidden = usuario.rol !== "CLIENTE";
+    if (enlaceCarritoNav) enlaceCarritoNav.hidden = usuario.rol !== ROL.CLIENTE;
     if (seccionGestionProductos) {
-      seccionGestionProductos.hidden = !["ADMIN", "VENDEDOR"].includes(usuario.rol);
+      seccionGestionProductos.hidden = !ROLES_CATALOGO.includes(usuario.rol);
     }
     if (panelAdministracion?.element) {
       panelAdministracion.element.hidden = false;
@@ -164,7 +165,7 @@ export function configurarSesionYVistas({
     if (seccionPreguntasVendedor) seccionPreguntasVendedor.hidden = false;
     if (seccionInventario) seccionInventario.hidden = false;
     if (seccionEntradaInventario) {
-      seccionEntradaInventario.hidden = !["ADMIN", "ALMACEN"].includes(usuario.rol);
+      seccionEntradaInventario.hidden = !ROLES_OPERACION.includes(usuario.rol);
     }
 
     actualizarPestañasPorRol(usuario.rol);
@@ -172,7 +173,7 @@ export function configurarSesionYVistas({
       actualizarVistaCatalogo();
     }
 
-    if (usuario.rol === "CLIENTE") {
+    if (usuario.rol === ROL.CLIENTE) {
       if (typeof hayCarritoInvitado === "function" && hayCarritoInvitado()) {
         if (typeof mostrarToast === "function") {
           mostrarToast("Sincronizando productos de tu carrito...", "info");

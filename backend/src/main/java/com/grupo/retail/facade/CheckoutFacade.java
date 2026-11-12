@@ -1,11 +1,14 @@
 package com.grupo.retail.facade;
 
+import com.grupo.retail.dao.InventarioDAO;
 import com.grupo.retail.dao.PedidoDAO;
 import com.grupo.retail.exception.ClaveConfirmacionEnUsoException;
 import com.grupo.retail.exception.PagoRechazadoException;
 import com.grupo.retail.exception.StockInsuficienteException;
 import com.grupo.retail.model.PedidoConfirmado;
 import com.grupo.retail.model.ProductoEnCompra;
+import com.grupo.retail.model.RegistroMovimiento;
+import com.grupo.retail.model.RegistroMovimiento.TipoMovimiento;
 import com.grupo.retail.model.ResultadoPago;
 import com.grupo.retail.patterns.observer.EventoPedido;
 import com.grupo.retail.patterns.observer.PublicadorEventosPedido;
@@ -26,7 +29,8 @@ import java.util.Optional;
  *
  * <p>Ofrece {@code confirmarCompra} como entrada única al caso de uso de compra y oculta
  * sus subsistemas: el control transaccional ({@link EjecutorTransaccion}), la persistencia
- * ({@link PedidoDAO}) y el proveedor de pago ({@link PuertoPago}, un Adapter).</p>
+ * ({@link PedidoDAO}), el inventario ({@link InventarioDAO}) y el proveedor de pago
+ * ({@link PuertoPago}, un Adapter).</p>
  *
  * <p>La fachada orquesta los pasos y aplica las reglas del negocio; el DAO solo ejecuta
  * SQL sobre la conexión que recibe. Todos los pasos comparten una única transacción:
@@ -40,16 +44,19 @@ public class CheckoutFacade {
     private static final String MOTIVO_CONFIRMACION = "Pedido confirmado; pago simulado aprobado";
 
     private final PedidoDAO pedidoDAO;
+    private final InventarioDAO inventarioDAO;
     private final PuertoPago puertoPago;
     private final EjecutorTransaccion ejecutorTransaccion;
     private final PublicadorEventosPedido publicadorEventos;
 
     public CheckoutFacade(
             PedidoDAO pedidoDAO,
+            InventarioDAO inventarioDAO,
             PuertoPago puertoPago,
             EjecutorTransaccion ejecutorTransaccion,
             PublicadorEventosPedido publicadorEventos) {
         this.pedidoDAO = Objects.requireNonNull(pedidoDAO, "pedidoDAO no puede ser null");
+        this.inventarioDAO = Objects.requireNonNull(inventarioDAO, "inventarioDAO no puede ser null");
         this.puertoPago = Objects.requireNonNull(puertoPago, "puertoPago no puede ser null");
         this.ejecutorTransaccion = Objects.requireNonNull(
                 ejecutorTransaccion, "ejecutorTransaccion no puede ser null");
@@ -110,6 +117,7 @@ public class CheckoutFacade {
         // 5. Persistencia del pedido completo en la misma conexión.
         PedidoConfirmado pedido = pedidoDAO.registrarCompra(
                 conexion, usuarioId, total, pago, productos, carritoId, clave, destinatario, direccion);
+        descontarStock(conexion, pedido.idPedido(), usuarioId, productos);
 
         // 6. Observer: la alerta in-app entra en esta transacción; la auditoría y el
         //    correo simulado salen solo después del commit.
@@ -117,6 +125,23 @@ public class CheckoutFacade {
                 pedido.idPedido(), usuarioId, null, ESTADO_INICIAL,
                 OffsetDateTime.now(), MOTIVO_CONFIRMACION));
         return pedido;
+    }
+
+    /**
+     * Descuenta lo vendido (solo si alcanza el stock y el producto sigue activo) y deja el
+     * movimiento SALIDA en el kardex. Si algo cambió, StockInsuficienteException revierte la compra.
+     */
+    private void descontarStock(Connection conexion, long pedidoId, Long usuarioId,
+            List<ProductoEnCompra> productos) throws SQLException {
+        for (ProductoEnCompra producto : productos) {
+            if (!inventarioDAO.descontarStock(conexion, producto.id(), producto.cantidad())) {
+                throw new StockInsuficienteException(
+                        "El stock de " + producto.nombre() + " cambió; actualiza el carrito");
+            }
+            inventarioDAO.registrarMovimiento(conexion, new RegistroMovimiento(
+                    producto.id(), TipoMovimiento.SALIDA, -producto.cantidad(),
+                    "Venta del pedido #" + pedidoId, usuarioId, pedidoId, null));
+        }
     }
 
     private static void validarProductos(List<ProductoEnCompra> productos) {

@@ -85,7 +85,7 @@ test("crearFilaMovimientoKardex genera fila <tr> con formato de fecha, producto 
   // Columna 4: Motivo
   assert.equal(fila.children[3].textContent, "Compra a proveedor");
   // Columna 5: Responsable
-  assert.equal(fila.children[4].textContent, "1");
+  assert.equal(fila.children[4].textContent, "Usuario #1");
   // Columna 6: Cantidad con signo '+'
   assert.equal(fila.children[5].textContent, "+15");
 
@@ -100,7 +100,7 @@ test("crearFilaMovimientoKardex genera fila <tr> con formato de fecha, producto 
   };
   const filaSalida = crearFilaMovimientoKardex(movimientoSalida, productos);
   assert.equal(filaSalida.children[1].textContent, "Producto #99");
-  assert.equal(filaSalida.children[4].textContent, "No registrado");
+  assert.equal(filaSalida.children[4].textContent, "Sistema");
   assert.equal(filaSalida.children[5].textContent, "-3");
 });
 

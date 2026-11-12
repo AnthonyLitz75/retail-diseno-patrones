@@ -350,17 +350,102 @@
  * cerrar sesión, campana y carrito) no cabían en una línea y la página se desplazaba en
  * horizontal, dejando la campana y el carrito fuera de la pantalla.
  */
+/* El icono de "Cerrar sesión" solo se usa en móvil. */
+.header-btn-salir-icono {
+  display: none;
+}
+
+/*
+ * Revisión UX (punto 6): en celular la cabecera ocupaba ~240 px antes del contenido
+ * (logo, texto de sesión, botones y buscador en filas separadas). Bajo 576 px queda en
+ * dos filas: logo + acciones con iconos, y el buscador debajo. El nombre de la sesión
+ * y el texto de "Cerrar sesión" pasan a ser solo para lectores de pantalla; "Crear
+ * cuenta" se oculta porque la página de inicio de sesión ya enlaza al registro.
+ */
 @media (max-width: 575.98px) {
-  .header-actions {
-    flex: 1 1 100%;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-    gap: 0.5rem;
-    white-space: normal;
+  .header-level-1 {
+    padding: 0.5rem 0;
   }
 
-  #usuario-activo {
-    flex-basis: 100%;
-    text-align: right;
+  .header-level-1-container {
+    gap: 0.5rem;
+  }
+
+  .header-brand {
+    gap: 0.5rem;
+  }
+
+  .header-brand-mark {
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .header-brand-mark svg {
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .header-brand-title {
+    font-size: 0.95rem;
+  }
+
+  .header-brand-subtitle,
+  #enlace-registro {
+    display: none !important;
+  }
+
+  /* Sin carrito ni campana (personal), el buscador se metía en la primera fila. */
+  .header-search-form {
+    flex: 1 1 100%;
+  }
+
+  .header-actions {
+    margin-left: auto;
+    gap: 0.4rem;
+  }
+
+  #usuario-activo,
+  .header-btn-texto {
+    position: absolute !important;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .header-btn-salir {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+  }
+
+  .header-btn-salir[hidden] {
+    display: none;
+  }
+
+  .header-btn-salir-icono {
+    display: block;
+  }
+
+  #btn-notificaciones {
+    width: 44px;
+    height: 44px;
+    margin-right: 0 !important;
+  }
+
+  .header-cart-btn {
+    min-height: 44px;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .header-search-input-group {
+    min-height: 44px;
   }
 }

@@ -145,3 +145,58 @@
   border-radius: 10px;
   box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
 }
+
+/* Selector de cantidad del carrito (carrito.js: .cart-stepper). Antes no tenía estilos
+   propios: el botón "−" heredaba el .btn de Bootstrap y quedaba montado sobre la cantidad.
+   Ahora es un grupo con borde: [−][cantidad][+], botones de 36 px. */
+.cart-stepper {
+  display: inline-flex;
+  align-items: stretch;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.cart-stepper-btn {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #334155;
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cart-stepper-btn:hover:not(:disabled) {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.cart-stepper-btn:focus-visible {
+  outline: 2px solid var(--retail-blue);
+  outline-offset: -2px;
+}
+
+.cart-stepper-btn:disabled {
+  color: #94a3b8;
+  opacity: 1;
+  cursor: not-allowed;
+}
+
+.cart-stepper-qty {
+  min-width: 36px;
+  padding: 0 0.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-left: 1px solid #e2e8f0;
+  border-right: 1px solid #e2e8f0;
+  color: #0f172a;
+}

@@ -7,6 +7,7 @@ import {
   listarPreguntasPendientes,
   enviarRespuestaPregunta,
 } from "./vendedor.js";
+import { ROL } from "../utilidades/constantes.js"
 
 /**
  * Configura la bandeja y el ciclo de vida de preguntas para el vendedor.
@@ -33,7 +34,7 @@ export function configurarBandejaVendedor({
 
   async function cargarPreguntasVendedor() {
     const estado = obtenerEstado ? obtenerEstado() : {};
-    if (estado.usuarioSesion?.rol !== "VENDEDOR") return null;
+    if (estado.usuarioSesion?.rol !== ROL.VENDEDOR) return null;
     if (promesaEnCurso) return promesaEnCurso;
 
     promesaEnCurso = (async () => {
@@ -44,7 +45,7 @@ export function configurarBandejaVendedor({
 
       try {
         const preguntas = await listarPreguntasPendientes(apiRequest);
-        if (estado.usuarioSesion?.rol !== "VENDEDOR") return [];
+        if (estado.usuarioSesion?.rol !== ROL.VENDEDOR) return [];
 
         if (!Array.isArray(preguntas) || preguntas.length === 0) {
           if (listaPreguntasVendedor) listaPreguntasVendedor.replaceChildren();
