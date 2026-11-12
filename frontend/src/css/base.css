@@ -171,6 +171,28 @@ a {
   }
 }
 
+/* Revisión UX (punto 3): en móvil el botón de WhatsApp tapaba botones y el avance del
+   pedido. Se reduce a 44 px (mínimo táctil), se pega más a la esquina y la página deja
+   un margen inferior para que el último contenido nunca quede debajo. */
+@media (max-width: 575.98px) {
+  .floating-whatsapp-pill {
+    width: 44px;
+    height: 44px;
+    bottom: 0.75rem;
+    right: 0.75rem;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);
+  }
+
+  .floating-whatsapp-pill svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  body {
+    padding-bottom: 4rem;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -193,4 +215,34 @@ a {
 
 .text-terms-legal {
   font-size: 0.78rem;
+}
+
+/* Indicador global de carga (spec 007, T004): barra fina arriba de la página. */
+.indicador-carga-global {
+  position: fixed;
+  inset: 0 0 auto 0;
+  height: 3px;
+  z-index: 2000;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--retail-blue) 18%, transparent);
+  pointer-events: none;
+}
+
+.indicador-carga-barra {
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(90deg, var(--retail-blue), var(--retail-cyan));
+  animation: indicador-carga-avance 1.1s var(--retail-motion) infinite;
+}
+
+@keyframes indicador-carga-avance {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(250%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .indicador-carga-barra {
+    width: 100%;
+    animation: none;
+  }
 }

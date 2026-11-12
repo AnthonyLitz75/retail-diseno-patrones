@@ -1,5 +1,6 @@
 package com.grupo.retail.controller;
 
+import com.grupo.retail.security.LimitadorIntentosLogin;
 import com.grupo.retail.dto.InicioSesion;
 import com.grupo.retail.dto.RegistroCliente;
 import com.grupo.retail.model.Usuario;
@@ -32,10 +33,13 @@ public class AuthController {
 
     private final UsuarioService usuarioService;
     private final SesionAutenticada sesionAutenticada;
+    private final LimitadorIntentosLogin limitadorIntentos;
 
-    public AuthController(UsuarioService usuarioService, SesionAutenticada sesionAutenticada) {
+    public AuthController(UsuarioService usuarioService, SesionAutenticada sesionAutenticada,
+            LimitadorIntentosLogin limitadorIntentos) {
         this.usuarioService = usuarioService;
         this.sesionAutenticada = sesionAutenticada;
+        this.limitadorIntentos = limitadorIntentos;
     }
 
     @PostMapping("/registro")
@@ -49,12 +53,15 @@ public class AuthController {
     public ResponseEntity<?> iniciarSesion(
             @Valid @RequestBody InicioSesion datos,
             HttpServletRequest solicitud) {
+        limitadorIntentos.verificar(datos.correo());
         Optional<Usuario> resultado = usuarioService.autenticarCliente(datos);
 
         if (resultado.isEmpty()) {
+            limitadorIntentos.registrarFallo(datos.correo());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("error", "Correo o contraseña incorrectos"));
         }
+        limitadorIntentos.reiniciar(datos.correo());
 
         HttpSession sesionAnterior = solicitud.getSession(false);
         if (sesionAnterior != null) {

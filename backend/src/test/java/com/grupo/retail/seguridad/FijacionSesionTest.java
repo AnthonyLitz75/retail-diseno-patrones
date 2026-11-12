@@ -1,5 +1,6 @@
 package com.grupo.retail.seguridad;
 
+import com.grupo.retail.integracion.BaseIntegracionPostgres;
 import com.grupo.retail.dao.UsuarioDAO;
 import com.grupo.retail.model.CredencialesUsuario;
 import com.grupo.retail.model.Usuario;
@@ -28,7 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-public class FijacionSesionTest {
+public class FijacionSesionTest extends BaseIntegracionPostgres {
 
     @Autowired
     private MockMvc mockMvc;

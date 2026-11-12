@@ -30,4 +30,10 @@ public record Producto(
             boolean activo) {
         this(id, null, nombre, null, categoria, null, null, precio, null, stock, false, null, activo);
     }
+
+    /** Copia del producto con otro stock (el resto de la ficha no cambia). */
+    public Producto conStock(int nuevoStock) {
+        return new Producto(id, sku, nombre, marca, categoria, categoriaId, descripcion,
+                precio, precioAnterior, nuevoStock, nuevo, imagen, activo);
+    }
 }

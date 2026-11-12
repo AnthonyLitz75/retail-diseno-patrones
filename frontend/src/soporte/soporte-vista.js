@@ -21,6 +21,8 @@ import {
   tomarReclamo,
 } from "../atencion/atencion.js";
 import { formatoPrecio } from "../utilidades/formato.js";
+import { crearElemento as el } from "../utilidades/dom.js";
+import { ROL } from "../utilidades/constantes.js";
 
 /** Acciones de Soporte sobre un reclamo según su estado y responsable. */
 export function accionesReclamo(reclamo, usuarioId) {
@@ -34,13 +36,6 @@ export function accionesReclamo(reclamo, usuarioId) {
 /** Acción de Soporte sobre una devolución según su estado. */
 export function accionDevolucion(devolucion) {
   return { SOLICITADA: "decidir", APROBADA: "recibir" }[devolucion.estado] || null;
-}
-
-function el(etiqueta, clase = "", texto = "") {
-  const nodo = document.createElement(etiqueta);
-  if (clase) nodo.className = clase;
-  if (texto !== "") nodo.textContent = texto;
-  return nodo;
 }
 
 function boton(texto, clase = "btn btn-outline-primary btn-sm", tipo = "button") {
@@ -96,7 +91,7 @@ export function configurarPortalSoporte({ apiRequest, obtenerEstado, contenedor,
   contenedor.replaceChildren(panelContexto, reclamos.seccion, devoluciones.seccion);
 
   const usuarioId = () => obtenerEstado?.()?.usuarioSesion?.idUsuario;
-  const esSoporte = () => obtenerEstado?.()?.usuarioSesion?.rol === "SOPORTE";
+  const esSoporte = () => obtenerEstado?.()?.usuarioSesion?.rol === ROL.SOPORTE;
 
   async function ejecutar(accion, mensaje, control, estadoEl, recargar) {
     if (control) control.disabled = true;

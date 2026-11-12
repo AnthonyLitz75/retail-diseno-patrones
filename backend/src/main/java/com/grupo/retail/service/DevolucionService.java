@@ -1,6 +1,8 @@
 package com.grupo.retail.service;
 
 import com.grupo.retail.dao.DevolucionDAO;
+import com.grupo.retail.dao.InventarioDAO;
+import com.grupo.retail.dao.PagoDAO;
 import com.grupo.retail.dao.PedidoDAO;
 import com.grupo.retail.dto.DecidirDevolucion;
 import com.grupo.retail.dto.LineaRecepcionDevolucion;
@@ -12,6 +14,8 @@ import com.grupo.retail.model.Devolucion;
 import com.grupo.retail.model.EstadoDevolucion;
 import com.grupo.retail.model.LineaDevolvible;
 import com.grupo.retail.model.PagoReembolsable;
+import com.grupo.retail.model.RegistroMovimiento;
+import com.grupo.retail.model.RegistroMovimiento.TipoMovimiento;
 import com.grupo.retail.model.PedidoBloqueado;
 import com.grupo.retail.model.ResultadoPago;
 import com.grupo.retail.patterns.observer.EventoPedido;
@@ -53,14 +57,19 @@ public class DevolucionService {
 
     private final DevolucionDAO devolucionDAO;
     private final PedidoDAO pedidoDAO;
+    private final PagoDAO pagoDAO;
+    private final InventarioDAO inventarioDAO;
     private final PuertoPago puertoPago;
     private final EjecutorTransaccion ejecutorTransaccion;
     private final PublicadorEventosPedido publicadorEventos;
 
-    public DevolucionService(DevolucionDAO devolucionDAO, PedidoDAO pedidoDAO, PuertoPago puertoPago,
-            EjecutorTransaccion ejecutorTransaccion, PublicadorEventosPedido publicadorEventos) {
+    public DevolucionService(DevolucionDAO devolucionDAO, PedidoDAO pedidoDAO, PagoDAO pagoDAO,
+            InventarioDAO inventarioDAO, PuertoPago puertoPago, EjecutorTransaccion ejecutorTransaccion,
+            PublicadorEventosPedido publicadorEventos) {
         this.devolucionDAO = devolucionDAO;
         this.pedidoDAO = pedidoDAO;
+        this.pagoDAO = pagoDAO;
+        this.inventarioDAO = inventarioDAO;
         this.puertoPago = puertoPago;
         this.ejecutorTransaccion = ejecutorTransaccion;
         this.publicadorEventos = publicadorEventos;
@@ -150,8 +159,11 @@ public class DevolucionService {
                 devolucionDAO.marcarReintegro(conexion, linea.id(), reintegros.get(linea.id()));
             }
             for (DetalleDevolucion linea : aptas) {
-                devolucionDAO.reponerStock(conexion, linea.productoId(), linea.cantidad(), soporteId,
-                        devolucion.pedidoId(), devolucionId);
+                inventarioDAO.sumarStock(conexion, linea.productoId(), linea.cantidad());
+                inventarioDAO.registrarMovimiento(conexion, new RegistroMovimiento(
+                        linea.productoId(), TipoMovimiento.DEVOLUCION, linea.cantidad(),
+                        "Devolución #" + devolucionId + " del pedido #" + devolucion.pedidoId(),
+                        soporteId, devolucion.pedidoId(), devolucionId));
             }
 
             BigDecimal importe = devolucion.lineas().stream()
@@ -189,7 +201,7 @@ public class DevolucionService {
 
     private void reembolsar(Connection conexion, Devolucion devolucion, BigDecimal importe, String escenario)
             throws SQLException {
-        PagoReembolsable pago = devolucionDAO.bloquearPagoAprobado(conexion, devolucion.pedidoId())
+        PagoReembolsable pago = pagoDAO.bloquearPagoAprobado(conexion, devolucion.pedidoId())
                 .orElseThrow(() -> new IllegalStateException("El pedido no tiene un cobro aprobado que reembolsar"));
         if (importe.compareTo(pago.disponible()) > 0) {
             throw new IllegalStateException("El reembolso supera lo cobrado y aún no reembolsado");
@@ -199,7 +211,7 @@ public class DevolucionService {
             throw new IllegalStateException("El reembolso fue rechazado por el proveedor de pago; "
                     + "la devolución sigue APROBADA y no se aplicó ningún cambio");
         }
-        devolucionDAO.acumularReembolso(conexion, pago.id(), importe);
+        pagoDAO.acumularReembolso(conexion, pago.id(), importe);
     }
 
     private Devolucion bloquear(Connection conexion, long devolucionId) throws SQLException {

@@ -8,7 +8,36 @@ import { obtenerBadgeStock } from "../utilidades/stock.js";
 import { esFavorito, alternarFavorito } from "./favoritos.js";
 import { mostrarToast } from "../utilidades/notificaciones.js";
 import { formatoPrecio } from "../utilidades/formato.js";
-import { resolverImagenProducto } from "./imagen-producto.js";
+import { asignarImagenConRespaldo, resolverImagenProducto } from "./imagen-producto.js";
+import { crearMenuAcciones } from "../utilidades/menu-acciones.js";
+import { ROL, ROLES_CATALOGO, ROLES_INVENTARIO } from "../utilidades/constantes.js";
+
+/**
+ * Acciones del personal sobre un producto, en el orden en que aparecen en el menú
+ * "Gestionar". Inventario (almacén/vendedor): movimientos y stock. Catálogo
+ * (vendedor/admin): precio y ficha (RF16, spec 007).
+ *
+ * @returns {{texto: string, alElegir: Function}[]}
+ */
+export function accionesPersonalProducto(
+  producto,
+  { puedeGestionarInventario = false, puedeGestionarCatalogo = false, callbacks = {} } = {},
+) {
+  const acciones = [];
+  if (puedeGestionarCatalogo) {
+    acciones.push(
+      { texto: "Editar ficha", alElegir: () => callbacks.onAbrirModalEditar?.(producto) },
+      { texto: "Editar precio", alElegir: () => callbacks.onAbrirModalPrecio?.(producto) },
+    );
+  }
+  if (puedeGestionarInventario) {
+    acciones.push(
+      { texto: "Ajustar stock", alElegir: () => callbacks.onAbrirModalStock?.(producto) },
+      { texto: "Ver movimientos", alElegir: () => callbacks.onCargarMovimientos?.(producto) },
+    );
+  }
+  return acciones;
+}
 
 /**
  * Crea un elemento DOM de tarjeta de producto con enlaces canónicos y acciones según rol.
@@ -104,18 +133,9 @@ export function crearElementoTarjetaProducto(
   imgEl.loading = "lazy";
   imgEl.decoding = "async";
   imgEl.alt = producto.nombre;
-  imgEl.src = resolverImagenProducto(producto);
-  imgEl.onerror = () => {
-    imgEl.src = "/img/productos/placeholder.svg";
-  };
+  asignarImagenConRespaldo(imgEl, resolverImagenProducto(producto));
   linkImg.append(imgEl);
   imageBox.append(linkImg);
-
-  // 3. Rating visual de estrellas
-  const ratingBox = document.createElement("div");
-  ratingBox.className = "product-rating";
-  ratingBox.setAttribute("aria-label", "Calificación 5 estrellas");
-  ratingBox.innerHTML = `★★★★★`;
 
   // 4. Título del Producto (con enlace a detalle)
   const titleEl = document.createElement("h3");
@@ -166,12 +186,12 @@ export function crearElementoTarjetaProducto(
   const actionsBox = document.createElement("div");
   actionsBox.className = "mt-auto pt-2";
 
-  const esCliente = usuarioSesion?.rol === "CLIENTE";
+  const esCliente = usuarioSesion?.rol === ROL.CLIENTE;
   const esInvitado = !usuarioSesion;
-  const puedeGestionarInventario = ["ADMIN", "VENDEDOR", "ALMACEN"].includes(
+  const puedeGestionarInventario = ROLES_INVENTARIO.includes(
     usuarioSesion?.rol,
   );
-  const puedeGestionarCatalogo = ["ADMIN", "VENDEDOR"].includes(
+  const puedeGestionarCatalogo = ROLES_CATALOGO.includes(
     usuarioSesion?.rol,
   );
 
@@ -207,49 +227,22 @@ export function crearElementoTarjetaProducto(
   }
 
   if (puedeGestionarInventario || puedeGestionarCatalogo) {
-    const filaStaff = document.createElement("div");
-    filaStaff.className = "d-flex flex-wrap gap-1 mt-2";
-    if (puedeGestionarInventario) {
-      const btnHist = document.createElement("button");
-      btnHist.type = "button";
-      btnHist.className =
-        "btn btn-outline-info btn-sm py-0 px-2 product-card-staff-btn";
-      btnHist.textContent = "Movimientos";
-      btnHist.addEventListener("click", (e) => {
-        e.stopPropagation();
-        callbacks.onCargarMovimientos?.(producto);
-      });
-
-      const btnStock = document.createElement("button");
-      btnStock.type = "button";
-      btnStock.className =
-        "btn btn-outline-primary btn-sm py-0 px-2 product-card-staff-btn";
-      btnStock.textContent = "Ajustar stock";
-      btnStock.addEventListener("click", (e) => {
-        e.stopPropagation();
-        callbacks.onAbrirModalStock?.(producto);
-      });
-      filaStaff.append(btnHist, btnStock);
-    }
-    if (puedeGestionarCatalogo) {
-      const btnPrecio = document.createElement("button");
-      btnPrecio.type = "button";
-      btnPrecio.className =
-        "btn btn-outline-warning btn-sm py-0 px-2 product-card-staff-btn";
-      btnPrecio.textContent = "Editar precio";
-      btnPrecio.addEventListener("click", (e) => {
-        e.stopPropagation();
-        callbacks.onAbrirModalPrecio?.(producto);
-      });
-      filaStaff.append(btnPrecio);
-    }
-    actionsBox.append(filaStaff);
+    // Revisión UX (punto 7): las acciones del personal van en un solo menú "Gestionar".
+    actionsBox.append(
+      crearMenuAcciones({
+        nombreAccesible: `Gestionar ${producto.nombre}`,
+        acciones: accionesPersonalProducto(producto, {
+          puedeGestionarInventario,
+          puedeGestionarCatalogo,
+          callbacks,
+        }),
+      }),
+    );
   }
 
   tarjeta.append(
     tarjetaTop,
     imageBox,
-    ratingBox,
     titleEl,
     metaRow,
     pricingBox,

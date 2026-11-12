@@ -178,6 +178,69 @@
   </div>
 </div>
 
+<!-- Modal Registrar Despacho (spec 007, T013) -->
+<div class="modal fade" id="modal-despacho" tabindex="-1" aria-labelledby="modal-despacho-titulo" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title h6 fw-bold" id="modal-despacho-titulo">Registrar despacho</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <p class="small text-secondary mb-2">Indica el transportista y el código de seguimiento que verá el cliente.</p>
+        <div id="modal-despacho-formulario"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Editar Ficha del Producto (RF16, spec 007) -->
+<div class="modal fade" id="modal-editar-producto" tabindex="-1" aria-labelledby="modal-editar-producto-titulo" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title h6 fw-bold" id="modal-editar-producto-titulo">Editar ficha del producto</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <form id="form-modal-editar-producto">
+        <div class="modal-body">
+          <p class="small text-secondary mb-3">El precio y el stock se cambian desde sus propios botones. Los pedidos ya realizados conservan el nombre y el precio con que se vendieron.</p>
+          <div class="mb-2">
+            <label for="editar-producto-nombre" class="form-label small fw-semibold">Nombre</label>
+            <input id="editar-producto-nombre" class="form-control form-control-sm" type="text" maxlength="120" required>
+          </div>
+          <div class="row g-2 mb-2">
+            <div class="col-12 col-sm-6">
+              <label for="editar-producto-marca" class="form-label small fw-semibold">Marca</label>
+              <input id="editar-producto-marca" class="form-control form-control-sm" type="text" maxlength="80">
+            </div>
+            <div class="col-12 col-sm-6">
+              <label for="editar-producto-categoria" class="form-label small fw-semibold">Categoría</label>
+              <select id="editar-producto-categoria" class="form-select form-select-sm" required></select>
+            </div>
+          </div>
+          <div class="mb-2">
+            <label for="editar-producto-imagen" class="form-label small fw-semibold">Imagen (URL https o ruta /…)</label>
+            <input id="editar-producto-imagen" class="form-control form-control-sm" type="text" maxlength="255" placeholder="https://… o /imagenes/producto.webp">
+          </div>
+          <div class="mb-2">
+            <label for="editar-producto-descripcion" class="form-label small fw-semibold">Descripción</label>
+            <textarea id="editar-producto-descripcion" class="form-control form-control-sm" rows="3" maxlength="1000"></textarea>
+          </div>
+          <p id="editar-producto-mensaje" class="small mb-0" role="status" aria-live="polite"></p>
+        </div>
+        <div class="modal-footer justify-content-between">
+          <button id="editar-producto-desactivar" type="button" class="btn btn-outline-danger btn-sm">Desactivar producto</button>
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-primary btn-sm">Guardar ficha</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 <!-- Modal Preguntas y Respuestas del Producto -->
 <div class="modal fade" id="modal-preguntas-producto" tabindex="-1" aria-labelledby="modal-preguntas-titulo" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">

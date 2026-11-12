@@ -5,10 +5,11 @@
 
 import {
   determinarVistasPorRol,
-  obtenerVistaPorDefecto,
+  obtenerVistaInicial,
   obtenerEtiquetaPestaña,
   esVistaPermitida,
 } from "../utilidades/navegacion.js";
+import { ROL, ROLES_CATALOGO, ROLES_OPERACION } from "../utilidades/constantes.js"
 
 /**
  * Configura y orquesta el estado de sesión del usuario y el cambio dinámico de vistas.
@@ -59,7 +60,12 @@ export function configurarSesionYVistas({
 
   let vistaActiva = "tienda";
 
-  function cambiarVista(vista) {
+  /**
+   * @param {string} vista
+   * @param {{conservarHash?: boolean}} [opciones] conservarHash: al fijar la vista inicial de la
+   *   sesión no se toca la URL; el enrutador y sus guardas deciden qué hacer con ella (spec 007).
+   */
+  function cambiarVista(vista, { conservarHash = false } = {}) {
     const rol = estado.usuarioSesion ? estado.usuarioSesion.rol : null;
     if (!esVistaPermitida(vista, rol)) {
       vista = "tienda";
@@ -83,6 +89,7 @@ export function configurarSesionYVistas({
     });
 
     if (
+      !conservarHash &&
       typeof window !== "undefined" &&
       vista === "tienda" &&
       (window.location.hash === "#/pedidos" || window.location.hash === "#seccion-pedidos")
@@ -100,7 +107,7 @@ export function configurarSesionYVistas({
 
     if (!rol) {
       navModulos.hidden = true;
-      cambiarVista("tienda");
+      cambiarVista("tienda", { conservarHash: true });
       return;
     }
 
@@ -119,8 +126,9 @@ export function configurarSesionYVistas({
       });
     }
 
-    const vistaDefecto = obtenerVistaPorDefecto(rol);
-    cambiarVista(vistaDefecto);
+    const hashActual = typeof window !== "undefined" ? window.location.hash : "";
+    const vistaDefecto = obtenerVistaInicial(rol, hashActual);
+    cambiarVista(vistaDefecto, { conservarHash: true });
   }
 
   function configurarPestañasNavegacion() {
@@ -147,9 +155,9 @@ export function configurarSesionYVistas({
     }
     if (botonCerrarSesion) botonCerrarSesion.hidden = false;
     if (enlacePedidosNav) enlacePedidosNav.hidden = false;
-    if (enlaceCarritoNav) enlaceCarritoNav.hidden = usuario.rol !== "CLIENTE";
+    if (enlaceCarritoNav) enlaceCarritoNav.hidden = usuario.rol !== ROL.CLIENTE;
     if (seccionGestionProductos) {
-      seccionGestionProductos.hidden = !["ADMIN", "VENDEDOR"].includes(usuario.rol);
+      seccionGestionProductos.hidden = !ROLES_CATALOGO.includes(usuario.rol);
     }
     if (panelAdministracion?.element) {
       panelAdministracion.element.hidden = false;
@@ -157,7 +165,7 @@ export function configurarSesionYVistas({
     if (seccionPreguntasVendedor) seccionPreguntasVendedor.hidden = false;
     if (seccionInventario) seccionInventario.hidden = false;
     if (seccionEntradaInventario) {
-      seccionEntradaInventario.hidden = !["ADMIN", "ALMACEN"].includes(usuario.rol);
+      seccionEntradaInventario.hidden = !ROLES_OPERACION.includes(usuario.rol);
     }
 
     actualizarPestañasPorRol(usuario.rol);
@@ -165,7 +173,7 @@ export function configurarSesionYVistas({
       actualizarVistaCatalogo();
     }
 
-    if (usuario.rol === "CLIENTE") {
+    if (usuario.rol === ROL.CLIENTE) {
       if (typeof hayCarritoInvitado === "function" && hayCarritoInvitado()) {
         if (typeof mostrarToast === "function") {
           mostrarToast("Sincronizando productos de tu carrito...", "info");
@@ -240,6 +248,10 @@ export function configurarSesionYVistas({
         method: "POST",
       });
       mostrarSesionCerrada();
+      // Al salir a propósito se vuelve al inicio: la ruta privada ya no tiene sentido.
+      if (typeof window !== "undefined" && window.location.hash === "#/pedidos") {
+        window.location.hash = "#/";
+      }
     } catch (error) {
       if (usuarioActivo) {
         usuarioActivo.textContent = error.message;

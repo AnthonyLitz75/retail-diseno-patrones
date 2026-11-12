@@ -1,13 +1,12 @@
 {
   "dependencies": {
-    "bootstrap": "^5.3.8"
+    "bootstrap": "^5.3.9"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "eslint": "^10.14.0",
     "globals": "^17.14.0",
-    "sharp": "^0.35.5",
-    "vite": "^8.3.3"
+    "vite": "^8.3.8"
   },
   "scripts": {
     "dev": "vite",

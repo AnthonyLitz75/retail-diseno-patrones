@@ -97,7 +97,7 @@ export function mostrarProductos(
   paginacionInfo = null,
   {
     contenedor = document.querySelector("#productos"),
-    estadoCatalogo = document.querySelector("#estado"),
+    estadoCatalogo = document.querySelector("#estado-catalogo"),
     contenedorPaginacion = document.querySelector("#contenedor-paginacion"),
     onResetFiltros = null,
     usuarioSesion = null,

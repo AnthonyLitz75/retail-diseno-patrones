@@ -109,6 +109,13 @@ public final class ClienteHttp {
                 .method("PATCH", HttpRequest.BodyPublishers.noBody()));
     }
 
+    public Respuesta patchJson(String ruta, String json) {
+        return enviar(HttpRequest.newBuilder(URI.create(base + ruta))
+                .header("Content-Type", "application/json")
+                .header("X-XSRF-TOKEN", tokenCsrf)
+                .method("PATCH", HttpRequest.BodyPublishers.ofString(json)));
+    }
+
     public Respuesta get(String ruta) {
         return enviar(HttpRequest.newBuilder(URI.create(base + ruta)).GET());
     }

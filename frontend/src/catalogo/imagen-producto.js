@@ -108,3 +108,18 @@ export function resolverImagenProducto(producto) {
 
   return IMAGEN_PLACEHOLDER_DEFECTO;
 }
+
+/**
+ * Asigna la imagen a un <img> y, si no carga, la reemplaza una sola vez por el
+ * placeholder. Así nunca se muestra el texto alternativo partido en lugar de la foto.
+ *
+ * @param {HTMLImageElement} img - Elemento imagen
+ * @param {string} url - Ruta resuelta de la imagen
+ */
+export function asignarImagenConRespaldo(img, url) {
+  img.onerror = () => {
+    img.onerror = null;
+    img.src = IMAGEN_PLACEHOLDER_DEFECTO;
+  };
+  img.src = url || IMAGEN_PLACEHOLDER_DEFECTO;
+}

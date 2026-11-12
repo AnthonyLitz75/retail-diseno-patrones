@@ -1,5 +1,6 @@
 package com.grupo.retail.seguridad;
 
+import com.grupo.retail.integracion.BaseIntegracionPostgres;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,7 +16,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-public class ConfiguracionSeguridadCookieTest {
+public class ConfiguracionSeguridadCookieTest extends BaseIntegracionPostgres {
 
     @Autowired
     private Environment environment;

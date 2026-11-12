@@ -4,6 +4,7 @@ import com.grupo.retail.exception.ErrorAccesoDatosException;
 import com.grupo.retail.model.DetallePedido;
 import com.grupo.retail.model.EventoEstadoPedido;
 import com.grupo.retail.model.EnvioPedido;
+import com.grupo.retail.model.LineaReposicion;
 import com.grupo.retail.exception.CodigoSeguimientoDuplicadoException;
 import com.grupo.retail.model.PedidoBloqueado;
 import com.grupo.retail.model.PedidoConfirmado;
@@ -12,7 +13,6 @@ import com.grupo.retail.model.ProductoEnCompra;
 import com.grupo.retail.model.ResumenPago;
 import com.grupo.retail.model.ResultadoPago;
 import com.grupo.retail.exception.ClaveConfirmacionEnUsoException;
-import com.grupo.retail.exception.StockInsuficienteException;
 import com.grupo.retail.patterns.singleton.ProveedorConexiones;
 import org.springframework.stereotype.Repository;
 
@@ -65,16 +65,20 @@ public class PedidoDAO {
         return buscarVista(pedidoId, null);
     }
 
+    private static final String VISTA_PEDIDO_SQL = """
+            SELECT p.id_pedido, u.nombre AS cliente_nombre, u.correo AS cliente_correo,
+                   p.estado, p.total, p.creado_en,
+                   e.transportista, e.codigo_seguimiento, e.despachado_en, e.entregado_en
+            FROM pedido p
+            JOIN usuario u ON u.id_usuario = p.usuario_id
+            LEFT JOIN envio e ON e.pedido_id = p.id_pedido
+            WHERE p.id_pedido = ?""";
+
+    /** Variante con el filtro de propietario: el cliente solo ve sus pedidos. */
+    private static final String VISTA_PEDIDO_PROPIO_SQL = VISTA_PEDIDO_SQL + " AND p.usuario_id = ?";
+
     private Optional<PedidoVista> buscarVista(long pedidoId, Long clienteId) {
-        String sql = """
-                SELECT p.id_pedido, u.nombre AS cliente_nombre, u.correo AS cliente_correo,
-                       p.estado, p.total, p.creado_en,
-                       e.transportista, e.codigo_seguimiento, e.despachado_en, e.entregado_en
-                FROM pedido p
-                JOIN usuario u ON u.id_usuario = p.usuario_id
-                LEFT JOIN envio e ON e.pedido_id = p.id_pedido
-                WHERE p.id_pedido = ?
-                """.stripTrailing() + (clienteId == null ? "" : " AND p.usuario_id = ?");
+        String sql = clienteId == null ? VISTA_PEDIDO_SQL : VISTA_PEDIDO_PROPIO_SQL;
         try (Connection conexion = proveedorConexiones.obtenerConexion();
                 PreparedStatement consulta = conexion.prepareStatement(sql)) {
             consulta.setLong(1, pedidoId);
@@ -336,10 +340,6 @@ public class PedidoDAO {
                 SET estado = ?, actualizado_en = CURRENT_TIMESTAMP
                 WHERE id_pedido = ?
                 """;
-        String historialSql = """
-                INSERT INTO pedido_historial_estado (pedido_id, estado, responsable_id, comentario)
-                VALUES (?, ?, ?, ?)
-                """;
         String envioSql = """
                 INSERT INTO envio (pedido_id, transportista, codigo_seguimiento)
                 VALUES (?, ?, ?)
@@ -376,10 +376,21 @@ public class PedidoDAO {
                 registrarEntrega.executeUpdate();
             }
         }
-        try (PreparedStatement historial = conexion.prepareStatement(historialSql)) {
+        registrarHistorial(conexion, pedidoId, nuevoEstado, responsableId, comentario);
+    }
+
+    private static final String INSERTAR_HISTORIAL_SQL = """
+            INSERT INTO pedido_historial_estado (pedido_id, estado, responsable_id, comentario)
+            VALUES (?, ?, ?, ?)
+            """;
+
+    /** Deja una fila en el historial de estados del pedido. */
+    public void registrarHistorial(Connection conexion, long pedidoId, String estado,
+            Long responsableId, String comentario) throws SQLException {
+        try (PreparedStatement historial = conexion.prepareStatement(INSERTAR_HISTORIAL_SQL)) {
             historial.setLong(1, pedidoId);
-            historial.setString(2, nuevoEstado);
-            historial.setLong(3, responsableId);
+            historial.setString(2, estado);
+            historial.setObject(3, responsableId, java.sql.Types.BIGINT);
             historial.setString(4, comentario);
             historial.executeUpdate();
         }
@@ -420,90 +431,40 @@ public class PedidoDAO {
      * movimientos CANCELACION (productos en orden ascendente), reversa el pago de prueba,
      * cambia el estado y deja historial. Los avisos los emite el servicio (Observer).
      */
-    public void registrarCancelacion(
-            Connection conexion, long pedidoId, long responsableId, String estadoCancelado)
-            throws SQLException {
-        String detallesSql = """
-                SELECT pd.producto_id, pd.cantidad
-                FROM pedido_detalle pd
-                JOIN producto p ON p.id = pd.producto_id
-                WHERE pd.pedido_id = ?
-                ORDER BY pd.producto_id
-                FOR UPDATE OF p
-                """;
-        String reponerSql = "UPDATE producto SET stock = stock + ? WHERE id = ?";
-        String movimientoSql = """
-                INSERT INTO movimiento_inventario
-                    (producto_id, tipo, cantidad_firmada, motivo, usuario_responsable_id)
-                VALUES (?, 'CANCELACION', ?, ?, ?)
-                """;
-        String pagoSql = """
-                UPDATE pago
-                SET estado = 'REVERSADO'
-                WHERE pedido_id = ? AND estado = 'APROBADO'
-                """;
-        String pedidoSql = "UPDATE pedido SET estado = ?, actualizado_en = CURRENT_TIMESTAMP "
-                + "WHERE id_pedido = ? AND estado = 'PENDIENTE'";
-        String historialSql = """
-                INSERT INTO pedido_historial_estado
-                    (pedido_id, estado, responsable_id, comentario)
-                VALUES (?, ?, ?, 'Pedido cancelado; stock y pago simulado reversados')
-                """;
+    private static final String LINEAS_PEDIDO_BLOQUEANDO_PRODUCTOS_SQL = """
+            SELECT pd.producto_id, pd.cantidad
+            FROM pedido_detalle pd
+            JOIN producto p ON p.id = pd.producto_id
+            WHERE pd.pedido_id = ?
+            ORDER BY pd.producto_id
+            FOR UPDATE OF p
+            """;
+    private static final String MARCAR_CANCELADO_SQL = """
+            UPDATE pedido SET estado = ?, actualizado_en = CURRENT_TIMESTAMP
+            WHERE id_pedido = ? AND estado = 'PENDIENTE'
+            """;
 
-        List<LineaParaReponer> lineas = new ArrayList<>();
-        try (PreparedStatement consulta = conexion.prepareStatement(detallesSql)) {
+    /** Líneas del pedido con sus productos bloqueados en orden ascendente de id. */
+    public List<LineaReposicion> bloquearLineasPedido(Connection conexion, long pedidoId) throws SQLException {
+        List<LineaReposicion> lineas = new ArrayList<>();
+        try (PreparedStatement consulta = conexion.prepareStatement(LINEAS_PEDIDO_BLOQUEANDO_PRODUCTOS_SQL)) {
             consulta.setLong(1, pedidoId);
             try (ResultSet resultado = consulta.executeQuery()) {
                 while (resultado.next()) {
-                    lineas.add(new LineaParaReponer(
-                            resultado.getLong("producto_id"), resultado.getInt("cantidad")));
+                    lineas.add(new LineaReposicion(resultado.getLong("producto_id"), resultado.getInt("cantidad")));
                 }
             }
         }
-        if (lineas.isEmpty()) {
-            throw new IllegalStateException("El pedido no tiene productos para reponer");
-        }
-
-        for (LineaParaReponer linea : lineas) {
-            try (PreparedStatement reponer = conexion.prepareStatement(reponerSql)) {
-                reponer.setInt(1, linea.cantidad());
-                reponer.setLong(2, linea.productoId());
-                if (reponer.executeUpdate() != 1) {
-                    throw new IllegalStateException("No se pudo reponer un producto del pedido");
-                }
-            }
-            try (PreparedStatement movimiento = conexion.prepareStatement(movimientoSql)) {
-                movimiento.setLong(1, linea.productoId());
-                movimiento.setInt(2, linea.cantidad());
-                movimiento.setString(3, "Reposición por cancelación del pedido #" + pedidoId);
-                movimiento.setLong(4, responsableId);
-                movimiento.executeUpdate();
-            }
-        }
-
-        try (PreparedStatement pago = conexion.prepareStatement(pagoSql)) {
-            pago.setLong(1, pedidoId);
-            if (pago.executeUpdate() != 1) {
-                throw new IllegalStateException("No se encontró un pago aprobado para reversar");
-            }
-        }
-
-        try (PreparedStatement actualizacion = conexion.prepareStatement(pedidoSql)) {
-            actualizacion.setString(1, estadoCancelado);
-            actualizacion.setLong(2, pedidoId);
-            if (actualizacion.executeUpdate() != 1) {
-                throw new IllegalStateException("El pedido dejó de estar pendiente");
-            }
-        }
-        try (PreparedStatement historial = conexion.prepareStatement(historialSql)) {
-            historial.setLong(1, pedidoId);
-            historial.setString(2, estadoCancelado);
-            historial.setLong(3, responsableId);
-            historial.executeUpdate();
-        }
+        return lineas;
     }
 
-    private record LineaParaReponer(long productoId, int cantidad) {
+    /** Pasa el pedido a cancelado solo si sigue PENDIENTE; {@code false} si ya no lo estaba. */
+    public boolean marcarCancelado(Connection conexion, long pedidoId, String estadoCancelado) throws SQLException {
+        try (PreparedStatement actualizacion = conexion.prepareStatement(MARCAR_CANCELADO_SQL)) {
+            actualizacion.setString(1, estadoCancelado);
+            actualizacion.setLong(2, pedidoId);
+            return actualizacion.executeUpdate() == 1;
+        }
     }
 
     private record CabeceraPedido(
@@ -556,7 +517,6 @@ public class PedidoDAO {
 
         for (ProductoEnCompra producto : productos) {
             insertarDetalle(conexion, pedido.id(), producto);
-            descontarStock(conexion, pedido.id(), usuarioId, producto);
             detalles.add(new DetallePedido(
                     producto.id(), producto.nombre(), producto.precio(),
                     producto.cantidad(), producto.subtotal()));
@@ -739,38 +699,6 @@ public class PedidoDAO {
         }
     }
 
-    private void descontarStock(
-            Connection conexion, long pedidoId, Long usuarioId,
-            ProductoEnCompra producto) throws SQLException {
-        String sql = """
-                UPDATE producto
-                SET stock = stock - ?
-                WHERE id = ? AND activo = TRUE AND stock >= ?
-                """;
-        try (PreparedStatement consulta = conexion.prepareStatement(sql)) {
-            consulta.setInt(1, producto.cantidad());
-            consulta.setLong(2, producto.id());
-            consulta.setInt(3, producto.cantidad());
-            if (consulta.executeUpdate() == 0) {
-                throw new StockInsuficienteException(
-                        "El stock de " + producto.nombre() + " cambió; actualiza el carrito");
-            }
-        }
-
-        String movimiento = """
-                INSERT INTO movimiento_inventario
-                    (producto_id, tipo, cantidad_firmada, motivo, usuario_responsable_id)
-                VALUES (?, 'SALIDA', ?, ?, ?)
-                """;
-        try (PreparedStatement consulta = conexion.prepareStatement(movimiento)) {
-            consulta.setLong(1, producto.id());
-            consulta.setInt(2, -producto.cantidad());
-            consulta.setString(3, "Venta del pedido #" + pedidoId);
-            consulta.setLong(4, usuarioId);
-            consulta.executeUpdate();
-        }
-    }
-
     private void insertarPago(
             Connection conexion, long pedidoId, BigDecimal total, ResultadoPago pago)
             throws SQLException {
@@ -790,16 +718,7 @@ public class PedidoDAO {
 
     private void insertarHistorialInicial(
             Connection conexion, long pedidoId, Long usuarioId) throws SQLException {
-        String sql = """
-                INSERT INTO pedido_historial_estado
-                    (pedido_id, estado, responsable_id, comentario)
-                VALUES (?, 'PENDIENTE', ?, 'Pedido creado y pago simulado aprobado')
-                """;
-        try (PreparedStatement consulta = conexion.prepareStatement(sql)) {
-            consulta.setLong(1, pedidoId);
-            consulta.setLong(2, usuarioId);
-            consulta.executeUpdate();
-        }
+        registrarHistorial(conexion, pedidoId, "PENDIENTE", usuarioId, "Pedido creado y pago simulado aprobado");
     }
 
     private void vaciarYConvertirCarrito(Connection conexion, long carritoId)

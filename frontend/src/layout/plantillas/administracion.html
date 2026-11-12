@@ -1,6 +1,6 @@
 <div class="card-body">
   <h2 id="titulo-administracion" class="h4">Administración</h2>
-  <section aria-labelledby="titulo-cuentas-admin" class="mt-4">
+  <section id="admin-seccion-cuentas" aria-labelledby="titulo-cuentas-admin" class="mt-3">
     <h3 id="titulo-cuentas-admin" class="h5">Cuentas y personal</h3>
     <form id="form-personal-admin" class="row g-2 align-items-end">
       <div class="col-12 col-md-3">
@@ -47,7 +47,7 @@
       </div>
     </div>
     <div class="table-responsive mt-2">
-      <table class="table table-sm align-middle">
+      <table class="table table-sm align-middle tabla-apilable">
         <thead>
           <tr>
             <th>Nombre</th>
@@ -62,8 +62,7 @@
       </table>
     </div>
   </section>
-  <hr>
-  <section aria-labelledby="titulo-categorias-admin" class="mt-4">
+  <section id="admin-seccion-categorias" aria-labelledby="titulo-categorias-admin" class="mt-3">
     <h3 id="titulo-categorias-admin" class="h5">Categorías</h3>
     <form id="form-categoria-admin" class="row g-2 align-items-end">
       <div class="col-12 col-md-9">
@@ -77,8 +76,7 @@
     <p id="estado-categoria-admin" role="status" aria-live="polite"></p>
     <div id="lista-categorias-admin" class="list-group"></div>
   </section>
-  <hr>
-  <section aria-labelledby="titulo-reportes-admin" class="mt-4">
+  <section id="admin-seccion-reportes" aria-labelledby="titulo-reportes-admin" class="mt-3">
     <h3 id="titulo-reportes-admin" class="h5">Reportes</h3>
     <form id="form-reporte-admin" class="row g-2 align-items-end">
       <div class="col-6 col-md-4">
@@ -89,14 +87,25 @@
         <label class="form-label" for="reporte-hasta">Hasta</label>
         <input id="reporte-hasta" class="form-control" type="date">
       </div>
-      <div class="col-6 col-md-2 d-grid">
+      <div class="col-12 col-md-4 d-grid">
         <button class="btn btn-primary" type="submit">Consultar</button>
       </div>
-      <div class="col-6 col-md-2 d-grid">
-        <button id="descargar-reporte-admin" class="btn btn-outline-primary" type="button">Descargar CSV</button>
+      <div class="col-12 d-flex flex-wrap gap-2" role="group" aria-label="Descargar reportes en CSV">
+        <button class="btn btn-outline-primary btn-sm" type="button" data-reporte-csv="ventas">Ventas (CSV)</button>
+        <button class="btn btn-outline-primary btn-sm" type="button" data-reporte-csv="movimientos">Movimientos (CSV)</button>
+        <button class="btn btn-outline-primary btn-sm" type="button" data-reporte-csv="inventario">Inventario actual (CSV)</button>
       </div>
     </form>
     <p id="estado-reporte-admin" role="status" aria-live="polite"></p>
     <div id="metricas-admin" class="row g-2" aria-live="polite"></div>
+    <h4 class="h6 mt-3">Últimos movimientos del periodo</h4>
+    <div class="table-responsive">
+      <table class="table table-sm small align-middle">
+        <thead>
+          <tr><th scope="col">Fecha</th><th scope="col">SKU</th><th scope="col">Tipo</th><th scope="col">Cantidad</th><th scope="col">Motivo</th><th scope="col">Responsable</th></tr>
+        </thead>
+        <tbody id="ultimos-movimientos-admin"></tbody>
+      </table>
+    </div>
   </section>
 </div>

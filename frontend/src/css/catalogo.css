@@ -186,16 +186,6 @@
   transform: scale(1.04);
 }
 
-/* Estrellas de Calificación */
-.product-rating {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  color: #f59e0b;
-  font-size: 0.82rem;
-  margin-bottom: 0.35rem;
-}
-
 /* Título e Información */
 .product-title {
   font-size: 0.88rem;
@@ -244,7 +234,7 @@
 
 .product-old-price {
   font-size: 0.82rem;
-  color: #94a3b8;
+  color: var(--retail-muted); /* 4.8:1 (antes #94a3b8, 2.6:1) */
   text-decoration: line-through;
 }
 
@@ -284,8 +274,58 @@
   cursor: not-allowed;
 }
 
-.product-card-staff-btn {
-  font-size: 0.72rem;
+/* Revisión UX (punto 7): menú "Gestionar" del personal (utilidades/menu-acciones.js).
+   Se abre hacia arriba para no quedar recortado dentro de los carruseles horizontales. */
+.menu-acciones {
+  position: relative;
+  margin-top: 0.5rem;
+}
+
+.menu-acciones-boton {
+  width: 100%;
+  min-height: 44px;
+  font-weight: 700;
+}
+
+.menu-acciones-lista {
+  position: absolute;
+  right: 0;
+  left: 0;
+  bottom: calc(100% + 4px);
+  z-index: 20;
+  margin: 0;
+  padding: 0.35rem;
+  list-style: none;
+  background: #ffffff;
+  border: 1px solid var(--retail-border);
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.14);
+}
+
+.menu-acciones-lista[hidden] {
+  display: none;
+}
+
+.menu-acciones-item {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 0.75rem;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--retail-ink);
+  font-size: 0.9rem;
+  text-align: left;
+}
+
+.menu-acciones-item:hover,
+.menu-acciones-item:focus-visible {
+  background: #f1f5f9;
+}
+
+.menu-acciones-item-peligro {
+  color: #b02a37;
 }
 
 .product-card-question-btn {

@@ -12,6 +12,8 @@ import com.grupo.retail.patterns.singleton.ProveedorConexiones;
 import com.grupo.retail.service.SesionAutenticada;
 import com.grupo.retail.service.SesionEmpleado;
 import com.grupo.retail.service.UsuarioService;
+import com.grupo.retail.transaccion.EjecutorTransaccion;
+
 import jakarta.validation.Validation;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -27,6 +29,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.contains;
@@ -54,7 +57,7 @@ class UsuarioAdminTests {
     void crearPersonalNormalizaCorreoYEncriptaClaveAntesDePersistir() {
         UsuarioDAO dao = mock(UsuarioDAO.class);
         PasswordEncoder encoder = mock(PasswordEncoder.class);
-        UsuarioService servicio = new UsuarioService(dao, encoder);
+        UsuarioService servicio = new UsuarioService(dao, encoder, mock(EjecutorTransaccion.class));
         RegistroPersonal datos = new RegistroPersonal(
                 "  Vendedora  ", "  VENDEDORA@example.com ", "clave-segura", "VENDEDOR");
         when(encoder.encode("clave-segura")).thenReturn("bcrypt-hash");
@@ -80,7 +83,7 @@ class UsuarioAdminTests {
     @Test
     void noSePermiteCrearRolesFueraDeLaListaDePersonal() {
         UsuarioDAO dao = mock(UsuarioDAO.class);
-        UsuarioService servicio = new UsuarioService(dao, mock(PasswordEncoder.class));
+        UsuarioService servicio = new UsuarioService(dao, mock(PasswordEncoder.class), mock(EjecutorTransaccion.class));
         RegistroPersonal datos = new RegistroPersonal("Cliente", "c@example.com", "clave-segura", "ROL_INVALIDO");
 
         assertThrows(ResponseStatusException.class, () -> servicio.registrarPersonal(datos));
@@ -88,16 +91,16 @@ class UsuarioAdminTests {
     }
 
     @Test
-    void administradorNoPuedeDesactivarseNiQuitarseSuRol() {
+    void administradorNoPuedeDesactivarseNiQuitarseSuRol() throws Exception {
         UsuarioDAO dao = mock(UsuarioDAO.class);
-        UsuarioService servicio = new UsuarioService(dao, mock(PasswordEncoder.class));
+        UsuarioService servicio = new UsuarioService(dao, mock(PasswordEncoder.class), mock(EjecutorTransaccion.class));
 
         assertThrows(OperacionAdminNoPermitidaException.class,
                 () -> servicio.desactivar(4L, 4L));
         assertThrows(OperacionAdminNoPermitidaException.class,
                 () -> servicio.actualizarRol(4L, 4L, new ActualizarRolUsuario("ALMACEN")));
-        verify(dao, never()).desactivar(4L);
-        verify(dao, never()).actualizarRol(4L, "ALMACEN");
+        verify(dao, never()).marcarInactivo(any(), anyLong());
+        verify(dao, never()).cambiarRol(any(), anyLong(), anyString());
     }
 
     @Test
@@ -149,7 +152,7 @@ class UsuarioAdminTests {
         when(filaAdmin.getBoolean("activo")).thenReturn(true);
 
         assertThrows(OperacionAdminNoPermitidaException.class,
-                () -> new UsuarioDAO(proveedor).actualizarRol(9L, "VENDEDOR"));
+                () -> servicioSobre(proveedor).actualizarRol(9L, 1L, new ActualizarRolUsuario("VENDEDOR")));
 
         verify(conexion).prepareStatement(contains("ORDER BY id_usuario"));
         verify(conexion).rollback();
@@ -166,7 +169,7 @@ class UsuarioAdminTests {
     }
 
     @Test
-    void daoNoPuedeDesactivarElUltimoAdministradorActivo() throws Exception {
+    void noSePuedeDesactivarElUltimoAdministradorActivo() throws Exception {
         ProveedorConexiones proveedor = mock(ProveedorConexiones.class);
         Connection conexion = mock(Connection.class);
         PreparedStatement admins = mock(PreparedStatement.class);
@@ -189,12 +192,12 @@ class UsuarioAdminTests {
         when(filaAdmin.getBoolean("activo")).thenReturn(true);
 
         assertThrows(OperacionAdminNoPermitidaException.class,
-                () -> new UsuarioDAO(proveedor).desactivar(9L));
+                () -> servicioSobre(proveedor).desactivar(9L, 1L));
         verify(conexion).rollback();
         verify(conexion, never()).prepareStatement(contains("UPDATE usuario SET activo = FALSE"));
     }
     @Test
-    void cuentaInexistenteParaCambioDeRolDevuelveVacio() throws Exception {
+    void cuentaInexistenteParaCambioDeRolResponde404YRevierte() throws Exception {
         ProveedorConexiones proveedor = mock(ProveedorConexiones.class);
         Connection conexion = mock(Connection.class);
         PreparedStatement admins = mock(PreparedStatement.class);
@@ -210,8 +213,10 @@ class UsuarioAdminTests {
         when(buscar.executeQuery()).thenReturn(fila);
         when(fila.next()).thenReturn(false);
 
-        assertEquals(Optional.empty(), new UsuarioDAO(proveedor).actualizarRol(99L, "ALMACEN"));
-        verify(conexion).commit();
+        assertThrows(java.util.NoSuchElementException.class,
+                () -> servicioSobre(proveedor).actualizarRol(99L, 1L, new ActualizarRolUsuario("ALMACEN")));
+        verify(conexion).rollback();
+        verify(conexion, never()).prepareStatement(contains("UPDATE usuario SET rol"));
     }
 
     private UsuarioAdminController controller(UsuarioService servicio) {
@@ -229,4 +234,10 @@ class UsuarioAdminTests {
         UsuarioDAO usuarioDAO = mock(UsuarioDAO.class);
         when(usuarioDAO.sesionSigueVigente(anyLong(), anyString())).thenReturn(true);
         return new SesionAutenticada(usuarioDAO);
-    }}
+    }
+    /** Servicio con DAO y transacción reales sobre JDBC simulado. */
+    private static UsuarioService servicioSobre(ProveedorConexiones proveedor) {
+        return new UsuarioService(new UsuarioDAO(proveedor), mock(PasswordEncoder.class),
+                new EjecutorTransaccion(proveedor));
+    }
+}

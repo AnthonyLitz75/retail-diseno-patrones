@@ -1,3 +1,5 @@
+import { formatoPrecio } from "../utilidades/formato.js";
+
 export async function listarCuentas(apiRequest) {
   return (await apiRequest("/api/admin/usuarios")).json();
 }
@@ -48,10 +50,49 @@ export function crearParametrosReporte(desde, hasta) {
       "La fecha inicial no puede ser posterior a la fecha final.",
     );
   }
+  // Contrato 007: fechas yyyy-MM-dd; el backend cubre el día completo en hora de Lima.
   const parametros = new URLSearchParams();
-  if (desde) parametros.set("desde", `${desde}T00:00:00-05:00`);
-  if (hasta) parametros.set("hasta", `${hasta}T23:59:59.999-05:00`);
+  if (desde) parametros.set("desde", desde);
+  if (hasta) parametros.set("hasta", hasta);
   return parametros.toString();
+}
+
+/** Reportes CSV disponibles (spec 007, US7). El inventario es una foto: no usa fechas. */
+export const REPORTES_CSV = {
+  ventas: { archivo: "ventas.csv", conFechas: true },
+  inventario: { archivo: "inventario.csv", conFechas: false },
+  movimientos: { archivo: "movimientos.csv", conFechas: true },
+};
+
+export function solicitarCsv(apiRequest, tipo, consulta) {
+  const reporte = REPORTES_CSV[tipo];
+  if (!reporte) throw new TypeError(`Reporte desconocido: ${tipo}`);
+  const filtro = reporte.conFechas && consulta ? `?${consulta}` : "";
+  return apiRequest(`/api/admin/reportes/${reporte.archivo}${filtro}`);
+}
+
+function soles(valor) {
+  return formatoPrecio(valor ?? 0);
+}
+
+function resumirConteo(conteo, vacio) {
+  return Object.entries(conteo || {})
+    .map(([clave, cantidad]) => `${clave.replaceAll("_", " ")}: ${cantidad}`)
+    .join(" · ") || vacio;
+}
+
+/** Tarjetas del panel de supervisión (RF05) como pares [etiqueta, valor]. */
+export function tarjetasResumen(resumen) {
+  return [
+    ["Ventas netas (sin cancelados)", soles(resumen.ventasNetas)],
+    ["Pedidos vendidos", resumen.pedidosVendidos ?? 0],
+    ["Pedidos por estado", resumirConteo(resumen.pedidosPorEstado, "Sin pedidos")],
+    ["Reclamos escalados abiertos", resumen.escalados ?? 0],
+    ["Productos activos", resumen.productosActivos ?? 0],
+    ["Unidades en stock", resumen.unidadesEnStock ?? 0],
+    ["Valor del inventario", soles(resumen.valorInventario)],
+    ["Movimientos", resumirConteo(resumen.movimientos, "Sin movimientos")],
+  ];
 }
 
 export async function cargarResumenAdmin(apiRequest, consulta) {
@@ -60,10 +101,4 @@ export async function cargarResumenAdmin(apiRequest, consulta) {
       `/api/admin/reportes/resumen${consulta ? `?${consulta}` : ""}`,
     )
   ).json();
-}
-
-export function solicitarCsvVentas(apiRequest, consulta) {
-  return apiRequest(
-    `/api/admin/reportes/ventas.csv${consulta ? `?${consulta}` : ""}`,
-  );
 }

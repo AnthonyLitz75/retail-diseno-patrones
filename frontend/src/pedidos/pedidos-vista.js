@@ -7,7 +7,11 @@
 import { html, seguro } from "../utilidades/seguridad.js";
 import { formatoPrecio } from "../utilidades/formato.js";
 import { renderizarStepperPedido } from "./pedidos-stepper.js";
-import { resolverImagenProducto } from "../catalogo/imagen-producto.js";
+import {
+  asignarImagenConRespaldo,
+  resolverImagenProducto,
+} from "../catalogo/imagen-producto.js";
+import { ROL, ROLES_OPERACION, ESTADO_PEDIDO } from "../utilidades/constantes.js";
 
 /**
  * Retorna la clase semántica de Bootstrap para el badge de estado del pedido.
@@ -42,6 +46,7 @@ export function crearTarjetaPedido(
     onActualizarEstado = null,
     onCancelarPedido = null,
     crearAtencion = null,
+    onAbrirDespacho = null,
   } = {},
 ) {
   const tarjeta = document.createElement("article");
@@ -94,7 +99,7 @@ export function crearTarjetaPedido(
   if (pedido.envio) {
     const envioBox = document.createElement("div");
     envioBox.className = "order-shipping-box";
-    const esEntregado = pedido.estado === "ENTREGADO";
+    const esEntregado = pedido.estado === ESTADO_PEDIDO.ENTREGADO;
     const estadoTexto = esEntregado ? "Entregado" : "Despachado";
     const estadoBadgeClass = esEntregado ? "bg-primary-subtle text-primary border-primary-subtle" : "bg-success-subtle text-success border-success-subtle";
     const fechaTexto = esEntregado && pedido.envio.entregadoEn
@@ -137,7 +142,7 @@ export function crearTarjetaPedido(
       thumb.className = "order-product-thumb";
       if (imagenUrl) {
         const img = document.createElement("img");
-        img.src = imagenUrl;
+        asignarImagenConRespaldo(img, imagenUrl);
         img.alt = producto.nombreProducto || "Producto";
         thumb.append(img);
       } else {
@@ -209,8 +214,8 @@ export function crearTarjetaPedido(
   const transicion = transicionesAlmacen[pedido.estado];
 
   const puedeCancelar =
-    (esCliente || usuarioSesion?.rol === "VENDEDOR") &&
-    pedido.estado === "PENDIENTE";
+    (esCliente || usuarioSesion?.rol === ROL.VENDEDOR) &&
+    pedido.estado === ESTADO_PEDIDO.PENDIENTE;
 
   if (puedeCancelar) {
     const botonCancelar = document.createElement("button");
@@ -226,9 +231,18 @@ export function crearTarjetaPedido(
     cuerpo.append(botonCancelar);
   }
 
-  const esStaffOperativo = ["ADMIN", "ALMACEN"].includes(usuarioSesion?.rol);
+  const esStaffOperativo = ROLES_OPERACION.includes(usuarioSesion?.rol);
   if (!esCliente && esStaffOperativo && transicion) {
-    if (transicion.accion === "despachar") {
+    if (transicion.accion === "despachar" && typeof onAbrirDespacho === "function") {
+      // Spec 007 (T013): el despacho se registra en un modal con foco y etiquetas propias.
+      const botonDespacho = document.createElement("button");
+      botonDespacho.type = "button";
+      botonDespacho.className =
+        "btn btn-primary btn-sm rounded-pill px-4 mt-3 shadow-sm align-self-start";
+      botonDespacho.textContent = "Registrar despacho…";
+      botonDespacho.addEventListener("click", () => onAbrirDespacho(pedido));
+      cuerpo.append(botonDespacho);
+    } else if (transicion.accion === "despachar") {
       cuerpo.append(
         crearFormularioDespacho(pedido, ({ transportista, codigoSeguimiento, boton }) => {
           onActualizarEstado?.(pedido.idPedido, "despachar", boton, {
@@ -270,6 +284,7 @@ export function mostrarPedidos(
     onActualizarEstado = null,
     onCancelarPedido = null,
     crearAtencion = null,
+    onAbrirDespacho = null,
     onExplorarCatalogo = null,
   } = {},
 ) {
@@ -303,14 +318,14 @@ export function mostrarPedidos(
       <h5 class="fw-bold text-dark mb-1">${
         esCliente
           ? "Todavía no tienes compras registradas"
-          : ["ADMIN", "ALMACEN"].includes(rol)
+          : ROLES_OPERACION.includes(rol)
             ? "No hay pedidos por preparar, despachar o entregar"
             : "No hay pedidos pendientes en esta cola"
       }</h5>
       <p class="text-secondary small mb-4">${
         esCliente
           ? "Cuando realices tu primera compra en Píxel Andino, podrás realizar el seguimiento en tiempo real desde aquí."
-          : rol === "VENDEDOR"
+          : rol === ROL.VENDEDOR
             ? "Como vendedor, aquí atiendes los pedidos nuevos en estado PENDIENTE para soporte o cancelación comercial. Actualmente todos los pedidos de la tienda ya fueron atendidos o no hay compras pendientes."
             : "Los pedidos de los clientes aparecerán en este panel según su estado de despacho."
       }</p>
@@ -338,6 +353,7 @@ export function mostrarPedidos(
       onActualizarEstado,
       onCancelarPedido,
       crearAtencion,
+      onAbrirDespacho,
     });
     listaPedidos.append(tarjeta);
   }

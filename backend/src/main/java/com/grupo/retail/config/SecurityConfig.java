@@ -81,6 +81,10 @@ public class SecurityConfig {
                         // 5. Gestión de Catálogo y Precios (ADMIN y VENDEDOR)
                         .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/productos").hasAnyRole("ADMIN", "VENDEDOR")
                         .requestMatchers(org.springframework.http.HttpMethod.PUT, "/api/productos/{id:[0-9]+}/precio").hasAnyRole("ADMIN", "VENDEDOR")
+                        // RF16 (spec 007): ficha, activar/desactivar y catálogo de gestión con desactivados
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/productos/gestion").hasAnyRole("ADMIN", "VENDEDOR")
+                        .requestMatchers(org.springframework.http.HttpMethod.PUT, "/api/productos/{id:[0-9]+}").hasAnyRole("ADMIN", "VENDEDOR")
+                        .requestMatchers(org.springframework.http.HttpMethod.PATCH, "/api/productos/{id:[0-9]+}/estado").hasAnyRole("ADMIN", "VENDEDOR")
 
                         // 6. Inventario y Pedidos Pendientes (ADMIN, VENDEDOR y ALMACEN)
                         .requestMatchers(

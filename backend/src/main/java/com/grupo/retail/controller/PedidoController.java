@@ -1,5 +1,6 @@
 package com.grupo.retail.controller;
 
+import com.grupo.retail.model.Rol;
 import com.grupo.retail.dto.SolicitudConfirmarPedido;
 import com.grupo.retail.dto.SolicitudDespachoPedido;
 import com.grupo.retail.facade.CheckoutFacade;
@@ -107,14 +108,11 @@ public class PedidoController {
     public ResponseEntity<Void> cancelarPedido(
             @PathVariable Long id, HttpServletRequest peticion) {
         SesionAutenticada.UsuarioSesion actor = sesionAutenticada.exigirUsuario(peticion);
-        if ("CLIENTE".equals(actor.rol())) {
-            pedidoService.cancelarPedidoComoCliente(id, actor.usuarioId());
-        } else if ("ADMIN".equals(actor.rol())) {
-            pedidoService.cancelarPedidoComoAdmin(id, actor.usuarioId());
-        } else if ("VENDEDOR".equals(actor.rol())) {
-            pedidoService.cancelarPedidoComoVendedor(id, actor.usuarioId());
-        } else {
-            throw new org.springframework.web.server.ResponseStatusException(
+        switch (Rol.desde(actor.rol()).orElse(null)) {
+            case CLIENTE -> pedidoService.cancelarPedidoComoCliente(id, actor.usuarioId());
+            case ADMIN -> pedidoService.cancelarPedidoComoAdmin(id, actor.usuarioId());
+            case VENDEDOR -> pedidoService.cancelarPedidoComoVendedor(id, actor.usuarioId());
+            case null, default -> throw new org.springframework.web.server.ResponseStatusException(
                     HttpStatus.FORBIDDEN, "Tu rol no puede realizar esta operación");
         }
         return ResponseEntity.noContent().build();

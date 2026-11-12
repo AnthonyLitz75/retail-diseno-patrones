@@ -69,7 +69,7 @@ class GlobalExceptionHandlerTests {
 
         assertEquals(HttpStatus.BAD_REQUEST, respuesta.getStatusCode());
         assertNotNull(respuesta.getBody());
-        assertEquals("correo: El formato del correo es inválido", respuesta.getBody().get("error"));
+        assertEquals("El formato del correo es inválido", respuesta.getBody().get("error"));
     }
 
     @Test

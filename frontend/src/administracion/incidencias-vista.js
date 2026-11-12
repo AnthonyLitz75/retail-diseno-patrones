@@ -12,19 +12,14 @@ import {
   resolverIncidencia,
 } from "../atencion/atencion.js";
 import { listarCuentas } from "./administracion.js";
+import { crearElemento as el } from "../utilidades/dom.js";
+import { ROL } from "../utilidades/constantes.js";
 
 /** Agentes a los que se puede reasignar: SOPORTE activos, ordenados por nombre. */
 export function agentesDisponibles(cuentas) {
   return (Array.isArray(cuentas) ? cuentas : [])
-    .filter((c) => c.rol === "SOPORTE" && c.activo)
+    .filter((c) => c.rol === ROL.SOPORTE && c.activo)
     .sort((a, b) => String(a.nombre).localeCompare(String(b.nombre), "es"));
-}
-
-function el(etiqueta, clase = "", texto = "") {
-  const nodo = document.createElement(etiqueta);
-  if (clase) nodo.className = clase;
-  if (texto !== "") nodo.textContent = texto;
-  return nodo;
 }
 
 function estadoAccesible() {

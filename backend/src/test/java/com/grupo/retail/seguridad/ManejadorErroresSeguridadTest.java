@@ -1,5 +1,6 @@
 package com.grupo.retail.seguridad;
 
+import com.grupo.retail.integracion.BaseIntegracionPostgres;
 import com.grupo.retail.dao.UsuarioDAO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -25,7 +26,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-public class ManejadorErroresSeguridadTest {
+public class ManejadorErroresSeguridadTest extends BaseIntegracionPostgres {
 
     @Autowired
     private MockMvc mockMvc;

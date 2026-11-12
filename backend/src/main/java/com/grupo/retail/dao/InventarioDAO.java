@@ -1,8 +1,8 @@
 package com.grupo.retail.dao;
 
 import com.grupo.retail.exception.ErrorAccesoDatosException;
-import com.grupo.retail.dto.LineaEntradaInventario;
 import com.grupo.retail.model.MovimientoInventario;
+import com.grupo.retail.model.RegistroMovimiento;
 import com.grupo.retail.patterns.singleton.ProveedorConexiones;
 import org.springframework.stereotype.Repository;
 
@@ -10,29 +10,30 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
-import java.util.NoSuchElementException;
+import java.util.Optional;
 
 @Repository
 public class InventarioDAO {
-    private static final String BLOQUEAR_PRODUCTO = """
-            SELECT id, stock
+    private static final String BLOQUEAR_PRODUCTO_ACTIVO = """
+            SELECT stock
             FROM producto
             WHERE id = ? AND activo = TRUE
             FOR UPDATE
             """;
-    private static final String ACTUALIZAR_STOCK = """
+    private static final String SUMAR_STOCK = "UPDATE producto SET stock = stock + ? WHERE id = ?";
+    private static final String DESCONTAR_STOCK = """
             UPDATE producto
-            SET stock = stock + ?
-            WHERE id = ? AND activo = TRUE
+            SET stock = stock - ?
+            WHERE id = ? AND activo = TRUE AND stock >= ?
             """;
     private static final String INSERTAR_MOVIMIENTO = """
             INSERT INTO movimiento_inventario
-                (producto_id, tipo, cantidad_firmada, motivo, usuario_responsable_id)
-            VALUES (?, 'ENTRADA', ?, ?, ?)
+                (producto_id, tipo, cantidad_firmada, motivo, usuario_responsable_id, pedido_id, devolucion_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             RETURNING id, fecha
             """;
 
@@ -42,37 +43,58 @@ public class InventarioDAO {
         this.proveedorConexiones = proveedorConexiones;
     }
 
-    public List<MovimientoInventario> registrarEntradas(
-            List<LineaEntradaInventario> productos, String motivo, Long responsableId) {
-        List<LineaEntradaInventario> ordenadas = productos.stream()
-                .sorted(Comparator.comparing(LineaEntradaInventario::productoId))
-                .toList();
-        try (Connection conexion = proveedorConexiones.obtenerConexion()) {
-            conexion.setAutoCommit(false);
-            try {
-                for (LineaEntradaInventario linea : ordenadas) {
-                    int stockActual = bloquearProducto(conexion, linea.productoId());
-                    try {
-                        Math.addExact(stockActual, linea.cantidad());
-                    } catch (ArithmeticException error) {
-                        throw new IllegalArgumentException(
-                                "La entrada supera el stock máximo permitido", error);
-                    }
-                }
-
-                List<MovimientoInventario> movimientos = new ArrayList<>();
-                for (LineaEntradaInventario linea : ordenadas) {
-                    actualizarStock(conexion, linea);
-                    movimientos.add(insertarMovimiento(conexion, linea, motivo, responsableId));
-                }
-                conexion.commit();
-                return List.copyOf(movimientos);
-            } catch (SQLException | RuntimeException error) {
-                conexion.rollback();
-                throw error;
+    /** Bloquea un producto activo y devuelve su stock; vacío si no existe o está inactivo. */
+    public Optional<Integer> bloquearStockActivo(Connection conexion, long productoId) throws SQLException {
+        try (PreparedStatement consulta = conexion.prepareStatement(BLOQUEAR_PRODUCTO_ACTIVO)) {
+            consulta.setLong(1, productoId);
+            try (ResultSet resultado = consulta.executeQuery()) {
+                return resultado.next() ? Optional.of(resultado.getInt("stock")) : Optional.empty();
             }
-        } catch (SQLException error) {
-            throw new ErrorAccesoDatosException("No se pudieron registrar las entradas de inventario", error);
+        }
+    }
+
+    /** Suma unidades (entrada, reposición o ajuste positivo); {@code false} si el producto no existe. */
+    public boolean sumarStock(Connection conexion, long productoId, int cantidad) throws SQLException {
+        try (PreparedStatement actualizacion = conexion.prepareStatement(SUMAR_STOCK)) {
+            actualizacion.setInt(1, cantidad);
+            actualizacion.setLong(2, productoId);
+            return actualizacion.executeUpdate() == 1;
+        }
+    }
+
+    /**
+     * Descuenta unidades de un producto activo solo si alcanza el stock; {@code false} si no
+     * alcanza o el producto ya no está activo.
+     */
+    public boolean descontarStock(Connection conexion, long productoId, int cantidad) throws SQLException {
+        try (PreparedStatement actualizacion = conexion.prepareStatement(DESCONTAR_STOCK)) {
+            actualizacion.setInt(1, cantidad);
+            actualizacion.setLong(2, productoId);
+            actualizacion.setInt(3, cantidad);
+            return actualizacion.executeUpdate() == 1;
+        }
+    }
+
+    /** Único punto del sistema que escribe en el kardex ({@code movimiento_inventario}). */
+    public MovimientoInventario registrarMovimiento(Connection conexion, RegistroMovimiento movimiento)
+            throws SQLException {
+        try (PreparedStatement insercion = conexion.prepareStatement(INSERTAR_MOVIMIENTO)) {
+            insercion.setLong(1, movimiento.productoId());
+            insercion.setString(2, movimiento.tipo().name());
+            insercion.setInt(3, movimiento.cantidadFirmada());
+            insercion.setString(4, movimiento.motivo());
+            insercion.setObject(5, movimiento.responsableId(), Types.BIGINT);
+            insercion.setObject(6, movimiento.pedidoId(), Types.BIGINT);
+            insercion.setObject(7, movimiento.devolucionId(), Types.BIGINT);
+            try (ResultSet resultado = insercion.executeQuery()) {
+                if (!resultado.next()) {
+                    throw new SQLException("No se devolvieron los datos del movimiento creado");
+                }
+                return new MovimientoInventario(
+                        resultado.getLong("id"), movimiento.productoId(), movimiento.tipo().name(),
+                        movimiento.cantidadFirmada(), movimiento.motivo(), movimiento.responsableId(),
+                        resultado.getObject("fecha", OffsetDateTime.class));
+            }
         }
     }
 
@@ -118,51 +140,6 @@ public class InventarioDAO {
             return List.copyOf(movimientos);
         } catch (SQLException error) {
             throw new ErrorAccesoDatosException("No se pudo consultar el kardex", error);
-        }
-    }
-
-    private int bloquearProducto(Connection conexion, Long productoId) throws SQLException {
-        try (PreparedStatement consulta = conexion.prepareStatement(BLOQUEAR_PRODUCTO)) {
-            consulta.setLong(1, productoId);
-            try (ResultSet resultado = consulta.executeQuery()) {
-                if (!resultado.next()) {
-                    throw new NoSuchElementException(
-                            "No existe un producto activo con ID " + productoId);
-                }
-                return resultado.getInt("stock");
-            }
-        }
-    }
-
-    private void actualizarStock(Connection conexion, LineaEntradaInventario linea)
-            throws SQLException {
-        try (PreparedStatement actualizacion = conexion.prepareStatement(ACTUALIZAR_STOCK)) {
-            actualizacion.setInt(1, linea.cantidad());
-            actualizacion.setLong(2, linea.productoId());
-            if (actualizacion.executeUpdate() != 1) {
-                throw new NoSuchElementException(
-                        "No existe un producto activo con ID " + linea.productoId());
-            }
-        }
-    }
-
-    private MovimientoInventario insertarMovimiento(
-            Connection conexion, LineaEntradaInventario linea, String motivo, Long responsableId)
-            throws SQLException {
-        try (PreparedStatement insercion = conexion.prepareStatement(INSERTAR_MOVIMIENTO)) {
-            insercion.setLong(1, linea.productoId());
-            insercion.setInt(2, linea.cantidad());
-            insercion.setString(3, motivo.strip());
-            insercion.setLong(4, responsableId);
-            try (ResultSet resultado = insercion.executeQuery()) {
-                if (!resultado.next()) {
-                    throw new SQLException("No se devolvieron los datos del movimiento creado");
-                }
-                return new MovimientoInventario(
-                        resultado.getLong("id"), linea.productoId(), "ENTRADA",
-                        linea.cantidad(), motivo.strip(), responsableId,
-                        resultado.getObject("fecha", OffsetDateTime.class));
-            }
         }
     }
 

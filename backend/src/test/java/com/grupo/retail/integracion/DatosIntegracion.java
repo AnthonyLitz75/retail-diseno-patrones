@@ -90,6 +90,71 @@ public final class DatosIntegracion {
         ejecutar("UPDATE producto SET activo = FALSE WHERE id = ?", productoId);
     }
 
+    /** Desactiva a los administradores activos salvo los indicados y devuelve sus ids para restaurarlos. */
+    public java.util.List<Long> desactivarAdminsExcepto(long... conservar) {
+        java.util.List<Long> desactivados = new java.util.ArrayList<>();
+        Long[] excluidos = java.util.Arrays.stream(conservar).boxed().toArray(Long[]::new);
+        try (Connection conexion = dataSource.getConnection();
+             PreparedStatement consulta = conexion.prepareStatement(
+                     "UPDATE usuario SET activo = FALSE WHERE rol = 'ADMIN' AND activo "
+                             + "AND NOT (id_usuario = ANY (?)) RETURNING id_usuario")) {
+            consulta.setArray(1, conexion.createArrayOf("bigint", excluidos));
+            try (ResultSet rs = consulta.executeQuery()) {
+                while (rs.next()) {
+                    desactivados.add(rs.getLong(1));
+                }
+            }
+        } catch (SQLException error) {
+            throw new IllegalStateException(error);
+        }
+        return desactivados;
+    }
+
+    public void reactivarUsuarios(java.util.List<Long> ids) {
+        try (Connection conexion = dataSource.getConnection();
+             PreparedStatement consulta = conexion.prepareStatement(
+                     "UPDATE usuario SET activo = TRUE WHERE id_usuario = ANY (?)")) {
+            consulta.setArray(1, conexion.createArrayOf("bigint", ids.toArray(Long[]::new)));
+            consulta.executeUpdate();
+        } catch (SQLException error) {
+            throw new IllegalStateException(error);
+        }
+    }
+
+    public int adminsActivos() {
+        return contar("SELECT COUNT(*) FROM usuario WHERE rol = 'ADMIN' AND activo");
+    }
+
+    public boolean usuarioActivo(long id) {
+        return "t".equals(texto("SELECT activo FROM usuario WHERE id_usuario = ?", id));
+    }
+
+    /** Categoría activa con nombre único; devuelve su nombre. */
+    public String crearCategoria() {
+        String nombre = "Cat-" + UUID.randomUUID().toString().substring(0, 8);
+        ejecutar("INSERT INTO categoria (nombre) VALUES (?)", nombre);
+        return nombre;
+    }
+
+    public String nombreEnPedido(long pedidoId, long productoId) {
+        return texto("SELECT nombre_producto || '|' || precio_unitario FROM pedido_detalle "
+                + "WHERE pedido_id = ? AND producto_id = ?", pedidoId, productoId);
+    }
+
+    public String skuDe(long productoId) {
+        return texto("SELECT sku FROM producto WHERE id = ?", productoId);
+    }
+
+    /** Fija la fecha de creación del pedido (escenarios de reportes con rango de fechas). */
+    public void fecharPedido(long pedidoId, String fechaIso) {
+        ejecutar("UPDATE pedido SET creado_en = ?::timestamptz WHERE id_pedido = ?", fechaIso, pedidoId);
+    }
+
+    /** Fija la fecha de todos los movimientos del producto. */
+    public void fecharMovimientos(long productoId, String fechaIso) {
+        ejecutar("UPDATE movimiento_inventario SET fecha = ?::timestamptz WHERE producto_id = ?", fechaIso, productoId);
+    }
+
     public long idDetallePedido(long pedidoId, long productoId) {
         return contar("SELECT id_detalle FROM pedido_detalle WHERE pedido_id = ? AND producto_id = ?",
                 pedidoId, productoId);

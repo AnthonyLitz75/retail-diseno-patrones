@@ -129,3 +129,8 @@
   font-weight: 700;
   letter-spacing: 0.1em;
 }
+
+/* Contraste sobre el fondo oscuro del pie (spec 007, T020): text-secondary es para fondos claros. */
+.site-footer .text-secondary {
+  color: #b6c0cf !important; /* 10:1 sobre el azul noche del pie */
+}

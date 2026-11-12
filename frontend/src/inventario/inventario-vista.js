@@ -7,6 +7,13 @@ import {
   crearParametrosMovimientos,
   crearSolicitudEntrada,
 } from "./almacen.js";
+import { paginarProductos } from "../catalogo/filtros-catalogo.js";
+import { ROLES_INVENTARIO, ROLES_OPERACION } from "../utilidades/constantes.js";
+
+/** Revisión UX (punto 9): el kardex muestra 10 movimientos por página. */
+export const MOVIMIENTOS_POR_PAGINA = 10;
+
+const FORMATO_FECHA_KARDEX = { dateStyle: "short", timeStyle: "short" };
 
 /**
  * Genera una fila <tr> para la tabla de movimientos de Kardex.
@@ -18,10 +25,11 @@ export function crearFilaMovimientoKardex(movimiento, productosInventario = []) 
   const fila = document.createElement("tr");
 
   const fecha = document.createElement("td");
+  fecha.className = "text-nowrap";
   const fechaObj = movimiento.fecha ? new Date(movimiento.fecha) : new Date();
   fecha.textContent = Number.isNaN(fechaObj.getTime())
     ? String(movimiento.fecha || "")
-    : fechaObj.toLocaleString("es-PE");
+    : fechaObj.toLocaleString("es-PE", FORMATO_FECHA_KARDEX);
 
   const producto = document.createElement("td");
   const productoEncontrado = productosInventario.find(
@@ -32,16 +40,19 @@ export function crearFilaMovimientoKardex(movimiento, productosInventario = []) 
     : `Producto #${movimiento.productoId}`;
 
   const tipo = document.createElement("td");
+  const esEntrada = Number(movimiento.cantidadFirmada || 0) > 0;
+  tipo.className = `text-nowrap kardex-tipo ${esEntrada ? "kardex-tipo-entrada" : "kardex-tipo-salida"}`;
   tipo.textContent = movimiento.tipo || "";
 
   const motivo = document.createElement("td");
   motivo.textContent = movimiento.motivo || "";
 
+  // Sin responsable = movimiento automático (carga inicial o proceso del sistema).
   const responsable = document.createElement("td");
   responsable.textContent =
     movimiento.responsableId == null
-      ? "No registrado"
-      : String(movimiento.responsableId);
+      ? "Sistema"
+      : `Usuario #${movimiento.responsableId}`;
 
   const cantidad = document.createElement("td");
   cantidad.className = "text-end fw-semibold";
@@ -51,6 +62,47 @@ export function crearFilaMovimientoKardex(movimiento, productosInventario = []) 
 
   fila.append(fecha, producto, tipo, motivo, responsable, cantidad);
   return fila;
+}
+
+/**
+ * Texto de estado del kardex a partir del resultado de paginarProductos().
+ * @param {{totalItems: number, totalPaginas: number, indiceInicio: number, indiceFin: number}} info
+ * @returns {string}
+ */
+export function textoEstadoKardex(info) {
+  if (!info || info.totalItems === 0) return "No hay movimientos para esos filtros.";
+  const total = info.totalItems === 1 ? "1 movimiento" : `${info.totalItems} movimientos`;
+  if (info.totalPaginas <= 1) return total;
+  return `${total} · mostrando ${info.indiceInicio}–${info.indiceFin}`;
+}
+
+/**
+ * Botones Anterior / Siguiente y el indicador "Página X de Y" del kardex.
+ * @param {object} info - Resultado de paginarProductos()
+ * @param {(pagina: number) => void} alCambiar
+ * @returns {HTMLElement[]}
+ */
+export function crearControlesPaginacionKardex(info, alCambiar) {
+  const anterior = document.createElement("button");
+  anterior.type = "button";
+  anterior.className = "btn btn-outline-secondary btn-sm";
+  anterior.textContent = "Anterior";
+  anterior.disabled = !info.tieneAnterior;
+  anterior.addEventListener("click", () => alCambiar(info.paginaActual - 1));
+
+  const indicador = document.createElement("span");
+  indicador.className = "small text-secondary";
+  indicador.setAttribute("aria-live", "polite");
+  indicador.textContent = `Página ${info.paginaActual} de ${Math.max(1, info.totalPaginas)}`;
+
+  const siguiente = document.createElement("button");
+  siguiente.type = "button";
+  siguiente.className = "btn btn-outline-secondary btn-sm";
+  siguiente.textContent = "Siguiente";
+  siguiente.disabled = !info.tieneSiguiente;
+  siguiente.addEventListener("click", () => alCambiar(info.paginaActual + 1));
+
+  return [anterior, indicador, siguiente];
 }
 
 /**
@@ -172,8 +224,27 @@ export function configurarPanelInventario({
     movimientosHasta,
     estadoMovimientos,
     listaMovimientos,
+    paginacionMovimientos,
     contenedorHistorial,
   } = elementos;
+
+  let movimientosCargados = [];
+
+  function pintarPaginaMovimientos(pagina) {
+    const info = paginarProductos(movimientosCargados, pagina, MOVIMIENTOS_POR_PAGINA);
+    estadoMovimientos.className = "small text-secondary mt-2 mb-2";
+    estadoMovimientos.textContent = textoEstadoKardex(info);
+    const productos = obtenerEstado().productosInventario || [];
+    listaMovimientos.replaceChildren(
+      ...info.items.map((movimiento) => crearFilaMovimientoKardex(movimiento, productos)),
+    );
+    if (paginacionMovimientos) {
+      paginacionMovimientos.hidden = info.totalPaginas <= 1;
+      paginacionMovimientos.replaceChildren(
+        ...crearControlesPaginacionKardex(info, pintarPaginaMovimientos),
+      );
+    }
+  }
 
   function poblarSelectores() {
     const estado = obtenerEstado();
@@ -213,19 +284,11 @@ export function configurarPanelInventario({
       const respuesta = await apiRequest(`/api/inventario/movimientos${sufijo}`);
       const movimientos = await respuesta.json();
 
-      estadoMovimientos.className = "small text-secondary mt-2 mb-2";
-      estadoMovimientos.textContent = movimientos.length
-        ? `Movimientos encontrados: ${movimientos.length}`
-        : "No hay movimientos para esos filtros.";
-
-      for (const movimiento of movimientos) {
-        const fila = crearFilaMovimientoKardex(
-          movimiento,
-          estado.productosInventario || [],
-        );
-        listaMovimientos.append(fila);
-      }
+      movimientosCargados = Array.isArray(movimientos) ? movimientos : [];
+      pintarPaginaMovimientos(1);
     } catch (error) {
+      movimientosCargados = [];
+      if (paginacionMovimientos) paginacionMovimientos.hidden = true;
       estadoMovimientos.className = "small text-danger mt-2 mb-2";
       estadoMovimientos.textContent = `No se pudieron cargar los movimientos. ${error.message}`;
     }
@@ -234,14 +297,14 @@ export function configurarPanelInventario({
   async function iniciarPanelInventario() {
     const estado = obtenerEstado();
     const rol = estado.usuarioSesion?.rol;
-    if (!["ADMIN", "VENDEDOR", "ALMACEN"].includes(rol)) {
+    if (!ROLES_INVENTARIO.includes(rol)) {
       if (seccionInventario) seccionInventario.hidden = true;
       return;
     }
 
     if (seccionInventario) seccionInventario.hidden = false;
     if (seccionEntradaInventario) {
-      seccionEntradaInventario.hidden = !["ADMIN", "ALMACEN"].includes(rol);
+      seccionEntradaInventario.hidden = !ROLES_OPERACION.includes(rol);
     }
     if (estadoMovimientos) {
       estadoMovimientos.textContent = "Cargando productos y movimientos…";

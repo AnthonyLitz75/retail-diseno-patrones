@@ -1,5 +1,6 @@
 package com.grupo.retail.exception;
 
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
@@ -43,7 +44,9 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, String>> manejarValidacion(MethodArgumentNotValidException error) {
         String mensaje = error.getBindingResult().getFieldErrors().stream()
-                .map(campo -> campo.getField() + ": " + campo.getDefaultMessage())
+                // Cada mensaje ya nombra su campo en español ("El nombre es obligatorio"); el
+                // nombre técnico del atributo no aporta al usuario (spec 007, T002).
+                .map(org.springframework.validation.FieldError::getDefaultMessage)
                 .findFirst()
                 .orElse("Datos de solicitud inválidos");
         return ResponseEntity.badRequest().body(Map.of("error", mensaje));
@@ -88,6 +91,13 @@ public class GlobalExceptionHandler {
             CarritoDesactualizadoException.class})
     public ResponseEntity<Map<String, String>> manejarConflictoDeCompra(RuntimeException error) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", error.getMessage()));
+    }
+
+    @ExceptionHandler(DemasiadosIntentosException.class)
+    public ResponseEntity<Map<String, String>> manejarDemasiadosIntentos(DemasiadosIntentosException error) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header(HttpHeaders.RETRY_AFTER, String.valueOf(error.segundosEspera()))
+                .body(Map.of("error", error.getMessage()));
     }
 
     @ExceptionHandler(PagoRechazadoException.class)

@@ -11,13 +11,8 @@ import {
   etiquetaEstadoReclamo,
 } from "./atencion.js";
 import { formatoPrecio } from "../utilidades/formato.js";
-
-function el(etiqueta, clase = "", texto = "") {
-  const nodo = document.createElement(etiqueta);
-  if (clase) nodo.className = clase;
-  if (texto) nodo.textContent = texto;
-  return nodo;
-}
+import { crearElemento as el } from "../utilidades/dom.js";
+import { ESTADO_PEDIDO } from "../utilidades/constantes.js";
 
 function badge({ texto, clase }) {
   return el("span", `badge rounded-pill ${clase}`, texto);
@@ -142,7 +137,7 @@ export function crearSeccionAtencionPedido(pedido, {
 } = {}) {
   const propiosReclamos = reclamos.filter((r) => r.pedidoId === pedido.idPedido);
   const propiasDevoluciones = devoluciones.filter((d) => d.pedidoId === pedido.idPedido);
-  const entregado = pedido.estado === "ENTREGADO";
+  const entregado = pedido.estado === ESTADO_PEDIDO.ENTREGADO;
   if (!entregado && propiosReclamos.length === 0 && propiasDevoluciones.length === 0) return null;
 
   const seccion = el("section", "order-support mt-3 pt-3 border-top");

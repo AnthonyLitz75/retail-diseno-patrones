@@ -113,13 +113,9 @@ export function renderizarVistaDetalleProducto(producto, {
             <!-- Título Principal -->
             <h1 class="product-detail-title h3 fw-bold text-dark mb-1">${producto.nombre}</h1>
 
-            <!-- SKU y Calificación -->
+            <!-- SKU. No se muestra calificación: la tienda aún no tiene reseñas reales. -->
             <div class="d-flex flex-wrap align-items-center gap-3 text-secondary small pb-2 border-bottom">
               <span>Ref / SKU: <strong class="text-dark">${skuProducto}</strong></span>
-              <span class="text-muted">|</span>
-              <span class="d-inline-flex align-items-center gap-1 text-warning fw-semibold">
-                ★★★★★ <span class="text-secondary ms-1">5.0 (48 opiniones verificadas)</span>
-              </span>
             </div>
 
             <!-- Bloque de Precios y Ahorro -->

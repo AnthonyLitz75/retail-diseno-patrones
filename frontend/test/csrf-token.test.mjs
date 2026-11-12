@@ -43,7 +43,7 @@ test('solicita token CSRF y lo adjunta en cabecera en peticiones POST', async ()
 
 test('reutiliza el token CSRF en mutaciones posteriores sin volver a llamar /api/auth/csrf', async () => {
   let contadorCsrf = 0
-  globalThis.fetch = async (url, options) => {
+  globalThis.fetch = async (url, _options) => {
     if (url === '/api/auth/csrf') {
       contadorCsrf++
       return new Response(JSON.stringify({ token: 'csrf-token-fijo', cabecera: 'X-XSRF-TOKEN' }), {
@@ -66,7 +66,7 @@ test('reutiliza el token CSRF en mutaciones posteriores sin volver a llamar /api
 
 test('peticiones GET no solicitan ni envían token CSRF', async () => {
   let llamadaCsrf = false
-  globalThis.fetch = async (url, options) => {
+  globalThis.fetch = async (url, _options) => {
     if (url === '/api/auth/csrf') {
       llamadaCsrf = true
     }
@@ -81,7 +81,7 @@ test('peticiones GET no solicitan ni envían token CSRF', async () => {
 })
 
 test('ante 403 en mutación, renueva token y reintenta la petición una vez', async () => {
-  let tokensEntregados = ['token-viejo', 'token-renovado']
+  const tokensEntregados = ['token-viejo', 'token-renovado']
   let intentosMutacion = 0
   const tokensRecibidos = []
 
@@ -124,7 +124,7 @@ test('ante 403 en mutación, renueva token y reintenta la petición una vez', as
 
 test('si el reintento tras 403 vuelve a fallar con 403, lanza el error y no entra en bucle', async () => {
   let intentosMutacion = 0
-  globalThis.fetch = async (url, options) => {
+  globalThis.fetch = async (url, _options) => {
     if (url === '/api/auth/csrf') {
       return new Response(JSON.stringify({ token: 'nuevo-token', cabecera: 'X-XSRF-TOKEN' }), {
         status: 200,

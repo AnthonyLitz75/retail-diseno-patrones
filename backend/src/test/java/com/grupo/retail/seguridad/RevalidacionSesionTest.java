@@ -1,5 +1,6 @@
 package com.grupo.retail.seguridad;
 
+import com.grupo.retail.integracion.BaseIntegracionPostgres;
 import com.grupo.retail.dao.UsuarioDAO;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -24,7 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-public class RevalidacionSesionTest {
+public class RevalidacionSesionTest extends BaseIntegracionPostgres {
 
     @Autowired
     private MockMvc mockMvc;

@@ -5,7 +5,6 @@ import com.grupo.retail.model.DetalleDevolucion;
 import com.grupo.retail.model.Devolucion;
 import com.grupo.retail.model.EstadoDevolucion;
 import com.grupo.retail.model.LineaDevolvible;
-import com.grupo.retail.model.PagoReembolsable;
 import com.grupo.retail.patterns.singleton.ProveedorConexiones;
 import org.springframework.stereotype.Repository;
 
@@ -174,63 +173,6 @@ public class DevolucionDAO {
                 "UPDATE detalle_devolucion SET reintegrar_stock = ? WHERE id_detalle_devolucion = ?")) {
             consulta.setBoolean(1, reintegrar);
             consulta.setLong(2, detalleDevolucionId);
-            consulta.executeUpdate();
-        }
-    }
-
-    /**
-     * Repone las unidades aptas y deja el movimiento DEVOLUCION con su trazabilidad. El
-     * servicio llama en orden ascendente de producto para no cruzar bloqueos con compras.
-     */
-    public void reponerStock(Connection conexion, long productoId, int cantidad, long responsableId,
-            long pedidoId, long devolucionId) throws SQLException {
-        try (PreparedStatement reponer = conexion.prepareStatement(
-                "UPDATE producto SET stock = stock + ? WHERE id = ?")) {
-            reponer.setInt(1, cantidad);
-            reponer.setLong(2, productoId);
-            reponer.executeUpdate();
-        }
-        String movimientoSql = """
-                INSERT INTO movimiento_inventario
-                    (producto_id, tipo, cantidad_firmada, motivo, usuario_responsable_id, pedido_id, devolucion_id)
-                VALUES (?, 'DEVOLUCION', ?, ?, ?, ?, ?)
-                """;
-        try (PreparedStatement movimiento = conexion.prepareStatement(movimientoSql)) {
-            movimiento.setLong(1, productoId);
-            movimiento.setInt(2, cantidad);
-            movimiento.setString(3, "Devolución #" + devolucionId + " del pedido #" + pedidoId);
-            movimiento.setLong(4, responsableId);
-            movimiento.setLong(5, pedidoId);
-            movimiento.setLong(6, devolucionId);
-            movimiento.executeUpdate();
-        }
-    }
-
-    /** Bloquea el cobro APROBADO del pedido para acumular el reembolso sin carreras. */
-    public Optional<PagoReembolsable> bloquearPagoAprobado(Connection conexion, long pedidoId) throws SQLException {
-        String sql = """
-                SELECT id_pago, monto, monto_reembolsado, referencia
-                FROM pago
-                WHERE pedido_id = ? AND estado = 'APROBADO'
-                FOR UPDATE
-                """;
-        try (PreparedStatement consulta = conexion.prepareStatement(sql)) {
-            consulta.setLong(1, pedidoId);
-            try (ResultSet fila = consulta.executeQuery()) {
-                if (!fila.next()) {
-                    return Optional.empty();
-                }
-                return Optional.of(new PagoReembolsable(fila.getLong("id_pago"), fila.getBigDecimal("monto"),
-                        fila.getBigDecimal("monto_reembolsado"), fila.getString("referencia")));
-            }
-        }
-    }
-
-    public void acumularReembolso(Connection conexion, long pagoId, BigDecimal importe) throws SQLException {
-        try (PreparedStatement consulta = conexion.prepareStatement(
-                "UPDATE pago SET monto_reembolsado = monto_reembolsado + ? WHERE id_pago = ?")) {
-            consulta.setBigDecimal(1, importe);
-            consulta.setLong(2, pagoId);
             consulta.executeUpdate();
         }
     }
