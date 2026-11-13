@@ -8,7 +8,9 @@
 
 ![Java](https://img.shields.io/badge/Java-25-ED8B00?logo=openjdk&logoColor=white)
 ![Spring Boot](https://img.shields.io/badge/Spring_Boot-4.1.2-6DB33F?logo=springboot&logoColor=white)
+![Spring Security](https://img.shields.io/badge/Spring_Security-roles_%2B_CSRF-6DB33F?logo=springsecurity&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15+-4169E1?logo=postgresql&logoColor=white)
+![Flyway](https://img.shields.io/badge/Flyway-migraciones-CC0200?logo=flyway&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-8.3-646CFF?logo=vite&logoColor=white)
 ![Bootstrap](https://img.shields.io/badge/Bootstrap-5.3.9-7952B3?logo=bootstrap&logoColor=white)
 
@@ -38,7 +40,8 @@ Fue desarrollada como proyecto académico del curso **Diseño de Patrones de Sof
 - **Inicio** con destacados, nuevos productos, ofertas, accesos «Compra por categoría» y el resumen del catálogo.
 - **Catálogo** con filtros combinables (texto, categoría, rango de precios, solo en stock) y orden por precio o nombre.
 - **Detalle de producto** con descuento («Ahorras S/ …»), stock disponible, consultas al vendedor y **productos relacionados** de la misma categoría.
-- **Navegación SPA por hash** (`#/catalogo`, `#/categoria/:slug`, `#/producto/:sku`, `#/pedidos`) con historial del navegador y migas de pan.
+- **Navegación SPA por hash** (`#/catalogo`, `#/categoria/:slug`, `#/categoria/:padre/:slug`, `#/producto/:sku`, `#/buscar?q=…`, `#/pedidos`) con historial del navegador y migas de pan.
+- **Favoritos:** corazón en las tarjetas y en el detalle del producto; la lista se guarda en el navegador (`localStorage`) y se filtra desde el acceso rápido de favoritos.
 - **Carrito híbrido:** el invitado usa `localStorage` y, al iniciar sesión, el carrito se sincroniza con PostgreSQL. Cada acción se puede **deshacer** (patrón Command).
 - **Checkout en tres pasos** (Carrito → Entrega y pago → Confirmación): dirección de entrega, escenario de pago de prueba (aprobado o rechazado), resumen del pedido y pantalla de **compra confirmada**. Un pago rechazado no crea el pedido ni toca el carrito.
 - **Mis compras:** avance del pedido por estados, filtros por estado con su conteo, transportista y código de seguimiento con botón **«Copiar código»**, y cancelación de pedidos pendientes.
@@ -54,8 +57,8 @@ En escritorio, el personal navega con un **menú lateral** fijo a la izquierda; 
 | :---------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Vendedor**      | Vista **Productos** (tabla con búsqueda, categoría y pestañas Activos / Desactivados / Stock bajo), **alta de productos** con vista previa, edición de ficha y precio, y respuesta a consultas de clientes. |
 | **Almacén**       | Pedidos por preparar, despachar (transportista y código de seguimiento) y entregar; entradas de mercadería, ajustes de stock y kardex por producto y fecha.                                                 |
-| **Soporte**       | Bandeja de reclamos y devoluciones con el contexto del pedido; reembolsos simulados.                                                                                                                       |
-| **Administrador** | Indicadores generales, cuentas y roles del personal, árbol de categorías, reportes con exportación CSV, **auditoría** e incidencias escaladas.                                                                |
+| **Soporte**       | Bandeja de reclamos y devoluciones con el contexto del pedido; reembolsos simulados.                                                                                                                        |
+| **Administrador** | Indicadores generales, cuentas y roles del personal, árbol de categorías, reportes con exportación CSV, **auditoría** e incidencias escaladas.                                                              |
 
 ### Auditoría
 
@@ -63,27 +66,27 @@ El administrador consulta **quién hizo qué y cuándo**: inicios de sesión (ta
 
 ## Capturas
 
-| Tienda                                                       | Compra confirmada                                                          |
-| :----------------------------------------------------------- | :------------------------------------------------------------------------- |
-| ![Inicio de la tienda](docs/img/capturas/tienda-inicio.jpg)  | ![Checkout: compra confirmada](docs/img/capturas/compra-confirmada.jpg)    |
-| **Panel del personal: Productos**                            | **Administración**                                                         |
+| Tienda                                                                 | Compra confirmada                                                       |
+| :--------------------------------------------------------------------- | :---------------------------------------------------------------------- |
+| ![Inicio de la tienda](docs/img/capturas/tienda-inicio.jpg)            | ![Checkout: compra confirmada](docs/img/capturas/compra-confirmada.jpg) |
+| **Panel del personal: Productos**                                      | **Administración**                                                      |
 | ![Vista Productos del personal](docs/img/capturas/panel-productos.jpg) | ![Administración con indicadores](docs/img/capturas/administracion.jpg) |
 
 ## Stack tecnológico
 
-| Capa                 | Tecnologías                                                                                     |
-| :------------------- | :---------------------------------------------------------------------------------------------- |
-| **Backend**          | Java 25, Spring Boot 4.1.2, Spring Security, JDBC (sin ORM), Flyway                             |
-| **Base de datos**    | PostgreSQL 15+                                                                                  |
-| **Frontend**         | HTML5, CSS3 (variables nativas), JavaScript con ES Modules, Bootstrap 5.3.9, Vite 8.3           |
-| **Pruebas**          | JUnit 5, Mockito, Testcontainers (PostgreSQL real), JaCoCo; Node.js Test Runner y ESLint         |
+| Capa              | Tecnologías                                                                              |
+| :---------------- | :--------------------------------------------------------------------------------------- |
+| **Backend**       | Java 25, Spring Boot 4.1.2, Spring Security, JDBC (sin ORM), Flyway                      |
+| **Base de datos** | PostgreSQL 15+                                                                           |
+| **Frontend**      | HTML5, CSS3 (variables nativas), JavaScript con ES Modules, Bootstrap 5.3.9, Vite 8.3    |
+| **Pruebas**       | JUnit 5, Mockito, Testcontainers (PostgreSQL real), JaCoCo; Node.js Test Runner y ESLint |
 
 ## Inicio rápido
 
 ### Requisitos
 
 - JDK 25
-- Node.js 20+ y npm
+- Node.js 20.19+ o 22.12+ y npm (lo exigen Vite 8 y ESLint 10)
 - PostgreSQL 15+
 - Docker (solo para las pruebas de integración)
 
@@ -97,12 +100,12 @@ CREATE DATABASE retail_diseno_patrones;
 
 No hace falta ejecutar scripts a mano: al iniciar el backend, **Flyway** aplica las migraciones versionadas de `backend/src/main/resources/db/migration`:
 
-| Migración                                  | Contenido                                                                                                  |
-| :----------------------------------------- | :--------------------------------------------------------------------------------------------------------- |
-| `V1__esquema_base.sql`                     | Tablas, índices y restricciones `CHECK` (stock nunca negativo, estados válidos).                           |
-| `V2__reclamos_devoluciones_y_revision.sql` | Reclamos, devoluciones, control optimista del carrito, fecha de entrega y unicidad del pago aprobado.      |
-| `V3__notificacion_pedido_confirmado.sql`   | Notificación al confirmar un pedido.                                                                       |
-| `V4__registro_auditoria.sql`               | Tabla `registro_auditoria` del módulo de auditoría.                                                        |
+| Migración                                  | Contenido                                                                                             |
+| :----------------------------------------- | :---------------------------------------------------------------------------------------------------- |
+| `V1__esquema_base.sql`                     | Tablas, índices y restricciones `CHECK` (stock nunca negativo, estados válidos).                      |
+| `V2__reclamos_devoluciones_y_revision.sql` | Reclamos, devoluciones, control optimista del carrito, fecha de entrega y unicidad del pago aprobado. |
+| `V3__notificacion_pedido_confirmado.sql`   | Notificación al confirmar un pedido.                                                                  |
+| `V4__registro_auditoria.sql`               | Tabla `registro_auditoria` del módulo de auditoría.                                                   |
 
 Con el perfil `dev` se cargan además los datos de demostración de `db/dev` (cuentas, 32 productos con fotos, categorías y un carrito de ejemplo).
 
@@ -112,10 +115,10 @@ Con el perfil `dev` se cargan además los datos de demostración de `db/dev` (cu
 
 Define las credenciales de la base de datos mediante variables de entorno:
 
-| Variable      | Descripción                                                                 |
-| :------------ | :-------------------------------------------------------------------------- |
-| `DB_USER`     | Usuario de PostgreSQL (por ejemplo, `postgres`).                            |
-| `DB_PASSWORD` | Contraseña del usuario. Es obligatoria: no hay valor por defecto.           |
+| Variable      | Descripción                                                                       |
+| :------------ | :-------------------------------------------------------------------------------- |
+| `DB_USER`     | Usuario de PostgreSQL (por ejemplo, `postgres`).                                  |
+| `DB_PASSWORD` | Contraseña del usuario. Es obligatoria: no hay valor por defecto.                 |
 | `DB_URL`      | Opcional. Por defecto, `jdbc:postgresql://localhost:5432/retail_diseno_patrones`. |
 
 En despliegues con HTTPS define también `SESSION_COOKIE_SECURE=true`.
@@ -214,16 +217,16 @@ El frontend está organizado por dominio funcional (catálogo, carrito, pedidos,
 
 ## Patrones de diseño
 
-| Patrón             | Tipo           | Aplicación                                                                                                                                                                                                                       |
-| :----------------- | :------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Singleton**      | Creacional     | `ProveedorConexiones` es el punto único de acceso a las conexiones JDBC (componente de alcance singleton que envuelve el pool HikariCP).                                                                                           |
-| **Factory Method** | Creacional     | `FabricaNotificador` crea el canal de aviso: `NotificadorInApp` (persistido en la base) o `NotificadorConsola`.                                                                                                                  |
-| **Adapter**        | Estructural    | `PuertoPago` y `PagoPruebaAdapter` aíslan el checkout de la API del proveedor de pagos simulado.                                                                                                                                  |
+| Patrón             | Tipo           | Aplicación                                                                                                                                                                                                                              |
+| :----------------- | :------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Singleton**      | Creacional     | `ProveedorConexiones` es el punto único de acceso a las conexiones JDBC (componente de alcance singleton que envuelve el pool HikariCP).                                                                                                |
+| **Factory Method** | Creacional     | `FabricaNotificador` crea el canal de aviso: `NotificadorInApp` (persistido en la base) o `NotificadorConsola`.                                                                                                                         |
+| **Adapter**        | Estructural    | `PuertoPago` y `PagoPruebaAdapter` aíslan el checkout de la API del proveedor de pagos simulado.                                                                                                                                        |
 | **Facade**         | Estructural    | `CheckoutFacade.confirmarCompra` es la única entrada a la compra: valida stock, descuenta inventario, registra el pago y emite el pedido en una transacción, con **clave de idempotencia** para que un reintento no duplique la compra. |
-| **Composite**      | Estructural    | Árbol de categorías y subcategorías (`CategoriaComponente`, `ArbolCategoriaBuilder`), usado por el menú multinivel, los chips de categorías y las migas de pan.                                                                   |
-| **State**          | Comportamental | Ciclo de vida del pedido (`PENDIENTE` → `EN_PREPARACION` → `DESPACHADO` → `ENTREGADO` / `CANCELADO`) en `patterns/state`; el frontend lo refleja en el avance de Mis compras.                                                     |
-| **Observer**       | Comportamental | `PublicadorEventosPedido` avisa a sus observadores cuando cambia un estado: dentro de la transacción (notificación en la app y **registro de auditoría**) y después del commit (registro en consola y correo simulado).             |
-| **Command**        | Comportamental | Cada acción del carrito (agregar, cambiar cantidad, quitar) es un `ComandoCarrito` con su `deshacer`; `HistorialComandosCarrito` permite deshacer la última.                                                                       |
+| **Composite**      | Estructural    | Árbol de categorías y subcategorías (`CategoriaComponente`, `ArbolCategoriaBuilder`), usado por el menú multinivel, los chips de categorías y las migas de pan.                                                                         |
+| **State**          | Comportamental | Ciclo de vida del pedido (`PENDIENTE` → `EN_PREPARACION` → `DESPACHADO` → `ENTREGADO` / `CANCELADO`) en `patterns/state`; el frontend lo refleja en el avance de Mis compras.                                                           |
+| **Observer**       | Comportamental | `PublicadorEventosPedido` avisa a sus observadores cuando cambia un estado: dentro de la transacción (notificación en la app y **registro de auditoría**) y después del commit (registro en consola y correo simulado).                 |
+| **Command**        | Comportamental | Cada acción del carrito (agregar, cambiar cantidad, quitar) es un `ComandoCarrito` con su `deshacer`; `HistorialComandosCarrito` permite deshacer la última.                                                                            |
 
 ## Seguridad
 
@@ -253,6 +256,14 @@ cd backend
 ```
 
 > Las pruebas nunca usan tu base local: si una prueba de Spring intentara conectarse sin Testcontainers, falla a propósito.
+
+Qué cubren las pruebas del backend:
+
+| Grupo                     | Qué verifica                                                                                                                                                                  |
+| :------------------------ | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `integracion/`            | Compra idempotente y concurrente, rollback ante fallos, cancelación sin doble reverso, cierre de devoluciones, migraciones y restricciones del esquema.                       |
+| `security/`               | Matriz de acceso por rol, CSRF, fijación y revalidación de sesión, límite de intentos de inicio de sesión y que el registro público solo cree clientes.                       |
+| `RendimientoBusquedaTest` | Con 5000 productos y 5 usuarios simultáneos, el 95 % de las búsquedas del catálogo responde en menos de 3 s. El resultado queda en `backend/target/rendimiento/busqueda.txt`. |
 
 **Frontend** (Node.js Test Runner y ESLint):
 
@@ -286,7 +297,7 @@ retail/
 │       │   ├── model/  dto/   # Dominio y objetos de transferencia
 │       │   └── exception/     # Manejo global de errores
 │       ├── main/resources/db/ # migration (Flyway) y dev (datos de demostración)
-│       └── test/java/         # Unitarias e integración (integracion/)
+│       └── test/java/         # Unitarias, integración (integracion/) y seguridad (security/)
 ├── frontend/
 │   ├── src/
 │   │   ├── catalogo/          # vistas/, componentes/, gestion/ y catalogo-controlador.js
@@ -298,6 +309,6 @@ retail/
 │   │   ├── css/               # Estilos por dominio
 │   │   └── main.js            # Punto de entrada
 │   └── test/                  # Pruebas organizadas por subdirectorios de dominio
-├── database/                  # Scripts SQL anteriores a Flyway (referencia histórica)
+├── database/legado/           # Scripts SQL anteriores a Flyway (referencia histórica)
 └── docs/img/                  # Logo y capturas del README
 ```
