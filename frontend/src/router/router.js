@@ -8,11 +8,11 @@ import {
   parsearRuta,
   buscarCategoriaPorSlug,
   construirBreadcrumbs,
-} from "./enrutador.js";
-import { renderizarVistaDetalleProducto } from "../catalogo/detalle-producto.js";
-import { crearSeccionRelacionados, seleccionarRelacionados } from "../catalogo/explorar.js";
-import { resolverImagenProducto } from "../catalogo/imagen-producto.js";
-import { esFavorito, alternarFavorito } from "../catalogo/favoritos.js";
+} from "./parser-rutas.js";
+import { renderizarVistaDetalleProducto } from "../catalogo/vistas/detalle-producto.js";
+import { crearSeccionRelacionados, seleccionarRelacionados } from "../catalogo/vistas/explorar.js";
+import { resolverImagenProducto } from "../catalogo/componentes/imagen-producto.js";
+import { esFavorito, alternarFavorito } from "../catalogo/componentes/favoritos.js";
 import { esRutaProtegida, evaluarAcceso } from "./guardas.js";
 import { rutaLoginConRetorno } from "../utilidades/errores-globales.js";
 

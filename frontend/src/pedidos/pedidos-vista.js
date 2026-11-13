@@ -10,7 +10,7 @@ import { renderizarStepperPedido } from "./pedidos-stepper.js";
 import {
   asignarImagenConRespaldo,
   resolverImagenProducto,
-} from "../catalogo/imagen-producto.js";
+} from "../catalogo/componentes/imagen-producto.js";
 import { ROL, ROLES_OPERACION, ESTADO_PEDIDO } from "../utilidades/constantes.js";
 
 /**

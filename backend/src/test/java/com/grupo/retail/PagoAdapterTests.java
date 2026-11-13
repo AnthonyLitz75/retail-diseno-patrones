@@ -1,8 +1,8 @@
 package com.grupo.retail;
 
 import com.grupo.retail.model.ResultadoPago;
-import com.grupo.retail.patterns.pago.PagoPruebaAdapter;
-import com.grupo.retail.patterns.pago.ProveedorPagoSimulado;
+import com.grupo.retail.patterns.adapter.PagoPruebaAdapter;
+import com.grupo.retail.patterns.adapter.ProveedorPagoSimulado;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;

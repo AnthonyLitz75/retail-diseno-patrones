@@ -4,7 +4,7 @@ import com.grupo.retail.model.AccionAuditoria;
 import com.grupo.retail.model.EventoAuditoria;
 import com.grupo.retail.model.PaginaAuditoria;
 import com.grupo.retail.model.RegistroAuditoria;
-import com.grupo.retail.reportes.EscritorCsv;
+import com.grupo.retail.service.exportacion.EscritorCsv;
 import com.grupo.retail.service.AuditoriaService;
 import com.grupo.retail.service.SesionEmpleado;
 import jakarta.servlet.http.HttpServletRequest;
@@ -18,8 +18,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import static com.grupo.retail.reportes.RespuestaCsv.adjunto;
-import static com.grupo.retail.reportes.RespuestaCsv.fecha;
+import static com.grupo.retail.service.exportacion.RespuestaCsv.adjunto;
+import static com.grupo.retail.service.exportacion.RespuestaCsv.fecha;
 
 /**
  * Consulta de auditoría para el administrador (guía §2: "consultar auditoría").

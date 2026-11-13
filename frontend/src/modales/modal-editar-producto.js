@@ -8,7 +8,7 @@ import {
   cambiarEstadoProducto,
   categoriasAsignables,
   editarFichaProducto,
-} from "../catalogo/gestion-producto.js";
+} from "../catalogo/gestion/gestion-producto.js";
 import { mostrarConfirmacion } from "../utilidades/notificaciones.js";
 
 export function configurarModalEditarProducto({

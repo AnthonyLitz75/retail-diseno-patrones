@@ -8,16 +8,16 @@ import {
   CRITERIOS_ORDEN,
   paginarProductos,
   PRODUCTOS_POR_PAGINA,
-} from "./filtros-catalogo.js";
+} from "./componentes/filtros-catalogo.js";
 import {
   poblarVitrinaInicio as poblarVitrinaInicioVista,
   mostrarProductos,
   renderizarPaginacion,
   renderizarChipsFiltrosActivos as renderizarChipsFiltrosActivosVista,
-} from "./catalogo-vista.js";
-import { generarSkeletonCards } from "./skeleton-loader.js";
-import { configurarFormularioProducto } from "./formulario-producto.js";
-import { resumenCatalogo } from "./explorar.js";
+} from "./vistas/catalogo-vista.js";
+import { generarSkeletonCards } from "./componentes/skeleton-loader.js";
+import { configurarFormularioProducto } from "./gestion/formulario-producto.js";
+import { resumenCatalogo } from "./vistas/explorar.js";
 import { ROL } from "../utilidades/constantes.js";
 
 /**

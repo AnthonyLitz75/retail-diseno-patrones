@@ -1,7 +1,7 @@
 package com.grupo.retail.controller;
 
-import static com.grupo.retail.reportes.RespuestaCsv.adjunto;
-import static com.grupo.retail.reportes.RespuestaCsv.fecha;
+import static com.grupo.retail.service.exportacion.RespuestaCsv.adjunto;
+import static com.grupo.retail.service.exportacion.RespuestaCsv.fecha;
 import jakarta.servlet.http.HttpServletRequest;
 import com.grupo.retail.service.SesionEmpleado;
 import com.grupo.retail.service.AuditoriaService;
@@ -11,7 +11,7 @@ import com.grupo.retail.model.InventarioReporte;
 import com.grupo.retail.model.MovimientoReporte;
 import com.grupo.retail.model.ResumenAdministrativo;
 import com.grupo.retail.model.VentaReporte;
-import com.grupo.retail.reportes.EscritorCsv;
+import com.grupo.retail.service.exportacion.EscritorCsv;
 import com.grupo.retail.service.ReporteService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;

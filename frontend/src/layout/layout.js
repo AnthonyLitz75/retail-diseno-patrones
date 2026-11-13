@@ -27,7 +27,9 @@ export function renderizarLayoutPrincipal() {
   const headerHtml = renderizarHeader();
   const footerHtml = renderizarFooter();
 
+  // RNF06: primer elemento del tabulador; evita recorrer toda la cabecera en cada página.
   return `
+    <a class="saltar-contenido" href="#contenido-principal" data-saltar-a="contenido-principal">Saltar al contenido</a>
     ${headerHtml}
     ${cuerpoHtml}
     ${footerHtml}

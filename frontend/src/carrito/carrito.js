@@ -1,7 +1,7 @@
 import { apiRequest } from '../api/api.js'
 import { mostrarToast } from '../utilidades/notificaciones.js'
 import { formatoPrecio } from '../utilidades/formato.js'
-import { asignarImagenConRespaldo, resolverImagenProducto } from '../catalogo/imagen-producto.js'
+import { asignarImagenConRespaldo, resolverImagenProducto } from '../catalogo/componentes/imagen-producto.js'
 import {
   construirPayloadConfirmacion,
   conservarClaveTrasError,

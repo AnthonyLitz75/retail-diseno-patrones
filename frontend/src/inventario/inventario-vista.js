@@ -7,7 +7,7 @@ import {
   crearParametrosMovimientos,
   crearSolicitudEntrada,
 } from "./almacen.js";
-import { paginarProductos } from "../catalogo/filtros-catalogo.js";
+import { paginarProductos } from "../catalogo/componentes/filtros-catalogo.js";
 import { ROLES_INVENTARIO, ROLES_OPERACION } from "../utilidades/constantes.js";
 
 /** Revisión UX (punto 9): el kardex muestra 10 movimientos por página. */

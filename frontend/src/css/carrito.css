@@ -314,3 +314,9 @@
   text-align: end;
   overflow-wrap: anywhere;
 }
+
+/* El paso 3 recibe el foco por código para anunciar la confirmación; Firefox le dibujaba
+   un recuadro azul alrededor de todo el panel. Los botones de dentro conservan su foco. */
+#checkout-paso-confirmacion:focus {
+  outline: none;
+}

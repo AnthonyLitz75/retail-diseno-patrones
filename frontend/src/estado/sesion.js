@@ -167,7 +167,8 @@ export function configurarSesionYVistas({
       usuarioActivo.textContent = `Sesión: ${usuario.nombre} (${usuario.rol})`;
     }
     if (botonCerrarSesion) botonCerrarSesion.hidden = false;
-    if (enlacePedidosNav) enlacePedidosNav.hidden = false;
+    // "MIS COMPRAS" es del cliente; el personal llega a los pedidos desde su panel.
+    if (enlacePedidosNav) enlacePedidosNav.hidden = usuario.rol !== ROL.CLIENTE;
     if (enlaceCarritoNav) enlaceCarritoNav.hidden = usuario.rol !== ROL.CLIENTE;
     if (seccionGestionProductos) {
       seccionGestionProductos.hidden = !ROLES_CATALOGO.includes(usuario.rol);

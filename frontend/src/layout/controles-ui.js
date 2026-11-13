@@ -3,9 +3,9 @@
  * Manejador de interacciones de interfaz: menú flyout de categorías, carruseles horizontales, atajos de teclado y docks.
  */
 
-import { generarSlug } from "../router/enrutador.js";
-import { esFavorito } from "../catalogo/favoritos.js";
-import { enlacesCategorias, pintarChipsCategorias } from "../catalogo/explorar.js";
+import { generarSlug } from "../router/parser-rutas.js";
+import { esFavorito } from "../catalogo/componentes/favoritos.js";
+import { enlacesCategorias, pintarChipsCategorias } from "../catalogo/vistas/explorar.js";
 
 /**
  * Configura los controles interactivos complementarios de la interfaz.

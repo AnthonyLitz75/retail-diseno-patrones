@@ -11,7 +11,7 @@
  */
 export function renderizarCatalogoLayout({ heroHtml = '' } = {}) {
   return `
-  <main class="container py-4 storefront">
+  <main id="contenido-principal" class="container py-4 storefront" tabindex="-1">
     <nav id="navegacion-modulos" class="nav nav-pills modulo-tabs mb-4 gap-2 flex-wrap" role="tablist" aria-label="Módulos de la tienda" hidden>
       <button class="nav-link active" id="tab-tienda" type="button" role="tab" data-vista="tienda" aria-selected="true">Tienda</button>
       <button class="nav-link" id="tab-productos" type="button" role="tab" data-vista="productos" aria-selected="false" hidden>Productos</button>
@@ -476,7 +476,7 @@ export function renderizarCatalogoLayout({ heroHtml = '' } = {}) {
     <div id="vista-atencion" class="modulo-vista" hidden></div>
 
     <!-- Offcanvas Lateral: Carrito de Compras -->
-    <div id="seccion-carrito" class="offcanvas offcanvas-end" tabindex="-1" aria-labelledby="titulo-carrito">
+    <div id="seccion-carrito" class="offcanvas offcanvas-end" tabindex="-1" aria-labelledby="titulo-carrito" data-foco-respaldo="#enlace-carrito-nav">
       <div class="offcanvas-header border-bottom py-3">
         <div class="d-flex align-items-center gap-2">
           <h2 id="titulo-carrito" class="offcanvas-title h5 mb-0 fw-bold">Mi carrito</h2>

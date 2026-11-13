@@ -277,27 +277,27 @@ retail/
 │   └── src/
 │       ├── main/java/com/grupo/retail/
 │       │   ├── controller/    # Endpoints REST
-│       │   ├── service/       # Reglas de negocio
-│       │   ├── facade/        # CheckoutFacade
+│       │   ├── service/       # Reglas de negocio (incluye exportación CSV)
 │       │   ├── transaccion/   # EjecutorTransaccion
 │       │   ├── dao/           # Acceso a datos con JDBC
-│       │   ├── patterns/      # command, composite, factory, observer, pago, singleton, state
+│       │   ├── patterns/      # adapter, command, composite, facade, factory, observer, singleton, state
 │       │   ├── security/      # Sesión, límite de intentos y manejo de errores de seguridad
 │       │   ├── config/        # Spring Security y configuración
-│       │   ├── reportes/      # Escritura de CSV
 │       │   ├── model/  dto/   # Dominio y objetos de transferencia
 │       │   └── exception/     # Manejo global de errores
 │       ├── main/resources/db/ # migration (Flyway) y dev (datos de demostración)
 │       └── test/java/         # Unitarias e integración (integracion/)
 ├── frontend/
 │   ├── src/
-│   │   ├── catalogo/  carrito/  pedidos/  atencion/  soporte/
+│   │   ├── catalogo/          # vistas/, componentes/, gestion/ y catalogo-controlador.js
+│   │   ├── carrito/  pedidos/  atencion/  soporte/
 │   │   ├── inventario/  administracion/  vendedor/  notificaciones/
-│   │   ├── autenticacion/  api/  estado/  router/  modales/  utilidades/
+│   │   ├── autenticacion/  api/  estado/  modales/  utilidades/
+│   │   ├── router/            # router.js (SPA), parser-rutas.js y guardas.js
 │   │   ├── layout/            # Componentes y plantillas HTML
 │   │   ├── css/               # Estilos por dominio
 │   │   └── main.js            # Punto de entrada
-│   └── test/                  # Pruebas del frontend
+│   └── test/                  # Pruebas organizadas por subdirectorios de dominio
 ├── database/                  # Scripts SQL anteriores a Flyway (referencia histórica)
 └── docs/img/                  # Logo y capturas del README
 ```
