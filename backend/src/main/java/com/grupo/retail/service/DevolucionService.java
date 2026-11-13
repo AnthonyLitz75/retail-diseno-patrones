@@ -20,7 +20,7 @@ import com.grupo.retail.model.PedidoBloqueado;
 import com.grupo.retail.model.ResultadoPago;
 import com.grupo.retail.patterns.observer.EventoPedido;
 import com.grupo.retail.patterns.observer.PublicadorEventosPedido;
-import com.grupo.retail.patterns.pago.PuertoPago;
+import com.grupo.retail.patterns.adapter.PuertoPago;
 import com.grupo.retail.transaccion.EjecutorTransaccion;
 import org.springframework.stereotype.Service;
 

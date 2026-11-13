@@ -3,7 +3,7 @@ package com.grupo.retail.controller;
 import com.grupo.retail.model.Rol;
 import com.grupo.retail.dto.SolicitudConfirmarPedido;
 import com.grupo.retail.dto.SolicitudDespachoPedido;
-import com.grupo.retail.facade.CheckoutFacade;
+import com.grupo.retail.patterns.facade.CheckoutFacade;
 import com.grupo.retail.model.PedidoConfirmado;
 import com.grupo.retail.patterns.command.HistorialComandosCarrito;
 import com.grupo.retail.model.PedidoVista;

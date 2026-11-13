@@ -12,6 +12,7 @@ import "./style.css";
 
 import { apiRequest, suscribirEventosApi } from "./api/api.js";
 import { configurarErroresGlobales } from "./utilidades/errores-globales.js";
+import { configurarFocoTeclado } from "./utilidades/foco-teclado.js";
 import { crearIndicadorCarga } from "./utilidades/indicador-carga.js";
 import { estado } from "./estado/estado-global.js";
 import { montarLayoutPrincipal } from "./layout/layout.js";
@@ -27,7 +28,10 @@ import {
   hayCarritoInvitado,
 } from "./carrito/carrito-invitado.js";
 import { crearPanelAdministracion } from "./administracion/panel-administracion.js";
-import { mostrarConfirmacion, mostrarToast } from "./utilidades/notificaciones.js";
+import {
+  mostrarConfirmacion,
+  mostrarToast,
+} from "./utilidades/notificaciones.js";
 
 // Módulos especializados refactorizados (Hitos 1 a 6)
 import { configurarModalStock } from "./modales/modal-stock.js";
@@ -35,7 +39,7 @@ import { configurarModalPrecio } from "./modales/modal-precio.js";
 import { configurarModalPreguntas } from "./modales/modal-preguntas.js";
 import { configurarModalReclamaciones } from "./modales/modal-reclamaciones.js";
 import { configurarModalEditarProducto } from "./modales/modal-editar-producto.js";
-import { crearPanelProductos } from "./catalogo/panel-productos.js";
+import { crearPanelProductos } from "./catalogo/gestion/panel-productos.js";
 import { configurarPanelInventario } from "./inventario/inventario-vista.js";
 import { configurarBandejaNotificaciones } from "./notificaciones/bandeja-vista.js";
 import { configurarControladorPedidos } from "./pedidos/pedidos-controlador.js";
@@ -48,14 +52,22 @@ import { configurarPortalSoporte } from "./soporte/soporte-vista.js";
 import { configurarMiAtencion } from "./atencion/mi-atencion.js";
 import { crearPanelIncidencias } from "./administracion/incidencias-vista.js";
 import { crearPanelAuditoria } from "./administracion/auditoria-vista.js";
-import { ROL, ROLES_CATALOGO, ROLES_INVENTARIO } from "./utilidades/constantes.js";
+import {
+  ROL,
+  ROLES_CATALOGO,
+  ROLES_INVENTARIO,
+} from "./utilidades/constantes.js";
 
 // 1. Montaje del Layout Semántico Principal
 montarLayoutPrincipal("#app");
+configurarFocoTeclado();
 inicializarCarrito({ Offcanvas });
 
 // 1b. Indicador de carga y manejo global de 401/403 (spec 007, T002 y T004)
-crearIndicadorCarga({ suscribir: suscribirEventosApi, raizOcupada: document.querySelector("#app") });
+crearIndicadorCarga({
+  suscribir: suscribirEventosApi,
+  raizOcupada: document.querySelector("#app"),
+});
 configurarErroresGlobales({
   suscribir: suscribirEventosApi,
   obtenerUsuario: () => estado.usuarioSesion,
@@ -76,7 +88,9 @@ const { abrirModalStock } = configurarModalStock({
   onStockActualizado: async (prod) => {
     await catalogoCtrl.cargarProductos();
     await refrescarPanelProductos();
-    if (document.querySelector("#contenedor-historial-stock")?.children.length > 0) {
+    if (
+      document.querySelector("#contenedor-historial-stock")?.children.length > 0
+    ) {
       await inventarioCtrl.cargarMovimientos(prod);
     }
   },
@@ -124,12 +138,18 @@ const panelProductos = crearPanelProductos({
     await catalogoCtrl.cargarProductos();
   },
 });
-document.querySelector("#seccion-gestion-productos .card-body")?.append(panelProductos.element);
+document
+  .querySelector("#seccion-gestion-productos .card-body")
+  ?.append(panelProductos.element);
 /** Recarga la tabla de productos solo si está a la vista (tras precio, stock o ficha). */
 async function refrescarPanelProductos() {
-  if (document.querySelector("#vista-productos")?.hidden === false) await panelProductos.cargar();
+  if (document.querySelector("#vista-productos")?.hidden === false)
+    await panelProductos.cargar();
 }
-document.addEventListener("retail:producto-creado", () => void refrescarPanelProductos());
+document.addEventListener(
+  "retail:producto-creado",
+  () => void refrescarPanelProductos(),
+);
 
 const { abrirModalEditarProducto } = configurarModalEditarProducto({
   apiRequest,
@@ -146,7 +166,9 @@ const panelAdministracion = crearPanelAdministracion(apiRequest, async () => {
   await catalogoCtrl.cargarCategorias();
   await catalogoCtrl.cargarProductos();
 });
-document.querySelector("#vista-administracion")?.append(panelAdministracion.element);
+document
+  .querySelector("#vista-administracion")
+  ?.append(panelAdministracion.element);
 const panelIncidencias = crearPanelIncidencias(apiRequest, mostrarToast);
 const panelAuditoria = crearPanelAuditoria(apiRequest);
 panelAdministracion.agregarSeccion({
@@ -161,7 +183,10 @@ panelAdministracion.agregarSeccion({
 });
 
 // 3c. "Mi atención" del cliente (spec 007, T012)
-const miAtencion = configurarMiAtencion({ apiRequest, contenedor: document.querySelector("#vista-atencion") });
+const miAtencion = configurarMiAtencion({
+  apiRequest,
+  contenedor: document.querySelector("#vista-atencion"),
+});
 
 // 3b. Portal de Soporte (spec 006): reclamos, devoluciones y contexto del pedido
 const portalSoporte = configurarPortalSoporte({
@@ -181,14 +206,24 @@ const inventarioCtrl = configurarPanelInventario({
   },
   elementos: {
     seccionInventario: document.querySelector("#seccion-inventario"),
-    seccionEntradaInventario: document.querySelector("#seccion-entrada-inventario"),
-    formularioEntradaInventario: document.querySelector("#form-entrada-inventario"),
+    seccionEntradaInventario: document.querySelector(
+      "#seccion-entrada-inventario",
+    ),
+    formularioEntradaInventario: document.querySelector(
+      "#form-entrada-inventario",
+    ),
     selectorProductoEntrada: document.querySelector("#producto-entrada"),
     cantidadEntrada: document.querySelector("#cantidad-entrada"),
     motivoEntrada: document.querySelector("#motivo-entrada"),
-    estadoEntradaInventario: document.querySelector("#estado-entrada-inventario"),
-    formularioFiltrosMovimientos: document.querySelector("#filtros-movimientos"),
-    selectorProductoMovimientos: document.querySelector("#filtro-producto-movimientos"),
+    estadoEntradaInventario: document.querySelector(
+      "#estado-entrada-inventario",
+    ),
+    formularioFiltrosMovimientos: document.querySelector(
+      "#filtros-movimientos",
+    ),
+    selectorProductoMovimientos: document.querySelector(
+      "#filtro-producto-movimientos",
+    ),
     movimientosDesde: document.querySelector("#movimientos-desde"),
     movimientosHasta: document.querySelector("#movimientos-hasta"),
     estadoMovimientos: document.querySelector("#estado-movimientos"),
@@ -204,16 +239,26 @@ const notificacionesCtrl = configurarBandejaNotificaciones({
   obtenerUsuarioSesion: () => estado.usuarioSesion,
   cambiarVista: (vista) => sesionCtrl.cambiarVista(vista),
   alAbrirMenu: () => {
-    document.querySelector("#menu-categorias-dropdown")?.classList.remove("show");
-    document.querySelector("#btn-toggle-categorias-menu")?.setAttribute("aria-expanded", "false");
+    document
+      .querySelector("#menu-categorias-dropdown")
+      ?.classList.remove("show");
+    document
+      .querySelector("#btn-toggle-categorias-menu")
+      ?.setAttribute("aria-expanded", "false");
   },
   elementos: {
-    contenedorNotificaciones: document.querySelector("#contenedor-notificaciones"),
+    contenedorNotificaciones: document.querySelector(
+      "#contenedor-notificaciones",
+    ),
     btnNotificaciones: document.querySelector("#btn-notificaciones"),
     menuNotificaciones: document.querySelector("#menu-notificaciones"),
-    badgeContadorNotificaciones: document.querySelector("#badge-contador-notificaciones"),
+    badgeContadorNotificaciones: document.querySelector(
+      "#badge-contador-notificaciones",
+    ),
     listaNotificaciones: document.querySelector("#lista-notificaciones"),
-    btnRefrescarNotificaciones: document.querySelector("#btn-refrescar-notificaciones"),
+    btnRefrescarNotificaciones: document.querySelector(
+      "#btn-refrescar-notificaciones",
+    ),
   },
 });
 
@@ -222,10 +267,16 @@ const vendedorCtrl = configurarBandejaVendedor({
   apiRequest,
   obtenerEstado: () => estado,
   elementos: {
-    seccionPreguntasVendedor: document.querySelector("#seccion-preguntas-vendedor"),
-    estadoPreguntasVendedor: document.querySelector("#estado-preguntas-vendedor"),
+    seccionPreguntasVendedor: document.querySelector(
+      "#seccion-preguntas-vendedor",
+    ),
+    estadoPreguntasVendedor: document.querySelector(
+      "#estado-preguntas-vendedor",
+    ),
     listaPreguntasVendedor: document.querySelector("#lista-preguntas-vendedor"),
-    btnActualizarPreguntas: document.querySelector("#actualizar-preguntas-vendedor"),
+    btnActualizarPreguntas: document.querySelector(
+      "#actualizar-preguntas-vendedor",
+    ),
   },
   acciones: { mostrarToast },
 });
@@ -241,7 +292,9 @@ const pedidosCtrl = configurarControladorPedidos({
     estadoPedidos: document.querySelector("#estado-pedidos"),
     listaPedidos: document.querySelector("#lista-pedidos"),
     enlacePedidosNav: document.querySelector("#enlace-pedidos-nav"),
-    enlaceSeguimientoFooter: document.querySelector("#enlace-seguimiento-footer"),
+    enlaceSeguimientoFooter: document.querySelector(
+      "#enlace-seguimiento-footer",
+    ),
   },
   acciones: {
     cambiarVista: (vista) => sesionCtrl.cambiarVista(vista),
@@ -302,9 +355,11 @@ const enrutadorSPA = configurarEnrutadorSPA({
   acciones: {
     cargarProductos: () => catalogoCtrl.cargarProductos(),
     cargarArbolCategorias: () => uiCtrl.cargarArbolCategorias(),
-    sincronizarCategoriaDestacada: () => catalogoCtrl.sincronizarCategoriaDestacada(),
+    sincronizarCategoriaDestacada: () =>
+      catalogoCtrl.sincronizarCategoriaDestacada(),
     cambiarVista: (vista) => sesionCtrl.cambiarVista(vista),
-    agregarProductoAlCarrito: (id, prod, cant) => agregarProductoAlCarrito(id, prod, cant),
+    agregarProductoAlCarrito: (id, prod, cant) =>
+      agregarProductoAlCarrito(id, prod, cant),
     abrirModalPreguntas: (prod) => abrirModalPreguntas(prod),
     mostrarToast,
     esperarSesion: () => promesaSesion,
@@ -316,7 +371,9 @@ const uiCtrl = configurarControlesUI({
   apiRequest,
   estado,
   elementos: {
-    btnToggleCategoriasMenu: document.querySelector("#btn-toggle-categorias-menu"),
+    btnToggleCategoriasMenu: document.querySelector(
+      "#btn-toggle-categorias-menu",
+    ),
     menuCategoriasDropdown: document.querySelector("#menu-categorias-dropdown"),
     menuNotificaciones: document.querySelector("#menu-notificaciones"),
     btnNotificaciones: document.querySelector("#btn-notificaciones"),
@@ -346,13 +403,21 @@ const sesionCtrl = configurarSesionYVistas({
     botonCerrarSesion: document.querySelector("#cerrar-sesion"),
     enlacePedidosNav: document.querySelector("#enlace-pedidos-nav"),
     enlaceCarritoNav: document.querySelector("#enlace-carrito-nav"),
-    seccionGestionProductos: document.querySelector("#seccion-gestion-productos"),
+    seccionGestionProductos: document.querySelector(
+      "#seccion-gestion-productos",
+    ),
     panelAdministracion,
-    seccionPreguntasVendedor: document.querySelector("#seccion-preguntas-vendedor"),
-    estadoPreguntasVendedor: document.querySelector("#estado-preguntas-vendedor"),
+    seccionPreguntasVendedor: document.querySelector(
+      "#seccion-preguntas-vendedor",
+    ),
+    estadoPreguntasVendedor: document.querySelector(
+      "#estado-preguntas-vendedor",
+    ),
     listaPreguntasVendedor: document.querySelector("#lista-preguntas-vendedor"),
     seccionInventario: document.querySelector("#seccion-inventario"),
-    seccionEntradaInventario: document.querySelector("#seccion-entrada-inventario"),
+    seccionEntradaInventario: document.querySelector(
+      "#seccion-entrada-inventario",
+    ),
     listaMovimientos: document.querySelector("#lista-movimientos"),
     seccionPedidos: document.querySelector("#seccion-pedidos"),
     listaPedidos: document.querySelector("#lista-pedidos"),
@@ -375,25 +440,31 @@ const sesionCtrl = configurarSesionYVistas({
     cargarPreguntasCliente: () => catalogoCtrl.cargarPreguntasCliente(),
     cargarCarrito,
     ocultarCarrito,
-    cargarNotificacionesCliente: () => notificacionesCtrl.cargarNotificacionesCliente(),
-    iniciarPollingNotificaciones: () => notificacionesCtrl.iniciarPollingNotificaciones(),
+    cargarNotificacionesCliente: () =>
+      notificacionesCtrl.cargarNotificacionesCliente(),
+    iniciarPollingNotificaciones: () =>
+      notificacionesCtrl.iniciarPollingNotificaciones(),
     limpiarBandejaNotificaciones: () => notificacionesCtrl.limpiarBandeja(),
     mostrarToast,
     hayCarritoInvitado,
     onCambioVista: (vista, rol) => {
       if (estado.usuarioSesion) {
-        if (vista === "productos" && ROLES_CATALOGO.includes(rol)) void panelProductos.cargar();
+        if (vista === "productos" && ROLES_CATALOGO.includes(rol))
+          void panelProductos.cargar();
         else if (vista === "pedidos") void pedidosCtrl.cargarPedidos();
-        else if (vista === "inventario" && ROLES_INVENTARIO.includes(rol)) void inventarioCtrl.iniciarPanelInventario();
-        else if (vista === "consultas" && rol === ROL.VENDEDOR) void vendedorCtrl.cargarPreguntasVendedor();
+        else if (vista === "inventario" && ROLES_INVENTARIO.includes(rol))
+          void inventarioCtrl.iniciarPanelInventario();
+        else if (vista === "consultas" && rol === ROL.VENDEDOR)
+          void vendedorCtrl.cargarPreguntasVendedor();
         else if (vista === "administracion" && rol === ROL.ADMIN) {
           void panelAdministracion.cargar();
           panelIncidencias.element.hidden = false;
           void panelIncidencias.cargar();
           void panelAuditoria.cargar();
-        }
-        else if (vista === "soporte" && rol === ROL.SOPORTE) void portalSoporte.cargar();
-        else if (vista === "atencion" && rol === ROL.CLIENTE) void miAtencion.cargar();
+        } else if (vista === "soporte" && rol === ROL.SOPORTE)
+          void portalSoporte.cargar();
+        else if (vista === "atencion" && rol === ROL.CLIENTE)
+          void miAtencion.cargar();
       }
     },
   },
@@ -420,11 +491,13 @@ async function inicializarTienda() {
           <button id="btn-reintentar-inicio" class="btn btn-sm btn-outline-danger" type="button">Reintentar</button>
         </div>
       `;
-      document.querySelector("#btn-reintentar-inicio")?.addEventListener("click", () => {
-        estadoCatalogo.textContent = "Reconectando con el servidor...";
-        estadoCatalogo.className = "text-secondary small";
-        void void inicializarTienda();
-      });
+      document
+        .querySelector("#btn-reintentar-inicio")
+        ?.addEventListener("click", () => {
+          estadoCatalogo.textContent = "Reconectando con el servidor...";
+          estadoCatalogo.className = "text-secondary small";
+          void void inicializarTienda();
+        });
     }
   }
 }

@@ -253,3 +253,29 @@ a {
     animation: none;
   }
 }
+
+/* RNF06: "Saltar al contenido" — invisible hasta que recibe el foco con Tab. */
+.saltar-contenido {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  z-index: 2000;
+  padding: 0.6rem 1rem;
+  border-radius: 0.5rem;
+  background: var(--retail-navy);
+  color: var(--retail-surface);
+  font-weight: 700;
+  text-decoration: none;
+  transform: translateY(-200%);
+}
+
+.saltar-contenido:focus {
+  transform: none;
+  outline: 3px solid var(--retail-cyan);
+  outline-offset: 2px;
+}
+
+/* El destino del salto recibe el foco por código; no necesita un recuadro. */
+#contenido-principal:focus {
+  outline: none;
+}

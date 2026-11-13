@@ -6,14 +6,14 @@ import com.grupo.retail.dto.SolicitudConfirmarPedido;
 import com.grupo.retail.exception.ClaveConfirmacionEnUsoException;
 import com.grupo.retail.exception.PagoRechazadoException;
 import com.grupo.retail.exception.StockInsuficienteException;
-import com.grupo.retail.facade.CheckoutFacade;
+import com.grupo.retail.patterns.facade.CheckoutFacade;
 import com.grupo.retail.model.PedidoConfirmado;
 import com.grupo.retail.model.ProductoEnCompra;
 import com.grupo.retail.model.RegistroMovimiento;
 import com.grupo.retail.model.ResultadoPago;
 import com.grupo.retail.patterns.observer.EventoPedido;
 import com.grupo.retail.patterns.observer.PublicadorEventosPedido;
-import com.grupo.retail.patterns.pago.PuertoPago;
+import com.grupo.retail.patterns.adapter.PuertoPago;
 import com.grupo.retail.patterns.singleton.ProveedorConexiones;
 import com.grupo.retail.transaccion.EjecutorTransaccion;
 

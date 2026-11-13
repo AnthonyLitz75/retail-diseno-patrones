@@ -7,7 +7,7 @@
 
 import { esVistaPermitida } from "../utilidades/navegacion.js";
 
-/** Tipo de ruta (enrutador.js) -> vista que exige. Las rutas que no figuran son públicas. */
+/** Tipo de ruta (parser-rutas.js) -> vista que exige. Las rutas que no figuran son públicas. */
 export const RUTAS_PROTEGIDAS = Object.freeze({
   pedidos: "pedidos",
 });

@@ -54,7 +54,9 @@ export function crearMenuAcciones({ etiqueta = "Gestionar", nombreAccesible, acc
     item.textContent = accion.texto;
     item.addEventListener("click", (evento) => {
       evento.stopPropagation();
-      cerrar(false);
+      // El foco vuelve al botón "Gestionar": si la acción abre un modal, al cerrarlo el
+      // teclado regresa aquí y no a <body> (RNF06).
+      cerrar(true);
       accion.alElegir?.();
     });
     li.append(item);

@@ -15,7 +15,7 @@ import com.grupo.retail.model.RegistroMovimiento;
 import com.grupo.retail.model.RegistroMovimiento.TipoMovimiento;
 import com.grupo.retail.model.ResultadoPago;
 import com.grupo.retail.patterns.observer.PublicadorEventosPedido;
-import com.grupo.retail.patterns.pago.PuertoPago;
+import com.grupo.retail.patterns.adapter.PuertoPago;
 import com.grupo.retail.patterns.singleton.ProveedorConexiones;
 import com.grupo.retail.service.PedidoService;
 import com.grupo.retail.service.ProductoService;

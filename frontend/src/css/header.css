@@ -84,8 +84,9 @@
 }
 
 .header-search-input-group:focus-within {
+  /* RNF06: anillo de foco visible (antes era casi transparente, 15 %). */
   border-color: var(--retail-blue);
-  box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15);
+  box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.45);
 }
 
 .header-search-input {
