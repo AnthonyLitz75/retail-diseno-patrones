@@ -1,5 +1,5 @@
 /**
- * @file enrutador.js
+ * @file parser-rutas.js
  * Módulo puro de enrutamiento SPA para Píxel Andino Tech Store (RF-02)
  * Proporciona generación de slugs, parseo de URLs basadas en Hash,
  * construcción de migas de pan (breadcrumbs) y resolución de categorías.
