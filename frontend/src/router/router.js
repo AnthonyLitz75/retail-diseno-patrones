@@ -52,6 +52,18 @@ export function renderizarBreadcrumbsEnDOM(
   contenedorBreadcrumbs.hidden = false;
 }
 
+let routerActivo = null;
+
+/**
+ * Destruye la instancia activa del enrutador SPA y remueve el listener de hashchange.
+ */
+export function destruirRouter() {
+  if (routerActivo) {
+    routerActivo.destruir();
+    routerActivo = null;
+  }
+}
+
 /**
  * Configura el enrutador SPA por hash.
  * @param {Object} opciones
@@ -357,11 +369,24 @@ export function configurarEnrutadorSPA({
     if (contenedorBreadcrumbs) contenedorBreadcrumbs.hidden = true;
   }
 
+  let oyenteHash = null;
+
+  function destruir() {
+    if (typeof window !== "undefined" && oyenteHash) {
+      window.removeEventListener?.("hashchange", oyenteHash);
+      oyenteHash = null;
+    }
+    if (routerActivo === instancia) {
+      routerActivo = null;
+    }
+  }
+
   // Escuchar cambios de hash en la ventana
   if (typeof window !== "undefined") {
-    window.addEventListener("hashchange", () => {
+    oyenteHash = () => {
       void manejarRutaHash();
-    });
+    };
+    window.addEventListener("hashchange", oyenteHash);
   }
 
   // Enlaces rápidos por categoría en la barra de navegación y banners promocionales
@@ -382,7 +407,10 @@ export function configurarEnrutadorSPA({
     });
   }
 
-  return {
+  const instancia = {
     manejarRutaHash,
+    destruir,
   };
+  routerActivo = instancia;
+  return instancia;
 }

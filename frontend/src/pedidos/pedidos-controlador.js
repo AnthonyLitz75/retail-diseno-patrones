@@ -19,7 +19,7 @@ import {
   solicitarDevolucion,
 } from "../atencion/atencion.js";
 import { crearSeccionAtencionPedido } from "../atencion/atencion-cliente.js";
-import { ROL, ROLES_INVENTARIO, ROLES_OPERACION } from "../utilidades/constantes.js";
+import { ROL, ROLES_INVENTARIO, ROLES_OPERACION, EVENTOS } from "../utilidades/constantes.js";
 
 /**
  * Configura los flujos y eventos de la sección de pedidos.
@@ -249,7 +249,7 @@ export function configurarControladorPedidos({
   }
 
   if (typeof document !== "undefined") {
-    document.addEventListener("retail:pedido-confirmado", () => {
+    document.addEventListener(EVENTOS.PEDIDO_CONFIRMADO, () => {
       void cargarPedidos();
       if (typeof cambiarVista === "function") cambiarVista("pedidos");
     });

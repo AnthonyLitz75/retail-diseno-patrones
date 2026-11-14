@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   renderizarBreadcrumbsEnDOM,
   configurarEnrutadorSPA,
+  destruirRouter,
 } from "../../src/router/router.js";
 
 // Mock mínimo de DOM si estamos en entorno Node.js
@@ -141,4 +142,25 @@ test("configurarEnrutadorSPA - manejarRutaHash activa vistas según el hash", as
   await router.manejarRutaHash();
   assert.equal(vistaTienda.hidden, true);
   assert.equal(vista404.hidden, false);
+});
+
+test("destruirRouter remueve el listener de hashchange en window", () => {
+  let eventoRemovido = null;
+  global.window = {
+    location: { hash: "#/" },
+    addEventListener() {},
+    removeEventListener(ev) {
+      eventoRemovido = ev;
+    },
+  };
+
+  const router = configurarEnrutadorSPA({
+    estado: {},
+    elementos: {},
+    acciones: {},
+  });
+
+  assert.equal(typeof router.destruir, "function");
+  destruirRouter();
+  assert.equal(eventoRemovido, "hashchange");
 });

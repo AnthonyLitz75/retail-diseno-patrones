@@ -114,6 +114,19 @@ export function renderizarBandejaNotificaciones(
   });
 }
 
+let instanciaBandejaActiva = null;
+
+/**
+ * Destruye la instancia activa de la bandeja de notificaciones,
+ * desuscribiendo los listeners de document y deteniendo el polling.
+ */
+export function destruirBandeja() {
+  if (instanciaBandejaActiva) {
+    instanciaBandejaActiva.destruir();
+    instanciaBandejaActiva = null;
+  }
+}
+
 /**
  * Configura los eventos del dropdown, polling inteligente y visibilidad de notificaciones.
  * @param {Object} opciones
@@ -138,6 +151,8 @@ export function configurarBandejaNotificaciones({
 
   let timerPolling = null;
   let cacheNotificaciones = [];
+  let manejarClickDocumento = null;
+  let manejarKeydownDocumento = null;
 
   function cerrarMenu() {
     if (menuNotificaciones) {
@@ -293,19 +308,22 @@ export function configurarBandejaNotificaciones({
       evento.stopPropagation();
     });
 
-    if (typeof document !== "undefined") {
-      document.addEventListener("click", (evento) => {
-        if (!evento.target.closest("#contenedor-notificaciones")) {
-          cerrarMenu();
-        }
-      });
+    manejarClickDocumento = (evento) => {
+      if (!evento.target?.closest?.("#contenedor-notificaciones")) {
+        cerrarMenu();
+      }
+    };
 
-      document.addEventListener("keydown", (evento) => {
-        if (evento.key === "Escape" && menuNotificaciones.classList.contains("show")) {
-          cerrarMenu();
-          btnNotificaciones.focus();
-        }
-      });
+    manejarKeydownDocumento = (evento) => {
+      if (evento.key === "Escape" && menuNotificaciones.classList?.contains?.("show")) {
+        cerrarMenu();
+        btnNotificaciones.focus?.();
+      }
+    };
+
+    if (typeof document !== "undefined") {
+      document.addEventListener("click", manejarClickDocumento);
+      document.addEventListener("keydown", manejarKeydownDocumento);
     }
   }
 
@@ -335,12 +353,28 @@ export function configurarBandejaNotificaciones({
     }
   }
 
-  return {
+  function destruir() {
+    detenerPollingNotificaciones();
+    if (typeof document !== "undefined") {
+      document.removeEventListener?.("visibilitychange", manejarCambioVisibilidad);
+      document.removeEventListener?.("click", manejarClickDocumento);
+      document.removeEventListener?.("keydown", manejarKeydownDocumento);
+    }
+    limpiarBandeja();
+    if (instanciaBandejaActiva === resultado) {
+      instanciaBandejaActiva = null;
+    }
+  }
+
+  const resultado = {
     cargarNotificacionesCliente,
     iniciarPollingNotificaciones,
     detenerPollingNotificaciones,
     cerrarMenu,
     limpiarBandeja,
+    destruir,
     obtenerCache: () => cacheNotificaciones,
   };
+  instanciaBandejaActiva = resultado;
+  return resultado;
 }

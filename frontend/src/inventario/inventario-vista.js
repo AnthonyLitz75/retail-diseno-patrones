@@ -156,6 +156,8 @@ export async function cargarMovimientosProducto(producto, contenedorHistorial, a
 
   const mensaje = document.createElement("p");
   mensaje.className = "text-secondary";
+  mensaje.setAttribute?.("role", "status");
+  mensaje.setAttribute?.("aria-live", "polite");
   mensaje.textContent = "Cargando movimientos...";
 
   contenedorHistorial.append(titulo, mensaje);
@@ -194,6 +196,7 @@ export async function cargarMovimientosProducto(producto, contenedorHistorial, a
     contenedorHistorial.append(lista);
   } catch (error) {
     mensaje.className = "alert alert-danger";
+    mensaje.setAttribute?.("role", "alert");
     mensaje.textContent = `No se pudo cargar el historial. ${error.message}`;
   }
 }
@@ -229,6 +232,15 @@ export function configurarPanelInventario({
   } = elementos;
 
   let movimientosCargados = [];
+
+  if (estadoMovimientos) {
+    estadoMovimientos.setAttribute?.("role", "status");
+    estadoMovimientos.setAttribute?.("aria-live", "polite");
+  }
+  if (estadoEntradaInventario) {
+    estadoEntradaInventario.setAttribute?.("role", "status");
+    estadoEntradaInventario.setAttribute?.("aria-live", "polite");
+  }
 
   function pintarPaginaMovimientos(pagina) {
     const info = paginarProductos(movimientosCargados, pagina, MOVIMIENTOS_POR_PAGINA);

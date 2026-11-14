@@ -32,6 +32,7 @@ import {
   mostrarConfirmacion,
   mostrarToast,
 } from "./utilidades/notificaciones.js";
+import { html } from "./utilidades/seguridad.js";
 
 // Módulos especializados refactorizados (Hitos 1 a 6)
 import { configurarModalStock } from "./modales/modal-stock.js";
@@ -56,6 +57,7 @@ import {
   ROL,
   ROLES_CATALOGO,
   ROLES_INVENTARIO,
+  EVENTOS,
 } from "./utilidades/constantes.js";
 
 // 1. Montaje del Layout Semántico Principal
@@ -147,7 +149,7 @@ async function refrescarPanelProductos() {
     await panelProductos.cargar();
 }
 document.addEventListener(
-  "retail:producto-creado",
+  EVENTOS.PRODUCTO_CREADO,
   () => void refrescarPanelProductos(),
 );
 
@@ -485,7 +487,7 @@ async function inicializarTienda() {
     console.error("No se pudo iniciar la tienda", error);
     if (estadoCatalogo) {
       estadoCatalogo.className = "alert alert-danger my-3 py-2 px-3 small";
-      estadoCatalogo.innerHTML = `
+      estadoCatalogo.innerHTML = html`
         <div class="d-flex align-items-center justify-content-between gap-2">
           <span>No pudimos cargar la tienda. Revisa tu conexión e inténtalo de nuevo en unos segundos.</span>
           <button id="btn-reintentar-inicio" class="btn btn-sm btn-outline-danger" type="button">Reintentar</button>
@@ -496,7 +498,7 @@ async function inicializarTienda() {
         ?.addEventListener("click", () => {
           estadoCatalogo.textContent = "Reconectando con el servidor...";
           estadoCatalogo.className = "text-secondary small";
-          void void inicializarTienda();
+          void inicializarTienda();
         });
     }
   }

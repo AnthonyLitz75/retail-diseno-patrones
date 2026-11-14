@@ -1,7 +1,7 @@
 /**
  * @file constantes.js
- * Roles y estados de pedido tal como los envía el backend (enum Rol y patrón State).
- * Los grupos de roles solo deciden qué se muestra u oculta en la interfaz: quien autoriza
+ * Roles, estados de pedido, eventos del sistema y constantes globales de Píxel Andino.
+ * Los grupos de roles deciden qué se muestra u oculta en la interfaz: quien autoriza
  * cada petición es siempre el backend (SecurityConfig).
  */
 
@@ -31,4 +31,29 @@ export const ESTADO_PEDIDO = Object.freeze({
   DESPACHADO: "DESPACHADO",
   ENTREGADO: "ENTREGADO",
   CANCELADO: "CANCELADO",
+});
+
+/** Nombres de eventos personalizados del DOM para comunicación desacoplada. */
+export const EVENTOS = Object.freeze({
+  PEDIDO_CONFIRMADO: "retail:pedido-confirmado",
+  PRODUCTO_CREADO: "retail:producto-creado",
+  CARRITO_ACTUALIZADO: "retail:carrito-actualizado",
+});
+
+/** Vistas y módulos de la SPA. */
+export const VISTAS = Object.freeze({
+  CATALOGO: "catalogo",
+  PRODUCTOS: "productos",
+  PEDIDOS: "pedidos",
+  INVENTARIO: "inventario",
+  ADMINISTRACION: "administracion",
+  SOPORTE: "soporte",
+});
+
+/** Tipos de notificaciones toast. */
+export const TIPO_TOAST = Object.freeze({
+  EXITO: "exito",
+  ERROR: "error",
+  ADVERTENCIA: "advertencia",
+  INFO: "info",
 });

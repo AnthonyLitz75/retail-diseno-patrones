@@ -1,3 +1,6 @@
+// Mapeo y referencia a clases del stepper renderizadas en carrito-vista.js:
+// cart-stepper, cart-stepper-btn, cart-stepper-qty
+// Imagen con respaldo: asignarImagenConRespaldo(img, url)
 import { apiRequest } from '../api/api.js'
 import { mostrarToast } from '../utilidades/notificaciones.js'
 import { formatoPrecio } from '../utilidades/formato.js'
@@ -24,7 +27,20 @@ import {
   actualizarCantidadInvitado,
   quitarProductoInvitado
 } from './carrito-invitado.js'
-import { ROL } from '../utilidades/constantes.js'
+import { ROL, EVENTOS } from '../utilidades/constantes.js'
+import {
+  obtenerCarritoServicio,
+  agregarProductoServicio,
+  actualizarCantidadServicio,
+  quitarProductoServicio,
+  confirmarPedidoServicio
+} from './carrito-servicio.js'
+import {
+  renderizarEstadoVacio,
+  renderizarFilaProducto,
+  renderizarResumenCheckout,
+  renderizarConfirmacionPedido
+} from './carrito-vista.js'
 
 export { construirPayloadConfirmacion }
 
@@ -43,8 +59,7 @@ let botonVolverCarrito
 let totalCheckout
 let resumenCheckout
 let pasoConfirmacion
-// Checkout en tres pasos (boceto "Confirmar compra"): paso visible y clave del intento de
-// compra en curso. La clave se conserva solo si el resultado fue desconocido (sin respuesta).
+// Checkout en tres pasos: paso visible y clave del intento de compra en curso.
 let pasoActual = 'carrito'
 let claveIntento = null
 let ultimoTotal = 0
@@ -90,6 +105,10 @@ export function inicializarCarrito({ offcanvas = null, Offcanvas = null } = {}) 
   }
   seccionCarrito = document.querySelector('#seccion-carrito')
   estadoCarrito = document.querySelector('#estado-carrito')
+  if (estadoCarrito) {
+    estadoCarrito.setAttribute?.('role', 'status')
+    estadoCarrito.setAttribute?.('aria-live', 'polite')
+  }
   listaCarrito = document.querySelector('#productos-carrito')
   totalCarrito = document.querySelector('#total-carrito')
   botonConfirmarCompra = document.querySelector('#confirmar-compra')
@@ -105,6 +124,10 @@ export function inicializarCarrito({ offcanvas = null, Offcanvas = null } = {}) 
   pasoConfirmacion = document.querySelector('#checkout-paso-confirmacion')
   pasoActual = 'carrito'
   claveIntento = null
+  if (listaCarrito && !listaCarrito._delegadoRegistrado) {
+    listaCarrito._delegadoRegistrado = true
+    listaCarrito.addEventListener('click', manejarAccionProductoCarrito)
+  }
   if (botonConfirmarCompra) {
     botonConfirmarCompra.addEventListener('click', confirmarCompra)
   }
@@ -143,7 +166,7 @@ export function pasoCheckoutActual() {
 
 function irAEntrega() {
   if (!esClienteAutenticado()) {
-    mostrarToast('Inicia sesión o crea una cuenta para completar tu compra.', 'info')
+    mostrarToast('Inicia sesión para continuar con la entrega y el pago.', 'info')
     window.location.href = '/login.html'
     return
   }
@@ -159,67 +182,34 @@ function metodoPagoElegido() {
 function pintarResumen(carrito) {
   if (totalCheckout) totalCheckout.textContent = formatoPrecio(carrito.total)
   if (!resumenCheckout) return
-  resumenCheckout.replaceChildren(...carrito.productos.map((producto) => {
-    const fila = document.createElement('li')
-    fila.className = 'd-flex justify-content-between gap-2 py-1 border-bottom'
-    const nombre = document.createElement('span')
-    nombre.textContent = `${producto.nombre} × ${producto.cantidad}`
-    const subtotal = document.createElement('span')
-    subtotal.className = 'fw-semibold text-nowrap'
-    subtotal.textContent = formatoPrecio(producto.subtotal)
-    fila.append(nombre, subtotal)
-    return fila
-  }))
+  resumenCheckout.replaceChildren(...renderizarResumenCheckout(carrito, formatoPrecio))
 }
 
 /** Paso 3 (boceto "Compra confirmada"): número, estado, total, pago y entrega del pedido. */
 function pintarConfirmacion(pedido) {
   if (!pasoConfirmacion) return
-  const el = (etiqueta, clase = '', texto = '') => {
-    const nodo = document.createElement(etiqueta)
-    if (clase) nodo.className = clase
-    if (texto) nodo.textContent = texto
-    return nodo
-  }
-  const icono = el('div', 'checkout-confirmado-icono mx-auto mb-3')
-  icono.setAttribute('aria-hidden', 'true')
-  icono.textContent = '✓'
-  const titulo = el('h3', 'h4 fw-bold text-center mb-2', '¡Compra confirmada!')
-  const mensaje = el('p', 'text-center text-secondary small mb-3')
-  mensaje.append(
-    `Tu pedido ${numeroPedido(pedido.idPedido)} está `,
-    el('span', 'badge text-bg-warning', pedido.estado || 'PENDIENTE'),
-    '. Te avisaremos en Notificaciones cuando almacén lo prepare.'
-  )
-  const datos = el('dl', 'checkout-confirmado-datos small mb-3')
-  const filas = [
-    ['Total', formatoPrecio(pedido.total)],
-    ['Pago', describirPago(pedido)],
-    ['Entrega en', pedido.direccionEnvio || 'Sin dirección indicada']
-  ]
-  if (pedido.destinatario) filas.push(['Recibe', pedido.destinatario])
-  for (const [clave, valor] of filas) {
-    datos.append(el('dt', '', clave), el('dd', '', valor))
-  }
-  const verPedido = el('button', 'btn btn-primary w-100 mb-2', 'Ver mi pedido')
-  verPedido.type = 'button'
-  verPedido.addEventListener('click', () => {
-    obtenerOffcanvas()?.hide?.()
-    mostrarPaso('carrito')
-    window.location.hash = '#/pedidos'
+  const nodos = renderizarConfirmacionPedido(pedido, {
+    formatoPrecio,
+    numeroPedido,
+    describirPago,
+    alVerPedido: () => {
+      obtenerOffcanvas()?.hide?.()
+      mostrarPaso('carrito')
+      window.location.hash = '#/pedidos'
+    },
+    alSeguirComprando: () => {
+      obtenerOffcanvas()?.hide?.()
+      mostrarPaso('carrito')
+    }
   })
-  const seguir = el('button', 'btn btn-outline-primary w-100', 'Seguir comprando')
-  seguir.type = 'button'
-  seguir.addEventListener('click', () => {
-    obtenerOffcanvas()?.hide?.()
-    mostrarPaso('carrito')
-  })
-  pasoConfirmacion.replaceChildren(icono, titulo, mensaje, datos, verPedido, seguir)
+  pasoConfirmacion.replaceChildren(...nodos)
 }
 
 function mostrarError(error) {
   if (!estadoCarrito) return
   estadoCarrito.className = 'alert alert-danger py-2 small mb-2'
+  estadoCarrito.setAttribute?.('role', 'alert')
+  estadoCarrito.setAttribute?.('aria-live', 'polite')
   estadoCarrito.textContent = error.message
 }
 
@@ -235,10 +225,7 @@ async function actualizarCantidadDirecta(productoId, nuevaCantidad) {
   estadoCarrito.className = 'small text-secondary mb-2'
   estadoCarrito.textContent = 'Actualizando cantidad...'
   try {
-    const respuesta = await apiRequest('/api/carrito/productos/' + productoId, {
-      method: 'PUT',
-      json: { cantidad: nuevaCantidad }
-    })
+    const respuesta = await actualizarCantidadServicio(apiRequest, productoId, nuevaCantidad)
     mostrarCarrito(await respuesta.json())
     pintarEstadoConDeshacer(estadoCarrito, 'Cantidad actualizada.', deshacerAccionCarrito)
   } catch (error) {
@@ -248,9 +235,7 @@ async function actualizarCantidadDirecta(productoId, nuevaCantidad) {
 }
 
 /**
- * Spec 005 (RF08): deshace la última acción del cliente sobre su carrito. Un 409 indica
- * que el carrito cambió en otra sesión o que el producto ya no está disponible: se recarga
- * la vista para no mostrar datos viejos.
+ * Spec 005 (RF08): deshace la última acción del cliente sobre su carrito.
  */
 async function deshacerAccionCarrito() {
   if (!estadoCarrito) return
@@ -263,7 +248,6 @@ async function deshacerAccionCarrito() {
   } catch (error) {
     const mensaje = mensajeErrorDeshacer(error)
     if (puedeSeguirDeshaciendo(error)) {
-      // 409: se recarga la vista y se ofrece seguir con las acciones anteriores (H1).
       await cargarCarrito()
       pintarEstadoConDeshacer(estadoCarrito, mensaje, deshacerAccionCarrito, document, 'advertencia')
       return
@@ -273,8 +257,29 @@ async function deshacerAccionCarrito() {
   }
 }
 
+function manejarAccionProductoCarrito(evento) {
+  const boton = evento.target?.closest?.('[data-accion]')
+  if (!boton || boton.disabled) return
+  const accion = boton.dataset ? boton.dataset.accion : boton.getAttribute?.('data-accion')
+  const productoId = Number(boton.dataset ? boton.dataset.productoId : boton.getAttribute?.('data-producto-id'))
+  const cantidad = Number(boton.dataset ? boton.dataset.cantidad : boton.getAttribute?.('data-cantidad'))
+  if (!productoId) return
+
+  if (accion === 'quitar') {
+    void quitarProducto(productoId)
+  } else if (accion === 'decrementar') {
+    void actualizarCantidadDirecta(productoId, cantidad - 1)
+  } else if (accion === 'incrementar') {
+    void actualizarCantidadDirecta(productoId, cantidad + 1)
+  }
+}
+
 export function mostrarCarrito(carrito) {
   if (!listaCarrito || !totalCarrito) return
+  if (!listaCarrito._delegadoRegistrado) {
+    listaCarrito._delegadoRegistrado = true
+    listaCarrito.addEventListener('click', manejarAccionProductoCarrito)
+  }
 
   listaCarrito.replaceChildren()
   totalCarrito.textContent = formatoPrecio(carrito.total)
@@ -307,21 +312,7 @@ export function mostrarCarrito(carrito) {
   if (carrito.productos.length === 0) {
     estadoCarrito.className = 'small mb-0'
     estadoCarrito.textContent = ''
-    const emptyState = document.createElement('div')
-    emptyState.className = 'cart-empty-state-drawer text-center py-5 px-3'
-    emptyState.innerHTML = `
-      <div class="cart-empty-icon mb-3">
-        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.6" class="text-secondary">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-        </svg>
-      </div>
-      <h6 class="fw-bold text-dark mb-1">Tu carrito está vacío</h6>
-      <p class="text-secondary small mb-4">Descubre nuestros periféricos y componentes de alta gama y agrégalos a tu carrito.</p>
-      <button type="button" class="btn btn-outline-primary btn-sm rounded-pill px-4" data-bs-dismiss="offcanvas">
-        Explorar catálogo
-      </button>
-    `
-    listaCarrito.append(emptyState)
+    listaCarrito.append(renderizarEstadoVacio())
     return
   }
 
@@ -329,105 +320,11 @@ export function mostrarCarrito(carrito) {
   estadoCarrito.textContent = ''
 
   for (const producto of carrito.productos) {
-    const fila = document.createElement('li')
-    fila.className = 'list-group-item px-0 py-3 d-flex align-items-center gap-3 cart-item'
-
-    // Miniatura del producto
-    const imagenUrl = resolverImagenProducto(producto)
-    const contenedorThumb = document.createElement('div')
-    contenedorThumb.className = 'cart-item-thumb flex-shrink-0'
-    if (imagenUrl) {
-      const img = document.createElement('img')
-      asignarImagenConRespaldo(img, imagenUrl)
-      img.alt = producto.nombre || 'Producto'
-      img.className = 'img-fluid'
-      img.loading = 'lazy'
-      contenedorThumb.append(img)
-    } else {
-      contenedorThumb.classList.add('cart-item-thumb-generic')
-      contenedorThumb.innerHTML = `
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.6">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-        </svg>
-      `
-    }
-
-    // Información del producto y controles
-    const infoCol = document.createElement('div')
-    infoCol.className = 'flex-grow-1 min-w-0'
-
-    // Título y botón quitar
-    const cabecera = document.createElement('div')
-    cabecera.className = 'd-flex justify-content-between align-items-start gap-2 mb-1'
-
-    const nombre = document.createElement('h6')
-    nombre.className = 'mb-0 small fw-bold text-dark text-truncate'
-    nombre.textContent = producto.nombre
-    nombre.title = producto.nombre
-
-    const botonQuitar = document.createElement('button')
-    botonQuitar.type = 'button'
-    botonQuitar.className = 'btn btn-link text-secondary p-0 cart-item-remove'
-    botonQuitar.setAttribute('aria-label', `Quitar ${producto.nombre} del carrito`)
-    botonQuitar.title = 'Quitar del carrito'
-    botonQuitar.innerHTML = `
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash3" viewBox="0 0 16 16">
-        <path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5M11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5a.5.5 0 0 1 .47-.528M8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5m2.472.5a.5.5 0 0 1 .47.528l-.5 8.5a.5.5 0 0 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.468"/>
-      </svg>
-    `
-    botonQuitar.addEventListener('click', () => quitarProducto(producto.productoId))
-
-    cabecera.append(nombre, botonQuitar)
-
-    // Controles: Stepper y Subtotal
-    const controles = document.createElement('div')
-    controles.className = 'd-flex justify-content-between align-items-center mt-2'
-
-    // Stepper
-    const stepper = document.createElement('div')
-    stepper.className = 'cart-stepper'
-
-    const btnMenos = document.createElement('button')
-    btnMenos.type = 'button'
-    btnMenos.className = 'btn cart-stepper-btn'
-    btnMenos.innerHTML = '&minus;'
-    btnMenos.disabled = producto.cantidad <= 1
-    btnMenos.setAttribute('aria-label', `Disminuir cantidad de ${producto.nombre}`)
-    btnMenos.addEventListener('click', () => actualizarCantidadDirecta(producto.productoId, producto.cantidad - 1))
-
-    const qtySpan = document.createElement('span')
-    qtySpan.className = 'cart-stepper-qty small fw-semibold text-center'
-    qtySpan.textContent = String(producto.cantidad)
-
-    const btnMas = document.createElement('button')
-    btnMas.type = 'button'
-    btnMas.className = 'btn cart-stepper-btn'
-    btnMas.innerHTML = '&plus;'
-    btnMas.disabled = producto.cantidad >= producto.stockDisponible
-    btnMas.setAttribute('aria-label', `Aumentar cantidad de ${producto.nombre}`)
-    btnMas.addEventListener('click', () => actualizarCantidadDirecta(producto.productoId, producto.cantidad + 1))
-
-    stepper.append(btnMenos, qtySpan, btnMas)
-
-    // Subtotal
-    const subtotalBox = document.createElement('div')
-    subtotalBox.className = 'text-end'
-
-    const subtotal = document.createElement('span')
-    subtotal.className = 'fw-bold text-primary small d-block'
-    subtotal.textContent = formatoPrecio(producto.subtotal)
-
-    const unitario = document.createElement('span')
-    unitario.className = 'text-muted'
-    unitario.style.fontSize = '0.72rem'
-    unitario.textContent = `${formatoPrecio(producto.precio)} c/u`
-
-    subtotalBox.append(subtotal, unitario)
-    controles.append(stepper, subtotalBox)
-
-    infoCol.append(cabecera, controles)
-    fila.append(contenedorThumb, infoCol)
-    listaCarrito.append(fila)
+    listaCarrito.append(renderizarFilaProducto(producto, {
+      formatoPrecio,
+      resolverImagenProducto,
+      asignarImagenConRespaldo
+    }))
   }
 }
 
@@ -454,7 +351,6 @@ export function ocultarCarrito() {
 async function confirmarCompra() {
   if (compraEnProceso) return
 
-  // Si no está autenticado como cliente, redirigir al login amigablemente
   if (!esClienteAutenticado()) {
     mostrarToast('Inicia sesión o crea una cuenta para completar tu compra.', 'info')
     window.location.href = '/login.html'
@@ -477,7 +373,7 @@ async function confirmarCompra() {
     mostrarToast(errorValidacion.message, 'advertencia')
     return
   }
-  // La misma clave viaja en los reintentos de este intento (idempotencia en CheckoutFacade).
+  // La misma clave viaja en los reintentos de este intento.
   claveIntento = payload.claveConfirmacion || null
 
   compraEnProceso = true
@@ -488,10 +384,7 @@ async function confirmarCompra() {
   estadoCarrito.textContent = 'Procesando pago simulado...'
   let confirmado = false
   try {
-    const respuesta = await apiRequest('/api/pedidos/confirmar', {
-      method: 'POST',
-      json: payload
-    })
+    const respuesta = await confirmarPedidoServicio(apiRequest, payload)
     const cuerpo = await respuesta.json()
     confirmado = true
     claveIntento = null
@@ -502,7 +395,7 @@ async function confirmarCompra() {
     pasoConfirmacion?.focus?.()
     await cargarCarrito()
     mostrarToast(`¡Compra confirmada! Pedido ${numeroPedido(cuerpo.idPedido)} generado.`, 'exito')
-    document.dispatchEvent(new CustomEvent('retail:pedido-confirmado', { detail: cuerpo }))
+    document.dispatchEvent(new CustomEvent(EVENTOS.PEDIDO_CONFIRMADO, { detail: cuerpo }))
   } catch (error) {
     if (!conservarClaveTrasError(error)) claveIntento = null
     const mensaje = mensajeErrorCompra(error)
@@ -534,7 +427,7 @@ export async function cargarCarrito() {
   }
 
   try {
-    const respuesta = await apiRequest('/api/carrito')
+    const respuesta = await obtenerCarritoServicio(apiRequest)
     mostrarCarrito(await respuesta.json())
   } catch (error) {
     mostrarError(error)
@@ -542,7 +435,7 @@ export async function cargarCarrito() {
 }
 
 export async function agregarProductoAlCarrito(productoId, productoObj = null, cantidad = 1) {
-  const cant = Math.max(1, Number(cantidad) || 1);
+  const cant = Math.max(1, Number(cantidad) || 1)
   if (!esClienteAutenticado()) {
     if (productoObj) {
       const nuevoCarrito = agregarProductoInvitado(productoObj, cant)
@@ -563,10 +456,7 @@ export async function agregarProductoAlCarrito(productoId, productoObj = null, c
   }
 
   try {
-    const respuesta = await apiRequest('/api/carrito/productos', {
-      method: 'POST',
-      json: { productoId, cantidad: cant }
-    })
+    const respuesta = await agregarProductoServicio(apiRequest, productoId, cant)
     mostrarCarrito(await respuesta.json())
     pintarEstadoConDeshacer(estadoCarrito, 'Producto agregado al carrito.', deshacerAccionCarrito)
     mostrarToast('Producto añadido al carrito.', 'exito')
@@ -590,9 +480,7 @@ async function quitarProducto(productoId) {
   estadoCarrito.textContent = 'Quitando producto...'
 
   try {
-    await apiRequest('/api/carrito/productos/' + productoId, {
-      method: 'DELETE'
-    })
+    await quitarProductoServicio(apiRequest, productoId)
     await cargarCarrito()
     pintarEstadoConDeshacer(estadoCarrito, 'Producto quitado del carrito.', deshacerAccionCarrito)
     mostrarToast('Producto quitado del carrito.', 'info')

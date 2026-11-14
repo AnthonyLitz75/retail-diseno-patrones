@@ -102,6 +102,8 @@ export function configurarPortalSoporte({ apiRequest, obtenerEstado, contenedor,
     } catch (error) {
       if (estadoEl) {
         estadoEl.className = "small text-danger mb-0 mt-1";
+        estadoEl.setAttribute("role", "alert");
+        estadoEl.setAttribute("aria-live", "polite");
         estadoEl.textContent = error.message;
       }
       if (control) control.disabled = false;

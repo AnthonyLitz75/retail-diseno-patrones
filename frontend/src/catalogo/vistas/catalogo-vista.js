@@ -7,6 +7,7 @@
 import { distribuirProductosVitrina } from "./vitrina.js";
 import { obtenerChipsFiltrosActivos } from "../componentes/filtros-catalogo.js";
 import { crearElementoTarjetaProducto } from "../componentes/tarjeta-producto.js";
+import { html } from "../../utilidades/seguridad.js";
 
 /**
  * Puebla las secciones de la vitrina comercial de la portada (RF-04).
@@ -116,7 +117,7 @@ export function mostrarProductos(
     const vacioCol = document.createElement("div");
     vacioCol.className = "w-100";
     vacioCol.style.gridColumn = "1 / -1";
-    vacioCol.innerHTML = `
+    vacioCol.innerHTML = html`
       <div class="catalog-empty-state card border-0 text-center py-5 px-3">
         <div class="empty-state-icon mx-auto mb-3" aria-hidden="true">
           <svg width="40" height="40" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
@@ -196,7 +197,7 @@ export function renderizarPaginacion(
   aPrev.className = "page-link";
   aPrev.href = "#productos";
   aPrev.setAttribute("aria-label", "Página anterior");
-  aPrev.innerHTML = "&laquo; Anterior";
+  aPrev.innerHTML = html`&laquo; Anterior`;
   aPrev.addEventListener("click", (e) => {
     e.preventDefault();
     if (paginacionInfo.tieneAnterior && typeof onCambiarPagina === "function") {
@@ -235,7 +236,7 @@ export function renderizarPaginacion(
   aNext.className = "page-link";
   aNext.href = "#productos";
   aNext.setAttribute("aria-label", "Página siguiente");
-  aNext.innerHTML = "Siguiente &raquo;";
+  aNext.innerHTML = html`Siguiente &raquo;`;
   aNext.addEventListener("click", (e) => {
     e.preventDefault();
     if (paginacionInfo.tieneSiguiente && typeof onCambiarPagina === "function") {

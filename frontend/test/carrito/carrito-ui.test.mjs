@@ -18,6 +18,7 @@ class MockDOMElement {
     this.textContent = ''
     this.innerHTML = ''
     this.children = []
+    this.parentElement = null
     this.attributes = {}
     this.disabled = false
     this.value = ''
@@ -39,18 +40,88 @@ class MockDOMElement {
     return this.attributes[k]
   }
 
+  get dataset() {
+    if (!this._datasetProxy) {
+      this._datasetProxy = new Proxy(this.attributes, {
+        get: (target, prop) => {
+          const attr = 'data-' + String(prop).replace(/[A-Z]/g, m => '-' + m.toLowerCase())
+          return target[attr]
+        },
+        set: (target, prop, val) => {
+          const attr = 'data-' + String(prop).replace(/[A-Z]/g, m => '-' + m.toLowerCase())
+          target[attr] = String(val)
+          return true
+        }
+      })
+    }
+    return this._datasetProxy
+  }
+
   addEventListener(ev, fn) {
     if (!this.eventListeners[ev]) this.eventListeners[ev] = []
     this.eventListeners[ev].push(fn)
   }
 
   append(...nodes) {
-    nodes.forEach(n => this.children.push(n))
+    nodes.forEach(n => {
+      if (n && typeof n === 'object') n.parentElement = this
+      this.children.push(n)
+    })
   }
 
   replaceChildren(...nodes) {
     this.children = [...nodes]
+    this.children.forEach(n => {
+      if (n && typeof n === 'object') n.parentElement = this
+    })
     this.innerHTML = ''
+  }
+
+  closest(selector) {
+    let el = this
+    while (el) {
+      if (el._matches && el._matches(selector)) return el
+      el = el.parentElement || null
+    }
+    return null
+  }
+
+  _matches(selector) {
+    if (!selector) return false
+    if (selector.startsWith('#')) return this.id === selector.slice(1)
+    if (selector.startsWith('.')) return this.classList.contains(selector.slice(1))
+    if (selector.startsWith('[') && selector.endsWith(']')) {
+      const inside = selector.slice(1, -1)
+      if (inside.includes('=')) {
+        const [k, v] = inside.split('=').map(s => s.replace(/['"]/g, '').trim())
+        return this.getAttribute(k) === v
+      }
+      return Boolean(this.getAttribute(inside))
+    }
+    return Boolean(this.tagName && this.tagName.toLowerCase() === selector.toLowerCase())
+  }
+
+  dispatchEvent(event) {
+    if (!event.target) event.target = this
+    let el = this
+    while (el) {
+      const handlers = el.eventListeners[event.type] || []
+      for (const fn of handlers) {
+        fn(event)
+      }
+      if (event.cancelBubble) break
+      el = el.parentElement || null
+    }
+    return !event.defaultPrevented
+  }
+
+  click() {
+    this.dispatchEvent({
+      type: 'click',
+      target: this,
+      preventDefault() { this.defaultPrevented = true },
+      stopPropagation() { this.cancelBubble = true }
+    })
   }
 
   querySelector(selector) {
@@ -273,6 +344,15 @@ test('mostrarCarrito renderiza productos con steppers, límites de stock y subto
   assert.ok(btnMenos1.disabled, 'Botón menos debe estar deshabilitado cuando cantidad = 1')
   assert.equal(qtySpan1.textContent, '1')
   assert.equal(btnMas1.disabled, false, 'Botón más debe estar habilitado cuando cantidad < stock')
+  assert.equal(btnMenos1.getAttribute('data-accion'), 'decrementar')
+  assert.equal(btnMas1.getAttribute('data-accion'), 'incrementar')
+  assert.equal(btnMenos1.getAttribute('data-producto-id'), '1')
+  assert.equal(btnMas1.getAttribute('data-producto-id'), '1')
+
+  const botonQuitar1 = item1._findChild(el => el.className && el.className.includes('cart-item-remove'))
+  assert.ok(botonQuitar1, 'Debe contener el botón quitar')
+  assert.equal(botonQuitar1.getAttribute('data-accion'), 'quitar')
+  assert.equal(botonQuitar1.getAttribute('data-producto-id'), '1')
 
   // Verificación de Ítem 2 (cantidad 4 = stockDisponible 4 -> botón más deshabilitado)
   const item2 = dom.listaCarrito.children[1]

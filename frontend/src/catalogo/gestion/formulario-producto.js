@@ -7,6 +7,7 @@
  */
 
 import { crearElementoTarjetaProducto } from "../componentes/tarjeta-producto.js";
+import { EVENTOS } from "../../utilidades/constantes.js";
 
 /** Mismas reglas que NuevoProducto.java. */
 export const PATRON_CODIGO = /^[A-Z0-9][A-Z0-9-]{2,29}$/;
@@ -287,7 +288,7 @@ export function configurarFormularioProducto({
       actualizarVistaPrevia();
       await alCrear(creado);
       document.dispatchEvent(
-        new CustomEvent("retail:producto-creado", { detail: creado }),
+        new CustomEvent(EVENTOS.PRODUCTO_CREADO, { detail: creado }),
       );
     } catch (error) {
       // El backend responde con el mismo texto que validarNuevoProducto (o "Ya existe… código").

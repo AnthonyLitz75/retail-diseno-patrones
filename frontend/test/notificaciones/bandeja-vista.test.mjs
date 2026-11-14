@@ -4,6 +4,7 @@ import {
   crearElementoNotificacion,
   renderizarBandejaNotificaciones,
   configurarBandejaNotificaciones,
+  destruirBandeja,
 } from "../../src/notificaciones/bandeja-vista.js";
 
 // Mock mínimo de DOM si estamos en entorno Node.js
@@ -199,4 +200,35 @@ test("abrir una notificación no leída la marca en el servidor y baja el contad
   assert.ok(llamadas.includes("PATCH /api/notificaciones/5/leida"), llamadas.join(", "));
   assert.equal(badge.textContent, "1");
   assert.equal(bandeja.obtenerCache().find((n) => n.id === 5).leida, true);
+});
+
+test("destruirBandeja remueve listeners de document y detiene polling", () => {
+  const eventosRemovidos = [];
+  const origRemove = global.document.removeEventListener;
+  global.document.removeEventListener = (evento) => {
+    eventosRemovidos.push(evento);
+  };
+
+  const contenedor = global.document.createElement("div");
+  const btn = global.document.createElement("button");
+  const menu = global.document.createElement("div");
+
+  const bandeja = configurarBandejaNotificaciones({
+    apiRequest: async () => [],
+    obtenerUsuarioSesion: () => ({ rol: "CLIENTE" }),
+    elementos: {
+      contenedorNotificaciones: contenedor,
+      btnNotificaciones: btn,
+      menuNotificaciones: menu,
+    },
+  });
+
+  assert.equal(typeof bandeja.destruir, "function");
+  destruirBandeja();
+
+  assert.ok(eventosRemovidos.includes("visibilitychange"));
+  assert.ok(eventosRemovidos.includes("click"));
+  assert.ok(eventosRemovidos.includes("keydown"));
+
+  global.document.removeEventListener = origRemove;
 });

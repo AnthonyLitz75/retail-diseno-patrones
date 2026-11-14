@@ -19,6 +19,7 @@ import { generarSkeletonCards } from "./componentes/skeleton-loader.js";
 import { configurarFormularioProducto } from "./gestion/formulario-producto.js";
 import { resumenCatalogo } from "./vistas/explorar.js";
 import { ROL } from "../utilidades/constantes.js";
+import { html, seguro } from "../utilidades/seguridad.js";
 
 /**
  * Configura los flujos y eventos del catálogo.
@@ -83,12 +84,12 @@ export function configurarControladorCatalogo({
       icono.className = "category-icon";
       icono.setAttribute("aria-hidden", "true");
       icono.innerHTML = !valor
-        ? `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>`
+        ? html`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>`
         : valor.toLowerCase().includes("perif")
-          ? `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M8 16h8"></path></svg>`
+          ? html`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M8 16h8"></path></svg>`
           : valor.toLowerCase().includes("acces")
-            ? `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>`
-            : `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>`;
+            ? html`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>`
+            : html`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>`;
       const etiqueta = document.createElement("span");
       etiqueta.textContent = nombre;
       boton.append(icono, etiqueta);
@@ -292,23 +293,23 @@ export function configurarControladorCatalogo({
 
     if (contenedor) {
       contenedor.setAttribute("aria-busy", "true");
-      contenedor.innerHTML = generarSkeletonCards(8);
+      contenedor.innerHTML = html`${seguro(generarSkeletonCards(8))}`;
     }
 
     if (typeof document !== "undefined") {
       const trackNuevos = document.querySelector("#carrusel-nuevos-track");
       const trackOfertas = document.querySelector("#carrusel-ofertas-track");
       if (gridDestacados && gridDestacados.children.length === 0) {
-        gridDestacados.innerHTML = generarSkeletonCards(4);
+        gridDestacados.innerHTML = html`${seguro(generarSkeletonCards(4))}`;
       }
       if (trackNuevos && trackNuevos.children.length === 0) {
-        trackNuevos.innerHTML = generarSkeletonCards(4);
+        trackNuevos.innerHTML = html`${seguro(generarSkeletonCards(4))}`;
       }
       if (trackOfertas && trackOfertas.children.length === 0) {
-        trackOfertas.innerHTML = generarSkeletonCards(4);
+        trackOfertas.innerHTML = html`${seguro(generarSkeletonCards(4))}`;
       }
       if (gridComponentes && gridComponentes.children.length === 0) {
-        gridComponentes.innerHTML = generarSkeletonCards(4);
+        gridComponentes.innerHTML = html`${seguro(generarSkeletonCards(4))}`;
       }
     }
 
@@ -326,7 +327,7 @@ export function configurarControladorCatalogo({
       if (contenedor) contenedor.removeAttribute("aria-busy");
       if (estadoCatalogo) {
         estadoCatalogo.className = "alert alert-danger my-3 py-2 px-3 small";
-        estadoCatalogo.innerHTML = `
+        estadoCatalogo.innerHTML = html`
           <div class="d-flex align-items-center justify-content-between gap-2">
             <span>No pudimos cargar el catálogo. Revisa tu conexión e inténtalo de nuevo en unos segundos.</span>
             <button id="btn-reintentar-catalogo" class="btn btn-sm btn-outline-danger" type="button">Reintentar</button>

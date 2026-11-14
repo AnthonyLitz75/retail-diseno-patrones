@@ -1,3 +1,5 @@
+import { html } from './seguridad.js'
+
 let Toast = null
 let Modal = null
 
@@ -9,6 +11,7 @@ if (typeof document !== 'undefined') {
 
 let contenedorToasts = null
 let resolverConfirmacion = null
+let elementoPrevioFoco = null
 
 export function configurarClaseToast(tipo = 'exito') {
   const mapa = {
@@ -121,9 +124,9 @@ export function obtenerModalConfirmacion() {
     modalElemento.tabIndex = -1
     modalElemento.setAttribute('aria-labelledby', 'modal-confirmacion-titulo')
     modalElemento.setAttribute('aria-hidden', 'true')
-    modalElemento.innerHTML = `
+    modalElemento.innerHTML = html`
       <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content shadow">
+        <div class="modal-content shadow" tabindex="-1">
           <div class="modal-header border-bottom">
             <h5 class="modal-title h6 fw-bold" id="modal-confirmacion-titulo">Confirmación</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
@@ -140,20 +143,56 @@ export function obtenerModalConfirmacion() {
     `
     document.body.append(modalElemento)
 
+    // Al mostrarse el modal, mover el foco al botón principal
+    modalElemento.addEventListener('shown.bs.modal', () => {
+      const botonAceptar = modalElemento.querySelector('#modal-confirmacion-aceptar')
+      botonAceptar?.focus?.()
+    })
+
+    // Atrapado básico de teclado (focus trap) para Tab / Shift+Tab dentro del modal
+    modalElemento.addEventListener('keydown', (evento) => {
+      if (evento.key !== 'Tab') return
+      const enfocables = Array.from(
+        modalElemento.querySelectorAll?.(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        ) || []
+      ).filter((el) => !el.hidden)
+
+      if (enfocables.length === 0) return
+
+      const primero = enfocables[0]
+      const ultimo = enfocables[enfocables.length - 1]
+
+      if (evento.shiftKey) {
+        if (document.activeElement === primero) {
+          evento.preventDefault()
+          ultimo?.focus?.()
+        }
+      } else {
+        if (document.activeElement === ultimo) {
+          evento.preventDefault()
+          primero?.focus?.()
+        }
+      }
+    })
+
     modalElemento.addEventListener('hidden.bs.modal', () => {
       if (resolverConfirmacion) {
         resolverConfirmacion(false)
         resolverConfirmacion = null
       }
+      // Restaurar el foco al elemento disparador previo
+      elementoPrevioFoco?.focus?.()
+      elementoPrevioFoco = null
     })
 
     const botonAceptar = modalElemento.querySelector('#modal-confirmacion-aceptar')
-    botonAceptar.addEventListener('click', () => {
+    botonAceptar?.addEventListener?.('click', () => {
       if (resolverConfirmacion) {
         resolverConfirmacion(true)
         resolverConfirmacion = null
       }
-      Modal.getOrCreateInstance(modalElemento).hide()
+      Modal?.getOrCreateInstance?.(modalElemento)?.hide?.()
     })
   }
   return modalElemento
@@ -170,6 +209,10 @@ export function mostrarConfirmacion(opciones) {
       return
     }
 
+    if (typeof document !== 'undefined') {
+      elementoPrevioFoco = document.activeElement
+    }
+
     const tituloEl = modalElemento.querySelector('#modal-confirmacion-titulo')
     const mensajeEl = modalElemento.querySelector('#modal-confirmacion-mensaje')
     const botonAceptar = modalElemento.querySelector('#modal-confirmacion-aceptar')
@@ -181,7 +224,10 @@ export function mostrarConfirmacion(opciones) {
       botonAceptar.className = `btn ${conf.claseBoton} btn-sm`
     }
 
-    const modalInstancia = Modal.getOrCreateInstance(modalElemento)
-    modalInstancia.show()
+    // Foco inmediato al botón principal
+    botonAceptar?.focus?.()
+
+    const modalInstancia = Modal?.getOrCreateInstance?.(modalElemento)
+    modalInstancia?.show?.()
   })
 }
