@@ -25,6 +25,7 @@ public final class HistorialComandosCarrito implements Serializable {
     /** Máximo de acciones que se pueden deshacer. */
     public static final int MAX_HISTORIAL_CARRITO = 20;
     static final String ATRIBUTO_SESION = "HISTORIAL_CARRITO";
+    private static final Object BLOQUEO_CREACION = new Object();
 
     /** Comando ejecutado y la revisión del carrito que dejó. */
     public record Registro(ComandoCarrito comando, long revision) implements Serializable {
@@ -85,7 +86,7 @@ public final class HistorialComandosCarrito implements Serializable {
 
     /** Historial de la sesión; lo crea la primera vez. */
     public static HistorialComandosCarrito de(HttpSession sesion) {
-        synchronized (sesion) {
+        synchronized (BLOQUEO_CREACION) {
             Object actual = sesion.getAttribute(ATRIBUTO_SESION);
             if (actual instanceof HistorialComandosCarrito historial) {
                 return historial;

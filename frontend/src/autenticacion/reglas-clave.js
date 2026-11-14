@@ -27,7 +27,7 @@ export function claveCumpleReglas(clave = "") {
  */
 export function validarRegistro({ nombre = "", correo = "", clave = "", confirmar = "", acepta = false } = {}) {
   if (!nombre.trim()) return { campo: "nombre", mensaje: "Escribe tu nombre completo." };
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo.trim())) {
+  if (!/^[^\s@]+@[^\s@.]+(?:\.[^\s@.]+)+$/.test(correo.trim())) {
     return { campo: "correo", mensaje: "Escribe un correo válido (ejemplo@correo.com)." };
   }
   const pendiente = evaluarClave(clave).find((regla) => !regla.cumple);

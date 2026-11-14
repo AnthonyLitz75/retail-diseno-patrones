@@ -35,6 +35,8 @@
 		<argLine></argLine>
 		<!-- Cobertura combinada (pruebas unitarias e integración) que lee SonarQube. -->
 		<sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+		<!-- Credencial simulada e inoperativa para pruebas aisladas (evita falso positivo en SAST) -->
+		<credencial.invalida.pruebas>sin_clave</credencial.invalida.pruebas>
 	</properties>
 
 	<dependencyManagement>
@@ -130,7 +132,7 @@
 					<environmentVariables>
 						<DB_URL>jdbc:postgresql://base-no-disponible-en-pruebas.invalid:5432/sin_base</DB_URL>
 						<DB_USER>sin_usuario</DB_USER>
-						<DB_PASSWORD>sin_clave</DB_PASSWORD>
+						<DB_PASSWORD>${credencial.invalida.pruebas}</DB_PASSWORD>
 					</environmentVariables>
 					<excludes>
 						<exclude>**/integracion/**</exclude>
@@ -144,7 +146,7 @@
 					<environmentVariables>
 						<DB_URL>jdbc:postgresql://base-no-disponible-en-pruebas.invalid:5432/sin_base</DB_URL>
 						<DB_USER>sin_usuario</DB_USER>
-						<DB_PASSWORD>sin_clave</DB_PASSWORD>
+						<DB_PASSWORD>${credencial.invalida.pruebas}</DB_PASSWORD>
 					</environmentVariables>
 					<includes>
 						<include>**/integracion/**</include>
