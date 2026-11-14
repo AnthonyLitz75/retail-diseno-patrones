@@ -4,6 +4,7 @@ import com.grupo.retail.exception.ErrorAccesoDatosException;
 import com.grupo.retail.model.Carrito;
 import com.grupo.retail.model.CarritoBloqueado;
 import com.grupo.retail.model.LineaCarrito;
+import com.grupo.retail.model.ProductoEnCompra;
 import com.grupo.retail.patterns.singleton.ProveedorConexiones;
 import org.springframework.stereotype.Repository;
 
@@ -176,5 +177,74 @@ public class CarritoDAO {
             }
         }
         return new Carrito(carritoId, List.copyOf(productos), total, revision);
+    }
+
+    /** Bloquea el carrito activo para compra y devuelve su id. */
+    public long bloquearCarritoActivo(Connection conexion, Long usuarioId) throws SQLException {
+        return bloquearActivo(conexion, usuarioId).id();
+    }
+
+    /**
+     * Lee y bloquea (FOR UPDATE OF p) los productos incluidos en el carrito.
+     */
+    public List<ProductoEnCompra> leerYBloquearProductos(
+            Connection conexion, long carritoId) throws SQLException {
+        return consultarProductos(conexion, carritoId, true);
+    }
+
+    /**
+     * Lee los productos incluidos en el carrito sin bloquearlos en inventario.
+     */
+    public List<ProductoEnCompra> leerProductos(
+            Connection conexion, long carritoId) throws SQLException {
+        return consultarProductos(conexion, carritoId, false);
+    }
+
+    private List<ProductoEnCompra> consultarProductos(
+            Connection conexion, long carritoId, boolean bloquear) throws SQLException {
+        String sql = """
+                SELECT p.id, p.nombre, p.precio, p.stock, p.activo, cd.cantidad
+                FROM carrito_detalle cd
+                JOIN producto p ON p.id = cd.producto_id
+                WHERE cd.carrito_id = ?
+                ORDER BY p.id
+                """ + (bloquear ? "\nFOR UPDATE OF p" : "");
+        List<ProductoEnCompra> productos = new ArrayList<>();
+        try (PreparedStatement consulta = conexion.prepareStatement(sql)) {
+            consulta.setLong(1, carritoId);
+            try (ResultSet resultado = consulta.executeQuery()) {
+                while (resultado.next()) {
+                    productos.add(new ProductoEnCompra(
+                            resultado.getLong("id"),
+                            resultado.getString("nombre"),
+                            resultado.getBigDecimal("precio"),
+                            resultado.getInt("stock"),
+                            resultado.getBoolean("activo"),
+                            resultado.getInt("cantidad")));
+                }
+            }
+        }
+        return productos;
+    }
+
+    /** Vacía los ítems del carrito y lo marca como CONVERTIDO. */
+    public void vaciarYConvertirCarrito(Connection conexion, long carritoId)
+            throws SQLException {
+        try (PreparedStatement consulta = conexion.prepareStatement(
+                "DELETE FROM carrito_detalle WHERE carrito_id = ?")) {
+            consulta.setLong(1, carritoId);
+            consulta.executeUpdate();
+        }
+
+        try (PreparedStatement consulta = conexion.prepareStatement("""
+                UPDATE carrito
+                SET estado = 'CONVERTIDO', actualizado_en = CURRENT_TIMESTAMP
+                WHERE id_carrito = ? AND estado = 'ACTIVO'
+                """)) {
+            consulta.setLong(1, carritoId);
+            if (consulta.executeUpdate() == 0) {
+                throw new IllegalArgumentException("El carrito ya fue procesado");
+            }
+        }
     }
 }

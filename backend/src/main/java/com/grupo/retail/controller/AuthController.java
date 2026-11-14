@@ -4,10 +4,13 @@ import java.util.Locale;
 import com.grupo.retail.service.AuditoriaService;
 import com.grupo.retail.model.EventoAuditoria;
 import com.grupo.retail.model.AccionAuditoria;
+import com.grupo.retail.exception.CredencialesInvalidasException;
 import com.grupo.retail.exception.DemasiadosIntentosException;
 import com.grupo.retail.security.LimitadorIntentosLogin;
 import com.grupo.retail.dto.InicioSesion;
 import com.grupo.retail.dto.RegistroCliente;
+import com.grupo.retail.dto.SesionUsuarioDTO;
+import com.grupo.retail.dto.UsuarioRespuestaDTO;
 import com.grupo.retail.model.Usuario;
 import com.grupo.retail.service.UsuarioService;
 import com.grupo.retail.service.SesionAutenticada;
@@ -32,6 +35,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * Controlador de autenticación y gestión de sesiones de usuario.
+ * Respuestas estrictamente tipadas mediante DTOs para cumplir con SonarQube java:S1452.
+ */
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -50,14 +57,14 @@ public class AuthController {
     }
 
     @PostMapping("/registro")
-    public ResponseEntity<Usuario> registrar(
+    public ResponseEntity<UsuarioRespuestaDTO> registrar(
             @Valid @RequestBody RegistroCliente datos) {
         Usuario creado = usuarioService.registrarCliente(datos);
-        return ResponseEntity.status(HttpStatus.CREATED).body(creado);
+        return ResponseEntity.status(HttpStatus.CREATED).body(UsuarioRespuestaDTO.desde(creado));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> iniciarSesion(
+    public ResponseEntity<UsuarioRespuestaDTO> iniciarSesion(
             @Valid @RequestBody InicioSesion datos,
             HttpServletRequest solicitud) {
         String correoIntentado = datos.correo().trim().toLowerCase(Locale.ROOT);
@@ -76,7 +83,7 @@ public class AuthController {
             auditoriaService.registrarAparte(new EventoAuditoria(null, correoIntentado, null,
                     AccionAuditoria.INICIO_SESION_FALLIDO, "USUARIO", null, "Correo o contraseña incorrectos"));
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("error", "Correo o contraseña incorrectos"));
+                    .body(UsuarioRespuestaDTO.conError("Correo o contraseña incorrectos"));
         }
         limitadorIntentos.reiniciar(datos.correo());
 
@@ -101,7 +108,7 @@ public class AuthController {
 
         auditoriaService.registrarAparte(new EventoAuditoria(usuario.idUsuario(), usuario.correo(), usuario.rol(),
                 AccionAuditoria.INICIO_SESION, "USUARIO", usuario.idUsuario(), ""));
-        return ResponseEntity.ok(usuario);
+        return ResponseEntity.ok(UsuarioRespuestaDTO.desde(usuario));
     }
 
     @GetMapping("/csrf")
@@ -119,14 +126,16 @@ public class AuthController {
     }
 
     @GetMapping("/sesion")
-    public ResponseEntity<?> consultarSesion(HttpServletRequest solicitud) {
+    public ResponseEntity<SesionUsuarioDTO> consultarSesion(HttpServletRequest solicitud) {
         sesionAutenticada.exigirUsuario(solicitud);
         HttpSession sesion = solicitud.getSession(false);
-        return ResponseEntity.ok(Map.of(
-                "idUsuario", sesion.getAttribute("usuarioId"),
-                "nombre", sesion.getAttribute("usuarioNombre"),
-                "correo", sesion.getAttribute("usuarioCorreo"),
-                "rol", sesion.getAttribute("usuarioRol")));
+        Object idObj = sesion.getAttribute("usuarioId");
+        Long idUsuario = idObj instanceof Number num ? num.longValue() : null;
+        String nombre = (String) sesion.getAttribute("usuarioNombre");
+        String correo = (String) sesion.getAttribute("usuarioCorreo");
+        String rol = (String) sesion.getAttribute("usuarioRol");
+
+        return ResponseEntity.ok(new SesionUsuarioDTO(idUsuario, nombre, correo, rol));
     }
 
     @PostMapping("/logout")

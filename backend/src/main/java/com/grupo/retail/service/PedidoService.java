@@ -16,7 +16,10 @@ import com.grupo.retail.patterns.observer.PublicadorEventosPedido;
 import com.grupo.retail.patterns.adapter.PuertoPago;
 import com.grupo.retail.patterns.state.EstadoPedido;
 import com.grupo.retail.transaccion.EjecutorTransaccion;
+import com.grupo.retail.model.Rol;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -101,6 +104,23 @@ public class PedidoService {
 
     public void cancelarPedidoComoAdmin(Long pedidoId, Long adminId) {
         cancelarPedido(pedidoId, null, adminId);
+    }
+
+    /**
+     * Orquesta la cancelación del pedido validando el rol del actor (Spec Bloque B).
+     * Desacopla la lógica de bifurcación de roles de la capa web (PedidoController).
+     */
+    public void cancelarPedidoSegunRol(Long pedidoId, Long usuarioId, String rolTexto) {
+        Rol rol = Rol.desde(rolTexto).orElse(null);
+        if (rol == null) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Tu rol no puede realizar esta operación");
+        }
+        switch (rol) {
+            case CLIENTE -> cancelarPedidoComoCliente(pedidoId, usuarioId);
+            case ADMIN -> cancelarPedidoComoAdmin(pedidoId, usuarioId);
+            case VENDEDOR -> cancelarPedidoComoVendedor(pedidoId, usuarioId);
+            default -> throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Tu rol no puede realizar esta operación");
+        }
     }
 
     /**

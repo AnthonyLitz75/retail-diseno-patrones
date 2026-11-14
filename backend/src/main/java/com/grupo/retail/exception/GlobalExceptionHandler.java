@@ -25,12 +25,25 @@ public class GlobalExceptionHandler {
 
     private static final System.Logger LOGGER = System.getLogger(GlobalExceptionHandler.class.getName());
 
-    @ExceptionHandler(NoSuchElementException.class)
+    @ExceptionHandler({RecursoNoEncontradoException.class, NoSuchElementException.class})
     public ResponseEntity<Map<String, String>> manejarNoEncontrado(NoSuchElementException error) {
         String mensaje = error.getMessage() != null && !error.getMessage().isBlank()
                 ? error.getMessage()
                 : "Recurso no encontrado";
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", mensaje));
+    }
+
+    @ExceptionHandler(CredencialesInvalidasException.class)
+    public ResponseEntity<Map<String, String>> manejarCredencialesInvalidas(CredencialesInvalidasException error) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", error.getMessage()));
+    }
+
+    @ExceptionHandler(ReglaNegocioException.class)
+    public ResponseEntity<Map<String, String>> manejarReglaNegocio(ReglaNegocioException error) {
+        String mensaje = error.getMessage() != null && !error.getMessage().isBlank()
+                ? error.getMessage()
+                : "Operación no permitida por regla de negocio";
+        return ResponseEntity.badRequest().body(Map.of("error", mensaje));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

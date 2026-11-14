@@ -33,6 +33,7 @@ import java.sql.ResultSet;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -44,6 +45,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -60,6 +62,11 @@ class PedidoAutorizacionTests {
             new SesionEmpleado(sesionAutenticada),
             sesionAutenticada,
             pedidoService);
+
+    @BeforeEach
+    void configurarComportamientoMocks() {
+        doCallRealMethod().when(pedidoService).cancelarPedidoSegunRol(anyLong(), anyLong(), anyString());
+    }
 
     @Test
     void clienteCancelaPedidoUsandoSuIdentidadDeSesion() {

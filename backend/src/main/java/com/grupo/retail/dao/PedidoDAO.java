@@ -14,6 +14,7 @@ import com.grupo.retail.model.ResumenPago;
 import com.grupo.retail.model.ResultadoPago;
 import com.grupo.retail.exception.ClaveConfirmacionEnUsoException;
 import com.grupo.retail.patterns.singleton.ProveedorConexiones;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
@@ -37,9 +38,26 @@ public class PedidoDAO {
     private static final String INDICE_CLAVE_CONFIRMACION = "uq_pedido_clave_confirmacion";
 
     private final ProveedorConexiones proveedorConexiones;
+    private final CarritoDAO carritoDAO;
+    private final EnvioDAO envioDAO;
+
+    @Autowired
+    public PedidoDAO(ProveedorConexiones proveedorConexiones, CarritoDAO carritoDAO, EnvioDAO envioDAO) {
+        this.proveedorConexiones = proveedorConexiones;
+        this.carritoDAO = carritoDAO;
+        this.envioDAO = envioDAO;
+    }
 
     public PedidoDAO(ProveedorConexiones proveedorConexiones) {
-        this.proveedorConexiones = proveedorConexiones;
+        this(proveedorConexiones, new CarritoDAO(proveedorConexiones), new EnvioDAO());
+    }
+
+    public CarritoDAO getCarritoDAO() {
+        return carritoDAO;
+    }
+
+    public EnvioDAO getEnvioDAO() {
+        return envioDAO;
     }
 
     public List<PedidoVista> listarPorCliente(Long clienteId) {
@@ -264,15 +282,7 @@ public class PedidoDAO {
     }
 
     private EnvioPedido mapearEnvio(ResultSet resultado) throws SQLException {
-        String transportista = resultado.getString("transportista");
-        if (transportista == null) {
-            return null;
-        }
-        return new EnvioPedido(
-                transportista,
-                resultado.getString("codigo_seguimiento"),
-                resultado.getObject("despachado_en", OffsetDateTime.class),
-                resultado.getObject("entregado_en", OffsetDateTime.class));
+        return envioDAO.mapearEnvio(resultado);
     }
 
     private List<DetallePedido> listarDetalles(Connection conexion, long pedidoId)
@@ -340,15 +350,6 @@ public class PedidoDAO {
                 SET estado = ?, actualizado_en = CURRENT_TIMESTAMP
                 WHERE id_pedido = ?
                 """;
-        String envioSql = """
-                INSERT INTO envio (pedido_id, transportista, codigo_seguimiento)
-                VALUES (?, ?, ?)
-                """;
-        String entregaSql = """
-                UPDATE envio
-                SET entregado_en = CURRENT_TIMESTAMP
-                WHERE pedido_id = ? AND entregado_en IS NULL
-                """;
 
         try (PreparedStatement actualizacion = conexion.prepareStatement(actualizarSql)) {
             actualizacion.setString(1, nuevoEstado);
@@ -358,23 +359,10 @@ public class PedidoDAO {
             }
         }
         if (envio != null) {
-            try (PreparedStatement insertarEnvio = conexion.prepareStatement(envioSql)) {
-                insertarEnvio.setLong(1, pedidoId);
-                insertarEnvio.setString(2, envio.transportista());
-                insertarEnvio.setString(3, envio.codigoSeguimiento());
-                insertarEnvio.executeUpdate();
-            } catch (SQLException error) {
-                if (VIOLACION_UNICA.equals(error.getSQLState())) {
-                    throw new CodigoSeguimientoDuplicadoException(error);
-                }
-                throw error;
-            }
+            envioDAO.registrarEnvio(conexion, pedidoId, envio);
         }
         if ("ENTREGADO".equals(nuevoEstado)) {
-            try (PreparedStatement registrarEntrega = conexion.prepareStatement(entregaSql)) {
-                registrarEntrega.setLong(1, pedidoId);
-                registrarEntrega.executeUpdate();
-            }
+            envioDAO.registrarEntrega(conexion, pedidoId);
         }
         registrarHistorial(conexion, pedidoId, nuevoEstado, responsableId, comentario);
     }
@@ -599,49 +587,12 @@ public class PedidoDAO {
     }
 
     public long bloquearCarritoActivo(Connection conexion, Long usuarioId) throws SQLException {
-        String sql = """
-                SELECT id_carrito
-                FROM carrito
-                WHERE usuario_id = ? AND estado = 'ACTIVO'
-                FOR UPDATE
-                """;
-        try (PreparedStatement consulta = conexion.prepareStatement(sql)) {
-            consulta.setLong(1, usuarioId);
-            try (ResultSet resultado = consulta.executeQuery()) {
-                if (!resultado.next()) {
-                    throw new NoSuchElementException("No tienes un carrito activo");
-                }
-                return resultado.getLong("id_carrito");
-            }
-        }
+        return carritoDAO.bloquearCarritoActivo(conexion, usuarioId);
     }
 
     public List<ProductoEnCompra> leerYBloquearProductos(
             Connection conexion, long carritoId) throws SQLException {
-        String sql = """
-                SELECT p.id, p.nombre, p.precio, p.stock, p.activo, cd.cantidad
-                FROM carrito_detalle cd
-                JOIN producto p ON p.id = cd.producto_id
-                WHERE cd.carrito_id = ?
-                ORDER BY p.id
-                FOR UPDATE OF p
-                """;
-        List<ProductoEnCompra> productos = new ArrayList<>();
-        try (PreparedStatement consulta = conexion.prepareStatement(sql)) {
-            consulta.setLong(1, carritoId);
-            try (ResultSet resultado = consulta.executeQuery()) {
-                while (resultado.next()) {
-                    productos.add(new ProductoEnCompra(
-                            resultado.getLong("id"),
-                            resultado.getString("nombre"),
-                            resultado.getBigDecimal("precio"),
-                            resultado.getInt("stock"),
-                            resultado.getBoolean("activo"),
-                            resultado.getInt("cantidad")));
-                }
-            }
-        }
-        return productos;
+        return carritoDAO.leerYBloquearProductos(conexion, carritoId);
     }
 
     private PedidoCreado insertarPedido(
@@ -723,22 +674,7 @@ public class PedidoDAO {
 
     private void vaciarYConvertirCarrito(Connection conexion, long carritoId)
             throws SQLException {
-        try (PreparedStatement consulta = conexion.prepareStatement(
-                "DELETE FROM carrito_detalle WHERE carrito_id = ?")) {
-            consulta.setLong(1, carritoId);
-            consulta.executeUpdate();
-        }
-
-        try (PreparedStatement consulta = conexion.prepareStatement("""
-                UPDATE carrito
-                SET estado = 'CONVERTIDO', actualizado_en = CURRENT_TIMESTAMP
-                WHERE id_carrito = ? AND estado = 'ACTIVO'
-                """)) {
-            consulta.setLong(1, carritoId);
-            if (consulta.executeUpdate() == 0) {
-                throw new IllegalArgumentException("El carrito ya fue procesado");
-            }
-        }
+        carritoDAO.vaciarYConvertirCarrito(conexion, carritoId);
     }
 
     private record PedidoCreado(long id, OffsetDateTime creadoEn) {

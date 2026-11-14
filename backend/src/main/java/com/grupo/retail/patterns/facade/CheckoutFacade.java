@@ -1,5 +1,6 @@
 package com.grupo.retail.patterns.facade;
 
+import com.grupo.retail.dao.CarritoDAO;
 import com.grupo.retail.dao.InventarioDAO;
 import com.grupo.retail.dao.PedidoDAO;
 import com.grupo.retail.exception.ClaveConfirmacionEnUsoException;
@@ -14,6 +15,7 @@ import com.grupo.retail.patterns.observer.EventoPedido;
 import com.grupo.retail.patterns.observer.PublicadorEventosPedido;
 import com.grupo.retail.patterns.adapter.PuertoPago;
 import com.grupo.retail.transaccion.EjecutorTransaccion;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -40,14 +42,34 @@ import java.util.Optional;
 @Service
 public class CheckoutFacade {
 
+    private static final System.Logger LOGGER = System.getLogger(CheckoutFacade.class.getName());
     private static final String ESTADO_INICIAL = "PENDIENTE";
     private static final String MOTIVO_CONFIRMACION = "Pedido confirmado; pago simulado aprobado";
 
     private final PedidoDAO pedidoDAO;
+    private final CarritoDAO carritoDAO;
     private final InventarioDAO inventarioDAO;
     private final PuertoPago puertoPago;
     private final EjecutorTransaccion ejecutorTransaccion;
     private final PublicadorEventosPedido publicadorEventos;
+
+    @Autowired
+    public CheckoutFacade(
+            PedidoDAO pedidoDAO,
+            CarritoDAO carritoDAO,
+            InventarioDAO inventarioDAO,
+            PuertoPago puertoPago,
+            EjecutorTransaccion ejecutorTransaccion,
+            PublicadorEventosPedido publicadorEventos) {
+        this.pedidoDAO = Objects.requireNonNull(pedidoDAO, "pedidoDAO no puede ser null");
+        this.carritoDAO = Objects.requireNonNull(carritoDAO, "carritoDAO no puede ser null");
+        this.inventarioDAO = Objects.requireNonNull(inventarioDAO, "inventarioDAO no puede ser null");
+        this.puertoPago = Objects.requireNonNull(puertoPago, "puertoPago no puede ser null");
+        this.ejecutorTransaccion = Objects.requireNonNull(
+                ejecutorTransaccion, "ejecutorTransaccion no puede ser null");
+        this.publicadorEventos = Objects.requireNonNull(
+                publicadorEventos, "publicadorEventos no puede ser null");
+    }
 
     public CheckoutFacade(
             PedidoDAO pedidoDAO,
@@ -55,13 +77,7 @@ public class CheckoutFacade {
             PuertoPago puertoPago,
             EjecutorTransaccion ejecutorTransaccion,
             PublicadorEventosPedido publicadorEventos) {
-        this.pedidoDAO = Objects.requireNonNull(pedidoDAO, "pedidoDAO no puede ser null");
-        this.inventarioDAO = Objects.requireNonNull(inventarioDAO, "inventarioDAO no puede ser null");
-        this.puertoPago = Objects.requireNonNull(puertoPago, "puertoPago no puede ser null");
-        this.ejecutorTransaccion = Objects.requireNonNull(
-                ejecutorTransaccion, "ejecutorTransaccion no puede ser null");
-        this.publicadorEventos = Objects.requireNonNull(
-                publicadorEventos, "publicadorEventos no puede ser null");
+        this(pedidoDAO, pedidoDAO.getCarritoDAO(), inventarioDAO, puertoPago, ejecutorTransaccion, publicadorEventos);
     }
 
     public PedidoConfirmado confirmarCompra(Long usuarioId, String metodoPago) {
@@ -80,47 +96,91 @@ public class CheckoutFacade {
         String destino = normalizar(destinatario);
         String direccion = normalizar(direccionEnvio);
 
-        return ejecutorTransaccion.ejecutar("No se pudo confirmar la compra",
-                conexion -> confirmarEnTransaccion(conexion, usuarioId, metodo, clave, destino, direccion));
+        // 1. Pre-validación sin retener bloqueos FOR UPDATE sobre productos
+        PrevalidacionCompra pre = ejecutorTransaccion.ejecutar("No se pudo verificar el carrito",
+                conexion -> prevalidarEnTransaccion(conexion, usuarioId, clave));
+        if (pre.existente() != null) {
+            return pre.existente();
+        }
+
+        // 2. I/O externo con el proveedor de pago FUERA de cualquier bloqueo de base de datos
+        ResultadoPago pago = puertoPago.procesar(pre.total(), metodo);
+        if (pago == null || !pago.aprobado()) {
+            throw new PagoRechazadoException(pago != null ? pago.mensaje() : "Pago rechazado");
+        }
+
+        // 3. Transacción SQL con FOR UPDATE en orden ascendente y compensación ante fallo
+        try {
+            return ejecutorTransaccion.ejecutar("No se pudo confirmar la compra",
+                    conexion -> confirmarEnTransaccion(
+                            conexion, usuarioId, pago, pre.total(), clave, destino, direccion));
+        } catch (Exception e) {
+            try {
+                puertoPago.reembolsar(pre.total(), pago.referencia(), null);
+            } catch (Exception exReembolso) {
+                LOGGER.log(System.Logger.Level.ERROR,
+                        "Fallo al compensar el cobro en la pasarela de pago para la referencia: " + pago.referencia(),
+                        exReembolso);
+            }
+            throw e;
+        }
     }
 
-    private PedidoConfirmado confirmarEnTransaccion(
-            Connection conexion, Long usuarioId, String metodoPago,
-            String clave, String destinatario, String direccion) throws SQLException {
-        // 1. Una compra a la vez por cliente: un reintento espera aquí y luego ve el pedido.
-        pedidoDAO.bloquearClienteParaCompra(conexion, usuarioId);
+    private record PrevalidacionCompra(PedidoConfirmado existente, List<ProductoEnCompra> productos, BigDecimal total) {}
 
-        // 2. Idempotencia: la misma clave devuelve el pedido ya confirmado.
+    private PrevalidacionCompra prevalidarEnTransaccion(
+            Connection conexion, Long usuarioId, String clave) throws SQLException {
+        // Idempotencia preliminar: la misma clave devuelve el pedido ya confirmado
         if (clave != null) {
             Optional<PedidoConfirmado> existente =
                     pedidoDAO.buscarPorClaveConfirmacion(conexion, usuarioId, clave);
             if (existente.isPresent()) {
-                return existente.get();
+                return new PrevalidacionCompra(existente.get(), null, null);
             }
             if (pedidoDAO.claveConfirmacionRegistrada(conexion, clave)) {
                 throw new ClaveConfirmacionEnUsoException();
             }
         }
 
-        // 3. Carrito y productos bloqueados (productos en orden ascendente de id).
-        long carritoId = pedidoDAO.bloquearCarritoActivo(conexion, usuarioId);
-        List<ProductoEnCompra> productos = pedidoDAO.leerYBloquearProductos(conexion, carritoId);
+        // Lectura de carrito y productos SIN bloqueo FOR UPDATE de inventario
+        long carritoId = carritoDAO.bloquearCarritoActivo(conexion, usuarioId);
+        List<ProductoEnCompra> productos = carritoDAO.leerProductos(conexion, carritoId);
         validarProductos(productos);
         BigDecimal total = calcularTotal(productos);
+        return new PrevalidacionCompra(null, productos, total);
+    }
 
-        // 4. Pago simulado a través del Adapter; un rechazo revierte toda la transacción.
-        ResultadoPago pago = puertoPago.procesar(total, metodoPago);
-        if (pago == null || !pago.aprobado()) {
-            throw new PagoRechazadoException(pago != null ? pago.mensaje() : "Pago rechazado");
+    private PedidoConfirmado confirmarEnTransaccion(
+            Connection conexion, Long usuarioId, ResultadoPago pago, BigDecimal total,
+            String clave, String destinatario, String direccion) throws SQLException {
+        // 1. Una compra a la vez por cliente: un reintento espera aquí y luego ve el pedido
+        pedidoDAO.bloquearClienteParaCompra(conexion, usuarioId);
+
+        // 2. Idempotencia: si un reintento concurrente ya confirmó la misma clave durante el cobro
+        if (clave != null) {
+            Optional<PedidoConfirmado> existente =
+                    pedidoDAO.buscarPorClaveConfirmacion(conexion, usuarioId, clave);
+            if (existente.isPresent()) {
+                puertoPago.reembolsar(total, pago.referencia(), null);
+                return existente.get();
+            }
+            if (pedidoDAO.claveConfirmacionRegistrada(conexion, clave)) {
+                puertoPago.reembolsar(total, pago.referencia(), null);
+                throw new ClaveConfirmacionEnUsoException();
+            }
         }
 
-        // 5. Persistencia del pedido completo en la misma conexión.
+        // 3. Carrito y productos bloqueados (productos en orden ascendente de id con FOR UPDATE)
+        long carritoId = carritoDAO.bloquearCarritoActivo(conexion, usuarioId);
+        List<ProductoEnCompra> productos = carritoDAO.leerYBloquearProductos(conexion, carritoId);
+        validarProductos(productos);
+
+        // 4. Persistencia del pedido completo en la misma conexión
         PedidoConfirmado pedido = pedidoDAO.registrarCompra(
                 conexion, usuarioId, total, pago, productos, carritoId, clave, destinatario, direccion);
         descontarStock(conexion, pedido.idPedido(), usuarioId, productos);
 
-        // 6. Observer: la alerta in-app entra en esta transacción; la auditoría y el
-        //    correo simulado salen solo después del commit.
+        // 5. Observer: la alerta in-app entra en esta transacción; la auditoría y correo salen tras el commit
         publicadorEventos.publicar(conexion, new EventoPedido(
                 pedido.idPedido(), usuarioId, null, ESTADO_INICIAL,
                 OffsetDateTime.now(), MOTIVO_CONFIRMACION, usuarioId));

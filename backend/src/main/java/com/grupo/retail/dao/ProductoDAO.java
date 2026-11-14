@@ -3,7 +3,6 @@ package com.grupo.retail.dao;
 import com.grupo.retail.exception.ErrorAccesoDatosException;
 import com.grupo.retail.dto.EditarProducto;
 import com.grupo.retail.dto.NuevoProducto;
-import com.grupo.retail.model.Categoria;
 import com.grupo.retail.model.MovimientoInventario;
 import com.grupo.retail.model.Producto;
 import com.grupo.retail.patterns.singleton.ProveedorConexiones;
@@ -91,30 +90,6 @@ public class ProductoDAO {
             return productos;
         } catch (SQLException error) {
             throw new ErrorAccesoDatosException("No se pudieron consultar los productos", error);
-        }
-    }
-
-    public List<Categoria> listarCategorias() {
-        String sql = """
-                SELECT id_categoria, nombre, activa, categoria_padre_id
-                FROM categoria
-                WHERE activa = TRUE
-                ORDER BY nombre
-                """;
-        List<Categoria> categorias = new ArrayList<>();
-        try (Connection conexion = proveedorConexiones.obtenerConexion();
-                PreparedStatement consulta = conexion.prepareStatement(sql);
-                ResultSet resultado = consulta.executeQuery()) {
-            while (resultado.next()) {
-                categorias.add(new Categoria(
-                        resultado.getLong("id_categoria"),
-                        resultado.getString("nombre"),
-                        resultado.getBoolean("activa"),
-                        resultado.getObject("categoria_padre_id", Long.class)));
-            }
-            return categorias;
-        } catch (SQLException error) {
-            throw new ErrorAccesoDatosException("No se pudieron consultar las categorías", error);
         }
     }
 

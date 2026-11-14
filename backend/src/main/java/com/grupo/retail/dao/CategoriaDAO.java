@@ -41,54 +41,67 @@ public class CategoriaDAO {
         }
     }
 
-    public List<CategoriaComponente> listarArbol() {
-        String sqlCategorias = """
+    public List<Categoria> listarActivas() {
+        String sql = """
                 SELECT id_categoria, nombre, activa, categoria_padre_id
                 FROM categoria
                 WHERE activa = TRUE
                 ORDER BY id_categoria
                 """;
-        String sqlConteos = """
+        List<Categoria> categorias = new ArrayList<>();
+        try (Connection conexion = proveedorConexiones.obtenerConexion();
+                PreparedStatement consulta = conexion.prepareStatement(sql);
+                ResultSet resultado = consulta.executeQuery()) {
+            while (resultado.next()) {
+                categorias.add(mapear(resultado));
+            }
+            return List.copyOf(categorias);
+        } catch (SQLException error) {
+            throw new ErrorAccesoDatosException("No se pudieron consultar las categorías activas", error);
+        }
+    }
+
+    public Map<Long, Integer> consultarConteosPorCategoria() {
+        String sql = """
                 SELECT categoria_id, COUNT(*) AS total
                 FROM producto
                 WHERE activo = TRUE AND categoria_id IS NOT NULL
                 GROUP BY categoria_id
                 """;
-        String sqlSinCategoria = """
+        Map<Long, Integer> conteoPorCategoria = new HashMap<>();
+        try (Connection conexion = proveedorConexiones.obtenerConexion();
+                PreparedStatement consulta = conexion.prepareStatement(sql);
+                ResultSet resultado = consulta.executeQuery()) {
+            while (resultado.next()) {
+                conteoPorCategoria.put(resultado.getLong("categoria_id"), resultado.getInt("total"));
+            }
+            return conteoPorCategoria;
+        } catch (SQLException error) {
+            throw new ErrorAccesoDatosException("No se pudieron consultar los conteos de categorías", error);
+        }
+    }
+
+    public int consultarTotalSinCategoria() {
+        String sql = """
                 SELECT COUNT(*) AS total
                 FROM producto
                 WHERE activo = TRUE AND categoria_id IS NULL
                 """;
-
-        try (Connection conexion = proveedorConexiones.obtenerConexion()) {
-            List<Categoria> categorias = new ArrayList<>();
-            try (PreparedStatement consulta = conexion.prepareStatement(sqlCategorias);
-                    ResultSet resultado = consulta.executeQuery()) {
-                while (resultado.next()) {
-                    categorias.add(mapear(resultado));
-                }
+        try (Connection conexion = proveedorConexiones.obtenerConexion();
+                PreparedStatement consulta = conexion.prepareStatement(sql);
+                ResultSet resultado = consulta.executeQuery()) {
+            if (resultado.next()) {
+                return resultado.getInt("total");
             }
-
-            Map<Long, Integer> conteoPorCategoria = new HashMap<>();
-            try (PreparedStatement consulta = conexion.prepareStatement(sqlConteos);
-                    ResultSet resultado = consulta.executeQuery()) {
-                while (resultado.next()) {
-                    conteoPorCategoria.put(resultado.getLong("categoria_id"), resultado.getInt("total"));
-                }
-            }
-
-            int productosSinCategoria = 0;
-            try (PreparedStatement consulta = conexion.prepareStatement(sqlSinCategoria);
-                    ResultSet resultado = consulta.executeQuery()) {
-                if (resultado.next()) {
-                    productosSinCategoria = resultado.getInt("total");
-                }
-            }
-
-            return ArbolCategoriaBuilder.construirArbol(categorias, conteoPorCategoria, productosSinCategoria);
+            return 0;
         } catch (SQLException error) {
-            throw new ErrorAccesoDatosException("No se pudo construir el árbol de categorías", error);
+            throw new ErrorAccesoDatosException("No se pudo consultar el total de productos sin categoría", error);
         }
+    }
+
+    @Deprecated(since = "1.2")
+    public List<CategoriaComponente> listarArbol() {
+        return ArbolCategoriaBuilder.construirArbol(listarActivas(), consultarConteosPorCategoria(), consultarTotalSinCategoria());
     }
 
     /**

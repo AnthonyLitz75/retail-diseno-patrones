@@ -5,10 +5,12 @@ import com.grupo.retail.model.AccionAuditoria;
 import com.grupo.retail.dao.CategoriaDAO;
 import com.grupo.retail.dto.SolicitudCategoria;
 import com.grupo.retail.model.Categoria;
+import com.grupo.retail.patterns.composite.ArbolCategoriaBuilder;
 import com.grupo.retail.patterns.composite.CategoriaComponente;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -28,7 +30,10 @@ public class CategoriaService {
     }
 
     public List<CategoriaComponente> listarArbol() {
-        return categoriaDAO.listarArbol();
+        List<Categoria> categorias = categoriaDAO.listarActivas();
+        Map<Long, Integer> conteos = categoriaDAO.consultarConteosPorCategoria();
+        int productosSinCategoria = categoriaDAO.consultarTotalSinCategoria();
+        return ArbolCategoriaBuilder.construirArbol(categorias, conteos, productosSinCategoria);
     }
 
     public Categoria crear(SolicitudCategoria solicitud, Long administradorId) {

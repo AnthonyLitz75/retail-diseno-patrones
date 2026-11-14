@@ -12,6 +12,7 @@ import com.grupo.retail.model.MovimientoInventario;
 import com.grupo.retail.model.Producto;
 import com.grupo.retail.model.RegistroMovimiento.TipoMovimiento;
 import com.grupo.retail.model.RegistroMovimiento;
+import com.grupo.retail.patterns.composite.ArbolCategoriaBuilder;
 import com.grupo.retail.patterns.composite.CategoriaComponente;
 import com.grupo.retail.transaccion.EjecutorTransaccion;
 
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
@@ -49,11 +51,14 @@ public class ProductoService {
     }
 
     public List<Categoria> listarCategorias() {
-        return productoDAO.listarCategorias();
+        return categoriaDAO.listarActivas();
     }
 
     public List<CategoriaComponente> listarArbolCategorias() {
-        return categoriaDAO.listarArbol();
+        List<Categoria> categorias = categoriaDAO.listarActivas();
+        Map<Long, Integer> conteos = categoriaDAO.consultarConteosPorCategoria();
+        int sinCategoria = categoriaDAO.consultarTotalSinCategoria();
+        return ArbolCategoriaBuilder.construirArbol(categorias, conteos, sinCategoria);
     }
 
     public Optional<Producto> buscarPorId(Long id) {

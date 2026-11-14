@@ -4,10 +4,11 @@ import com.grupo.retail.dto.ActualizarPrecio;
 import com.grupo.retail.dto.AjusteInventario;
 import com.grupo.retail.dto.CambiarEstadoProducto;
 import com.grupo.retail.dto.CategoriaArbolDTO;
+import com.grupo.retail.dto.CategoriaRespuestaDTO;
 import com.grupo.retail.dto.EditarProducto;
+import com.grupo.retail.dto.MovimientoInventarioRespuestaDTO;
 import com.grupo.retail.dto.NuevoProducto;
-import com.grupo.retail.model.Categoria;
-import com.grupo.retail.model.MovimientoInventario;
+import com.grupo.retail.dto.ProductoRespuestaDTO;
 import com.grupo.retail.model.Producto;
 import com.grupo.retail.service.ProductoService;
 import com.grupo.retail.service.SesionEmpleado;
@@ -31,7 +32,7 @@ import java.util.Optional;
 
 /**
  * Catálogo público (productos y categorías) y gestión de productos del personal.
- * Antes se llamaba InicioController; el nombre no decía qué hacía.
+ * Desacoplado de las entidades de dominio internas mediante DTOs de respuesta tipados.
  */
 @RestController
 @RequestMapping("/api")
@@ -48,7 +49,11 @@ public class ProductoController {
     public String hello() { return "Backend de Retail funcionando"; }
 
     @GetMapping("/categorias")
-    public List<Categoria> listarCategorias() { return productoService.listarCategorias(); }
+    public List<CategoriaRespuestaDTO> listarCategorias() {
+        return productoService.listarCategorias().stream()
+                .map(CategoriaRespuestaDTO::desde)
+                .toList();
+    }
 
     @GetMapping("/categorias/arbol")
     public List<CategoriaArbolDTO> listarArbolCategorias() {
@@ -58,70 +63,79 @@ public class ProductoController {
     }
 
     @GetMapping("/productos")
-    public List<Producto> listarProductos(
+    public List<ProductoRespuestaDTO> listarProductos(
             @RequestParam(required = false) String nombre,
             @RequestParam(required = false) String categoria,
             @RequestParam(required = false) BigDecimal precioMin,
             @RequestParam(required = false) BigDecimal precioMax) {
-        return productoService.listarProductos(nombre, categoria, precioMin, precioMax);
+        return productoService.listarProductos(nombre, categoria, precioMin, precioMax).stream()
+                .map(ProductoRespuestaDTO::desde)
+                .toList();
     }
 
     @GetMapping("/productos/{id}")
-    public ResponseEntity<Producto> obtenerProducto(@PathVariable Long id) {
+    public ResponseEntity<ProductoRespuestaDTO> obtenerProducto(@PathVariable Long id) {
         Optional<Producto> resultado = productoService.buscarPorId(id);
-        return resultado.map(ResponseEntity::ok)
+        return resultado.map(p -> ResponseEntity.ok(ProductoRespuestaDTO.desde(p)))
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PostMapping("/productos")
-    public ResponseEntity<Producto> crearProducto(
+    public ResponseEntity<ProductoRespuestaDTO> crearProducto(
             @Valid @RequestBody NuevoProducto datos, HttpServletRequest solicitud) {
         Long responsableId = sesionEmpleado.obtenerId(solicitud);
         Producto creado = productoService.crearProducto(datos, responsableId);
-        return ResponseEntity.created(URI.create("/api/productos/" + creado.id())).body(creado);
+        return ResponseEntity.created(URI.create("/api/productos/" + creado.id()))
+                .body(ProductoRespuestaDTO.desde(creado));
     }
 
     @PutMapping("/productos/{id}/precio")
-    public ResponseEntity<Producto> actualizarPrecio(
+    public ResponseEntity<ProductoRespuestaDTO> actualizarPrecio(
             @PathVariable Long id, @Valid @RequestBody ActualizarPrecio datos, HttpServletRequest solicitud) {
         return productoService.actualizarPrecio(id, datos.precio(), sesionEmpleado.obtenerId(solicitud))
-                .map(ResponseEntity::ok)
+                .map(p -> ResponseEntity.ok(ProductoRespuestaDTO.desde(p)))
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PutMapping("/productos/{id}/stock")
-    public ResponseEntity<Producto> actualizarStock(
+    public ResponseEntity<ProductoRespuestaDTO> actualizarStock(
             @PathVariable Long id, @Valid @RequestBody AjusteInventario datos,
             HttpServletRequest solicitud) {
         Long responsableId = sesionEmpleado.obtenerId(solicitud);
         return productoService.actualizarStock(
                         id, datos.nuevoStock(), datos.motivo(), responsableId)
-                .map(ResponseEntity::ok)
+                .map(p -> ResponseEntity.ok(ProductoRespuestaDTO.desde(p)))
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     /** RF16: todos los productos, incluidos los desactivados (ADMIN y VENDEDOR). */
     @GetMapping("/productos/gestion")
-    public List<Producto> listarParaGestion() {
-        return productoService.listarParaGestion();
+    public List<ProductoRespuestaDTO> listarParaGestion() {
+        return productoService.listarParaGestion().stream()
+                .map(ProductoRespuestaDTO::desde)
+                .toList();
     }
 
     /** RF16: edita nombre, marca, descripción, imagen y categoría (ADMIN y VENDEDOR). */
     @PutMapping("/productos/{id}")
-    public Producto editarFicha(@PathVariable Long id, @Valid @RequestBody EditarProducto datos,
+    public ProductoRespuestaDTO editarFicha(@PathVariable Long id, @Valid @RequestBody EditarProducto datos,
             HttpServletRequest solicitud) {
-        return productoService.editarFicha(id, datos, sesionEmpleado.obtenerId(solicitud));
+        Producto modificado = productoService.editarFicha(id, datos, sesionEmpleado.obtenerId(solicitud));
+        return ProductoRespuestaDTO.desde(modificado);
     }
 
     /** RF16: activa o desactiva el producto; nunca lo borra (ADMIN y VENDEDOR). */
     @PatchMapping("/productos/{id}/estado")
-    public Producto cambiarEstado(@PathVariable Long id, @Valid @RequestBody CambiarEstadoProducto datos,
+    public ProductoRespuestaDTO cambiarEstado(@PathVariable Long id, @Valid @RequestBody CambiarEstadoProducto datos,
             HttpServletRequest solicitud) {
-        return productoService.cambiarEstado(id, datos.activo(), sesionEmpleado.obtenerId(solicitud));
+        Producto modificado = productoService.cambiarEstado(id, datos.activo(), sesionEmpleado.obtenerId(solicitud));
+        return ProductoRespuestaDTO.desde(modificado);
     }
 
     @GetMapping("/productos/{id}/movimientos")
-    public List<MovimientoInventario> listarMovimientos(@PathVariable Long id) {
-        return productoService.listarMovimientos(id);
+    public List<MovimientoInventarioRespuestaDTO> listarMovimientos(@PathVariable Long id) {
+        return productoService.listarMovimientos(id).stream()
+                .map(MovimientoInventarioRespuestaDTO::desde)
+                .toList();
     }
 }

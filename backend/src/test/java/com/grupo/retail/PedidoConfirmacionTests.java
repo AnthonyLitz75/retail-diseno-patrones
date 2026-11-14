@@ -1,5 +1,6 @@
 package com.grupo.retail;
 
+import com.grupo.retail.dao.CarritoDAO;
 import com.grupo.retail.dao.InventarioDAO;
 import com.grupo.retail.dao.PedidoDAO;
 import com.grupo.retail.dto.SolicitudConfirmarPedido;
@@ -40,6 +41,7 @@ class PedidoConfirmacionTests {
     private final Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
 
     private PedidoDAO dao;
+    private CarritoDAO carritoDAO;
     private InventarioDAO inventario;
     private PuertoPago puerto;
     private Connection conexion;
@@ -49,6 +51,7 @@ class PedidoConfirmacionTests {
     @BeforeEach
     void setUp() throws Exception {
         dao = mock(PedidoDAO.class);
+        carritoDAO = mock(CarritoDAO.class);
         inventario = mock(InventarioDAO.class);
         // Por defecto el stock alcanza; las pruebas de carrera lo cambian.
         when(inventario.descontarStock(any(), anyLong(), anyInt())).thenReturn(true);
@@ -58,7 +61,7 @@ class PedidoConfirmacionTests {
         when(proveedor.obtenerConexion()).thenReturn(conexion);
         // Ejecutor real sobre una conexión simulada: se verifica commit y rollback.
         publicador = mock(PublicadorEventosPedido.class);
-        facade = new CheckoutFacade(dao, inventario, puerto, new EjecutorTransaccion(proveedor), publicador);
+        facade = new CheckoutFacade(dao, carritoDAO, inventario, puerto, new EjecutorTransaccion(proveedor), publicador);
     }
 
     @Test
@@ -100,8 +103,9 @@ class PedidoConfirmacionTests {
         PedidoConfirmado esperado = pedido(10L, clave);
         when(dao.buscarPorClaveConfirmacion(conexion, 5L, clave)).thenReturn(Optional.empty());
         when(dao.claveConfirmacionRegistrada(conexion, clave)).thenReturn(false);
-        when(dao.bloquearCarritoActivo(conexion, 5L)).thenReturn(77L);
-        when(dao.leerYBloquearProductos(conexion, 77L)).thenReturn(List.of(mouse, teclado));
+        when(carritoDAO.bloquearCarritoActivo(conexion, 5L)).thenReturn(77L);
+        when(carritoDAO.leerProductos(conexion, 77L)).thenReturn(List.of(mouse, teclado));
+        when(carritoDAO.leerYBloquearProductos(conexion, 77L)).thenReturn(List.of(mouse, teclado));
         when(puerto.procesar(new BigDecimal("180.50"), "PRUEBA_APROBADA")).thenReturn(aprobado);
         when(dao.registrarCompra(conexion, 5L, new BigDecimal("180.50"), aprobado,
                 List.of(mouse, teclado), 77L, clave, "Juan", "Av. Perú 123")).thenReturn(esperado);
@@ -110,15 +114,24 @@ class PedidoConfirmacionTests {
                 5L, " PRUEBA_APROBADA ", " " + clave + " ", " Juan ", "Av. Perú 123");
 
         assertSame(esperado, resultado);
-        // Todos los pasos usan la misma conexión: el cliente se bloquea antes de leer la clave.
-        InOrder orden = inOrder(dao, puerto, conexion);
+        // Desacoplamiento de I/O externo: prevalidación -> llamada de pago -> transacción final con FOR UPDATE
+        InOrder orden = inOrder(dao, carritoDAO, puerto, conexion);
+        orden.verify(conexion).setAutoCommit(false);
+        orden.verify(dao).buscarPorClaveConfirmacion(conexion, 5L, clave);
+        orden.verify(carritoDAO).bloquearCarritoActivo(conexion, 5L);
+        orden.verify(carritoDAO).leerProductos(conexion, 77L);
+        orden.verify(conexion).commit();
+
+        orden.verify(puerto).procesar(new BigDecimal("180.50"), "PRUEBA_APROBADA");
+
         orden.verify(conexion).setAutoCommit(false);
         orden.verify(dao).bloquearClienteParaCompra(conexion, 5L);
         orden.verify(dao).buscarPorClaveConfirmacion(conexion, 5L, clave);
-        orden.verify(dao).bloquearCarritoActivo(conexion, 5L);
-        orden.verify(puerto).procesar(new BigDecimal("180.50"), "PRUEBA_APROBADA");
+        orden.verify(carritoDAO).bloquearCarritoActivo(conexion, 5L);
+        orden.verify(carritoDAO).leerYBloquearProductos(conexion, 77L);
         orden.verify(dao).registrarCompra(any(), anyLong(), any(), any(), any(), anyLong(), any(), any(), any());
         orden.verify(conexion).commit();
+
         // Inventario: cada línea descuenta su stock y deja un movimiento SALIDA ligado al pedido.
         verify(inventario).descontarStock(conexion, 1L, 2);
         verify(inventario).descontarStock(conexion, 2L, 1);
@@ -147,7 +160,7 @@ class PedidoConfirmacionTests {
         PedidoConfirmado resultado = facade.confirmarCompra(7L, "PRUEBA_APROBADA", clave, null, null);
 
         assertSame(existente, resultado);
-        verify(dao, never()).bloquearCarritoActivo(any(), anyLong());
+        verify(carritoDAO, never()).bloquearCarritoActivo(any(), anyLong());
         verifyNoInteractions(puerto, publicador); // un reintento no vuelve a notificar
         verify(conexion).commit();
     }
@@ -161,15 +174,15 @@ class PedidoConfirmacionTests {
         assertThrows(ClaveConfirmacionEnUsoException.class,
                 () -> facade.confirmarCompra(7L, "PRUEBA_APROBADA", clave, null, null));
 
-        verify(dao, never()).bloquearCarritoActivo(any(), anyLong());
+        verify(carritoDAO, never()).bloquearCarritoActivo(any(), anyLong());
         verifyNoInteractions(puerto);
         verify(conexion).rollback();
     }
 
     @Test
     void checkoutFacadeRechazaStockInsuficienteSinCobrar() throws Exception {
-        when(dao.bloquearCarritoActivo(conexion, 3L)).thenReturn(8L);
-        when(dao.leerYBloquearProductos(conexion, 8L)).thenReturn(List.of(
+        when(carritoDAO.bloquearCarritoActivo(conexion, 3L)).thenReturn(8L);
+        when(carritoDAO.leerProductos(conexion, 8L)).thenReturn(List.of(
                 new ProductoEnCompra(1L, "Monitor", new BigDecimal("900.00"), 1, true, 2)));
 
         StockInsuficienteException error = assertThrows(StockInsuficienteException.class,
@@ -182,11 +195,11 @@ class PedidoConfirmacionTests {
 
     @Test
     void checkoutFacadeRechazaCarritoVacioYProductoInactivo() throws Exception {
-        when(dao.bloquearCarritoActivo(conexion, 3L)).thenReturn(8L);
-        when(dao.leerYBloquearProductos(conexion, 8L)).thenReturn(List.of());
+        when(carritoDAO.bloquearCarritoActivo(conexion, 3L)).thenReturn(8L);
+        when(carritoDAO.leerProductos(conexion, 8L)).thenReturn(List.of());
         assertThrows(IllegalArgumentException.class, () -> facade.confirmarCompra(3L, "PRUEBA_APROBADA"));
 
-        when(dao.leerYBloquearProductos(conexion, 8L)).thenReturn(List.of(
+        when(carritoDAO.leerProductos(conexion, 8L)).thenReturn(List.of(
                 new ProductoEnCompra(1L, "Parlante", new BigDecimal("40.00"), 9, false, 1)));
         assertThrows(IllegalArgumentException.class, () -> facade.confirmarCompra(3L, "PRUEBA_APROBADA"));
         verifyNoInteractions(puerto);
@@ -194,8 +207,8 @@ class PedidoConfirmacionTests {
 
     @Test
     void checkoutFacadeRevierteSiElPagoEsRechazado() throws Exception {
-        when(dao.bloquearCarritoActivo(conexion, 3L)).thenReturn(8L);
-        when(dao.leerYBloquearProductos(conexion, 8L)).thenReturn(List.of(
+        when(carritoDAO.bloquearCarritoActivo(conexion, 3L)).thenReturn(8L);
+        when(carritoDAO.leerProductos(conexion, 8L)).thenReturn(List.of(
                 new ProductoEnCompra(1L, "Mouse", new BigDecimal("50.00"), 9, true, 1)));
         when(puerto.procesar(any(), any())).thenReturn(
                 new ResultadoPago(false, "SIMULADO", "RECHAZADO", "REF-X", "Pago rechazado por el banco simulado"));
@@ -203,7 +216,22 @@ class PedidoConfirmacionTests {
         assertThrows(PagoRechazadoException.class, () -> facade.confirmarCompra(3L, "PRUEBA_RECHAZADA"));
 
         verify(dao, never()).registrarCompra(any(), anyLong(), any(), any(), any(), anyLong(), any(), any(), any());
-        verify(conexion).rollback();
+    }
+
+    @Test
+    void checkoutFacadeCompensaReembolsandoSiFallaPersistencia() throws Exception {
+        ProductoEnCompra mouse = new ProductoEnCompra(1L, "Mouse", new BigDecimal("50.00"), 10, true, 1);
+        ResultadoPago aprobado = new ResultadoPago(true, "SIMULADO", "APROBADO", "REF-99", "OK");
+        when(carritoDAO.bloquearCarritoActivo(conexion, 5L)).thenReturn(77L);
+        when(carritoDAO.leerProductos(conexion, 77L)).thenReturn(List.of(mouse));
+        when(carritoDAO.leerYBloquearProductos(conexion, 77L)).thenReturn(List.of(mouse));
+        when(puerto.procesar(new BigDecimal("50.00"), "PRUEBA_APROBADA")).thenReturn(aprobado);
+        when(dao.registrarCompra(any(), anyLong(), any(), any(), any(), anyLong(), any(), any(), any()))
+                .thenThrow(new RuntimeException("Error simulado en persistencia"));
+
+        assertThrows(RuntimeException.class, () -> facade.confirmarCompra(5L, "PRUEBA_APROBADA"));
+
+        verify(puerto).reembolsar(new BigDecimal("50.00"), "REF-99", null);
     }
 
     @Test
@@ -214,7 +242,7 @@ class PedidoConfirmacionTests {
                 () -> facade.confirmarCompra(1L, "   "));
         assertThrows(IllegalArgumentException.class,
                 () -> facade.confirmarCompra(1L, null));
-        verifyNoInteractions(dao, puerto);
+        verifyNoInteractions(dao, carritoDAO, puerto);
     }
 
     @Test

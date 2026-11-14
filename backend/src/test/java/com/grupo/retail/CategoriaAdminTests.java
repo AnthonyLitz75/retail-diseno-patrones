@@ -157,7 +157,7 @@ class CategoriaAdminTests {
         when(statement.executeQuery()).thenReturn(result);
         when(result.next()).thenReturn(false);
 
-        new ProductoDAO(provider).listarCategorias();
+        new CategoriaDAO(provider).listarActivas();
 
         verify(connection).prepareStatement(contains("WHERE activa = TRUE"));
     }

@@ -1,7 +1,8 @@
 package com.grupo.retail.patterns.observer;
 
 import com.grupo.retail.model.EventoNotificacion;
-import com.grupo.retail.patterns.factory.FabricaNotificadorInApp;
+import com.grupo.retail.patterns.factory.FabricaNotificador;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import java.sql.Connection;
@@ -11,16 +12,15 @@ import java.sql.SQLException;
  * Patrón Observer (GoF) - Observador concreto transaccional.
  *
  * <p>Guarda la alerta de la campana del cliente en la misma transacción del pedido.
- * Combina dos patrones: es un observador y obtiene su canal mediante el Factory Method
- * existente ({@link FabricaNotificadorInApp}). Si la alerta no se puede guardar, el
- * cambio del pedido se revierte.</p>
+ * Cumple con el Principio de Inversión de Dependencias (DIP) al depender de la abstracción
+ * {@link FabricaNotificador} en lugar de la implementación concreta.</p>
  */
 @Component
 public class NotificadorInAppObservador implements ObservadorPedidoTransaccional {
 
-    private final FabricaNotificadorInApp fabrica;
+    private final FabricaNotificador fabrica;
 
-    public NotificadorInAppObservador(FabricaNotificadorInApp fabrica) {
+    public NotificadorInAppObservador(@Qualifier("fabricaNotificadorInApp") FabricaNotificador fabrica) {
         this.fabrica = fabrica;
     }
 

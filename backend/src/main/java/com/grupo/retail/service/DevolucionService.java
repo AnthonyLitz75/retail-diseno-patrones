@@ -141,11 +141,41 @@ public class DevolucionService {
     }
 
     /**
-     * RF25 y RF26 (SC-003): recepción y cierre en una sola transacción. Repetirlo es 409
-     * (la devolución ya está CERRADA) y un reembolso rechazado revierte stock, movimientos
-     * y estado.
+     * RF25 y RF26 (SC-003): recepción y cierre de devolución.
+     * La llamada a {@link PuertoPago#reembolsar} se ejecuta fuera de los bloqueos de base
+     * de datos sobre el inventario. Si el reembolso es rechazado, no se modifica stock ni estado
+     * y la devolución permanece APROBADA. Repetir el cierre responde 409 y no duplica reposición.
      */
     public Devolucion cerrar(long devolucionId, long soporteId, RecepcionDevolucion datos) {
+        // 1. Fase preliminar: validación de estado, recepción e importe del reembolso
+        record DatosReembolso(
+                Devolucion devolucion, Map<Long, Boolean> reintegros, BigDecimal importe, String referenciaCobro) {}
+
+        DatosReembolso prep = ejecutorTransaccion.ejecutar("No se pudo verificar la devolución", conexion -> {
+            Devolucion devolucion = bloquear(conexion, devolucionId);
+            devolucion.estado().validarTransicion(EstadoDevolucion.CERRADA);
+            Map<Long, Boolean> reintegros = validarRecepcion(devolucion, datos);
+
+            BigDecimal importe = devolucion.lineas().stream()
+                    .map(DetalleDevolucion::subtotalReembolso)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            PagoReembolsable pago = pagoDAO.bloquearPagoAprobado(conexion, devolucion.pedidoId())
+                    .orElseThrow(() -> new IllegalStateException("El pedido no tiene un cobro aprobado que reembolsar"));
+            if (importe.compareTo(pago.disponible()) > 0) {
+                throw new IllegalStateException("El reembolso supera lo cobrado y aún no reembolsado");
+            }
+            return new DatosReembolso(devolucion, reintegros, importe, pago.referencia());
+        });
+
+        // 2. I/O externo con la pasarela de pago FUERA de cualquier bloqueo de base de datos
+        ResultadoPago resultado = puertoPago.reembolsar(prep.importe(), prep.referenciaCobro(), datos.escenarioReembolso());
+        if (!resultado.aprobado()) {
+            throw new IllegalStateException("El reembolso fue rechazado por el proveedor de pago; "
+                    + "la devolución sigue APROBADA y no se aplicó ningún cambio");
+        }
+
+        // 3. Transacción SQL: bloqueo pesimista, reposición de stock, kardex, acumular reembolso y cerrar
         return ejecutorTransaccion.ejecutar("No se pudo cerrar la devolución", conexion -> {
             Devolucion devolucion = bloquear(conexion, devolucionId);
             devolucion.estado().validarTransicion(EstadoDevolucion.CERRADA);
@@ -169,7 +199,9 @@ public class DevolucionService {
             BigDecimal importe = devolucion.lineas().stream()
                     .map(DetalleDevolucion::subtotalReembolso)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
-            reembolsar(conexion, devolucion, importe, datos.escenarioReembolso());
+            PagoReembolsable pago = pagoDAO.bloquearPagoAprobado(conexion, devolucion.pedidoId())
+                    .orElseThrow(() -> new IllegalStateException("El pedido no tiene un cobro aprobado que reembolsar"));
+            pagoDAO.acumularReembolso(conexion, pago.id(), importe);
             devolucionDAO.cerrar(conexion, devolucionId, soporteId, importe);
 
             Devolucion cerrada = devolucionDAO.buscar(conexion, devolucionId);
@@ -197,21 +229,6 @@ public class DevolucionService {
             throw new IllegalArgumentException("Indica el resultado de todas las líneas de la devolución");
         }
         return reintegros;
-    }
-
-    private void reembolsar(Connection conexion, Devolucion devolucion, BigDecimal importe, String escenario)
-            throws SQLException {
-        PagoReembolsable pago = pagoDAO.bloquearPagoAprobado(conexion, devolucion.pedidoId())
-                .orElseThrow(() -> new IllegalStateException("El pedido no tiene un cobro aprobado que reembolsar"));
-        if (importe.compareTo(pago.disponible()) > 0) {
-            throw new IllegalStateException("El reembolso supera lo cobrado y aún no reembolsado");
-        }
-        ResultadoPago resultado = puertoPago.reembolsar(importe, pago.referencia(), escenario);
-        if (!resultado.aprobado()) {
-            throw new IllegalStateException("El reembolso fue rechazado por el proveedor de pago; "
-                    + "la devolución sigue APROBADA y no se aplicó ningún cambio");
-        }
-        pagoDAO.acumularReembolso(conexion, pago.id(), importe);
     }
 
     private Devolucion bloquear(Connection conexion, long devolucionId) throws SQLException {

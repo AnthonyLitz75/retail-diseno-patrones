@@ -108,13 +108,7 @@ public class PedidoController {
     public ResponseEntity<Void> cancelarPedido(
             @PathVariable Long id, HttpServletRequest peticion) {
         SesionAutenticada.UsuarioSesion actor = sesionAutenticada.exigirUsuario(peticion);
-        switch (Rol.desde(actor.rol()).orElse(null)) {
-            case CLIENTE -> pedidoService.cancelarPedidoComoCliente(id, actor.usuarioId());
-            case ADMIN -> pedidoService.cancelarPedidoComoAdmin(id, actor.usuarioId());
-            case VENDEDOR -> pedidoService.cancelarPedidoComoVendedor(id, actor.usuarioId());
-            case null, default -> throw new org.springframework.web.server.ResponseStatusException(
-                    HttpStatus.FORBIDDEN, "Tu rol no puede realizar esta operación");
-        }
+        pedidoService.cancelarPedidoSegunRol(id, actor.usuarioId(), actor.rol());
         return ResponseEntity.noContent().build();
     }
 
