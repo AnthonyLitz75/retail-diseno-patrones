@@ -43,8 +43,10 @@ test('renderizarCatalogoLayout genera las vistas modulares y cajón del carrito'
   assert.ok(html.includes('id="navegacion-modulos"'));
   assert.ok(html.includes('id="vista-tienda"'));
   assert.ok(html.includes('id="vista-pedidos"'));
-  assert.ok(html.includes('id="vista-inventario"'));
-  assert.ok(html.includes('id="vista-administracion"'));
+  assert.ok(html.includes('id="vista-atencion"'));
+  // T11: las vistas del personal se mudaron al panel (panel.html).
+  assert.ok(!html.includes('id="vista-inventario"'));
+  assert.ok(!html.includes('id="vista-administracion"'));
   assert.ok(html.includes('id="seccion-carrito"'));
   assert.ok(html.includes('id="hero-test"'));
 });

@@ -62,8 +62,10 @@ function selectorEstados(id, estados, etiquetaTodos) {
   return select;
 }
 
-function tarjetaBandeja(titulo, select) {
+function tarjetaBandeja(titulo, select, bandeja) {
   const seccion = el("section", "card shadow-sm mb-4");
+  // Gancho estable para que el panel del personal muestre solo la bandeja de su ruta.
+  seccion.setAttribute("data-bandeja", bandeja);
   const cuerpo = el("div", "card-body");
   const cabecera = el("div", "d-flex flex-wrap align-items-center justify-content-between gap-2");
   const actualizar = boton("Actualizar");
@@ -86,8 +88,8 @@ export function configurarPortalSoporte({ apiRequest, obtenerEstado, contenedor,
   panelContexto.hidden = true;
   const filtroReclamos = selectorEstados("filtro-reclamos-soporte", ESTADOS_FILTRO_RECLAMO, "Pendientes");
   const filtroDevoluciones = selectorEstados("filtro-devoluciones-soporte", ESTADOS_FILTRO_DEVOLUCION, "Por atender");
-  const reclamos = tarjetaBandeja("Reclamos de clientes", filtroReclamos);
-  const devoluciones = tarjetaBandeja("Devoluciones", filtroDevoluciones);
+  const reclamos = tarjetaBandeja("Reclamos de clientes", filtroReclamos, "reclamos");
+  const devoluciones = tarjetaBandeja("Devoluciones", filtroDevoluciones, "devoluciones");
   contenedor.replaceChildren(panelContexto, reclamos.seccion, devoluciones.seccion);
 
   const usuarioId = () => obtenerEstado?.()?.usuarioSesion?.idUsuario;

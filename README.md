@@ -51,7 +51,7 @@ Fue desarrollada como proyecto académico del curso **Diseño de Patrones de Sof
 
 ### Panel del personal (RBAC)
 
-En escritorio, el personal navega con un **menú lateral** fijo a la izquierda; en celular, con pestañas.
+El personal trabaja en su propia página, `panel.html` (ver [Panel del personal](#panel-del-personal)): menú lateral en escritorio y cajón de menú en celular.
 
 | Rol               | Capacidades                                                                                                                                                                                                 |
 | :---------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -174,6 +174,27 @@ La aplicación se abrirá en `http://localhost:5173`. Vite redirige las peticion
 | Soporte       | `soporte.prueba@example.com`  |
 
 Las contraseñas de estas cuentas están en `backend/src/main/resources/db/dev/V1000__datos_prueba.sql`.
+
+## Panel del personal
+
+**Cómo se entra:**
+
+- Al iniciar sesión, el personal (Administrador, Vendedor, Almacén y Soporte) llega directamente a `/panel.html#/inicio`. El cliente sigue yendo a la tienda.
+- Desde la tienda, con la sesión del personal abierta, el botón **«Panel del personal»** de la cabecera lleva al panel.
+- Sin sesión, `/panel.html` lleva al inicio de sesión; un cliente que lo abre vuelve a la tienda.
+
+Para probarlo, usa las [cuentas de demostración](#cuentas-de-demostración-perfil-dev) del personal.
+
+**Qué ve cada rol:**
+
+| Rol           | Pantallas del panel                                                                                          |
+| :------------ | :----------------------------------------------------------------------------------------------------------- |
+| Administrador | Inicio (indicadores y actividad), Pedidos, Productos, Inventario y kardex, Categorías, Cuentas y roles, Reportes, Incidencias y Auditoría. |
+| Vendedor      | Inicio (stock bajo, consultas y catálogo), Productos, Pedidos, Consultas de clientes e Inventario.          |
+| Almacén       | Inicio (cola de pedidos, stock crítico y entrada rápida), Pedidos por atender e Inventario y kardex.        |
+| Soporte       | Inicio (reclamos y devoluciones), Reclamos, Devoluciones y Consulta de pedido.                              |
+
+En la tienda, el personal ve el catálogo como un visitante con sesión: sin carrito y sin opciones de gestión.
 
 ## Arquitectura
 

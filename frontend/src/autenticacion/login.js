@@ -3,6 +3,7 @@ import "../style.css";
 import "../css/auth.css";
 import { apiRequest } from "../api/api.js";
 import { destinoTrasLogin } from "../utilidades/errores-globales.js";
+import { destinoTrasLoginPorRol } from "../panel/acceso.js";
 import { renderizarLogoSvg } from "../layout/componentes/logo.js";
 import { html, seguro } from "../utilidades/seguridad.js";
 
@@ -176,9 +177,10 @@ formulario.addEventListener("submit", async (evento) => {
     resultado.textContent = `Sesión iniciada. Bienvenida/o, ${cuerpo.nombre} (${cuerpo.rol}). Redirigiendo...`;
     formulario.reset();
 
-    // Redirección suave: vuelve a la ruta de la SPA donde estaba (spec 007, T002) o al catálogo
+    // Redirección suave según el rol (panel del personal, T11): el personal va siempre al inicio
+    // del panel; el cliente vuelve a la ruta de la SPA donde estaba (spec 007, T002) o al catálogo.
     setTimeout(() => {
-      window.location.href = destinoTrasLogin(window.location.search);
+      window.location.href = destinoTrasLoginPorRol(cuerpo.rol, window.location.search);
     }, 600);
   } catch (error) {
     resultado.className = "mt-3 mb-0 text-danger";

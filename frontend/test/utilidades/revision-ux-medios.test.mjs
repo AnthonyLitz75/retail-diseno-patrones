@@ -15,6 +15,7 @@ import {
 } from "../../src/inventario/inventario-vista.js";
 import { paginarProductos } from "../../src/catalogo/componentes/filtros-catalogo.js";
 import { renderizarHeader } from "../../src/layout/header.js";
+import { renderizarVistaInventario } from "../../src/layout/vistas-personal.js";
 
 // DOM mínimo con eventos, clases y foco; suficiente para los componentes de esta revisión.
 class ElementoFalso {
@@ -205,8 +206,9 @@ test("Administración arma las pestañas e incluye Incidencias", () => {
     assert.ok(plantilla.includes(`id="admin-seccion-${id}"`), id);
   }
   assert.ok(!plantilla.includes("<hr>"), "sin separadores entre secciones");
-  const main = leer("../../src/main.js");
-  assert.match(main, /panelAdministracion\.agregarSeccion\(\{\s*id: "incidencias"/);
+  // T11: Administración se monta en el panel, que también agrega Incidencias como sección.
+  const pantalla = leer("../../src/panel/pantallas/administracion.js");
+  assert.match(pantalla, /administracion\.agregarSeccion\(\{\s*id: "incidencias"/);
 });
 
 // ---------- Punto 9: kardex ----------
@@ -241,10 +243,15 @@ test("los controles del kardex se desactivan en los extremos y cambian de págin
 });
 
 test("la tabla del kardex tiene contenedor de paginación y cabecera sin '(ID)'", () => {
-  const layout = leer("../../src/layout/catalogo-layout.js");
+  // Panel del personal, T05: el HTML de la vista de inventario se movió de catalogo-layout.js
+  // a layout/vistas-personal.js (compartido con el panel). Antes se leía el texto fuente de
+  // catalogo-layout.js; ahora se comprueba el HTML que la tienda pinta de verdad, así la prueba
+  // no depende del archivo donde viva el marcado. Las dos comprobaciones se conservan.
+  // T11: el kardex se mudó al panel; se comprueba la plantilla compartida que monta.
+  const layout = renderizarVistaInventario();
   assert.ok(layout.includes('id="paginacion-movimientos"'));
   assert.ok(!layout.includes("Responsable (ID)"));
-  assert.ok(leer("../../src/main.js").includes('paginacionMovimientos: document.querySelector("#paginacion-movimientos")'));
+  assert.ok(leer("../../src/panel/pantallas/inventario.js").includes('paginacionMovimientos: "paginacion-movimientos"'));
 });
 
 // ---------- Punto 6: cabecera móvil ----------

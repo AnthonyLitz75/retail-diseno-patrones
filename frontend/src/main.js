@@ -2,6 +2,9 @@
  * @file main.js
  * Punto de entrada y orquestador principal de Píxel Andino Tech Store.
  * Inicializa el layout modular, servicios, componentes especializados y enrutador SPA.
+ * Los módulos del personal (productos, inventario, consultas, administración, auditoría y
+ * soporte) se montan en el panel del personal (panel.html) desde T11; la tienda ya no los
+ * configura ni llama a sus APIs.
  */
 
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -27,38 +30,20 @@ import {
   sincronizarCarritoInvitadoConBackend,
   hayCarritoInvitado,
 } from "./carrito/carrito-invitado.js";
-import { crearPanelAdministracion } from "./administracion/panel-administracion.js";
-import {
-  mostrarConfirmacion,
-  mostrarToast,
-} from "./utilidades/notificaciones.js";
+import { mostrarToast } from "./utilidades/notificaciones.js";
 import { html } from "./utilidades/seguridad.js";
 
 // Módulos especializados refactorizados (Hitos 1 a 6)
-import { configurarModalStock } from "./modales/modal-stock.js";
-import { configurarModalPrecio } from "./modales/modal-precio.js";
 import { configurarModalPreguntas } from "./modales/modal-preguntas.js";
 import { configurarModalReclamaciones } from "./modales/modal-reclamaciones.js";
-import { configurarModalEditarProducto } from "./modales/modal-editar-producto.js";
-import { crearPanelProductos } from "./catalogo/gestion/panel-productos.js";
-import { configurarPanelInventario } from "./inventario/inventario-vista.js";
 import { configurarBandejaNotificaciones } from "./notificaciones/bandeja-vista.js";
 import { configurarControladorPedidos } from "./pedidos/pedidos-controlador.js";
-import { configurarBandejaVendedor } from "./vendedor/vendedor-vista.js";
 import { configurarControladorCatalogo } from "./catalogo/catalogo-controlador.js";
 import { configurarControlesUI } from "./layout/controles-ui.js";
 import { configurarSesionYVistas } from "./estado/sesion.js";
 import { configurarEnrutadorSPA } from "./router/router.js";
-import { configurarPortalSoporte } from "./soporte/soporte-vista.js";
 import { configurarMiAtencion } from "./atencion/mi-atencion.js";
-import { crearPanelIncidencias } from "./administracion/incidencias-vista.js";
-import { crearPanelAuditoria } from "./administracion/auditoria-vista.js";
-import {
-  ROL,
-  ROLES_CATALOGO,
-  ROLES_INVENTARIO,
-  EVENTOS,
-} from "./utilidades/constantes.js";
+import { ROL } from "./utilidades/constantes.js";
 
 // 1. Montaje del Layout Semántico Principal
 montarLayoutPrincipal("#app");
@@ -82,32 +67,7 @@ configurarErroresGlobales({
 /** Se resuelve cuando se conoce la sesión; las guardas del enrutador la esperan. */
 let promesaSesion = Promise.resolve();
 
-// 2. Modales Especializados
-const { abrirModalStock } = configurarModalStock({
-  apiRequest,
-  Modal,
-  mostrarToast,
-  onStockActualizado: async (prod) => {
-    await catalogoCtrl.cargarProductos();
-    await refrescarPanelProductos();
-    if (
-      document.querySelector("#contenedor-historial-stock")?.children.length > 0
-    ) {
-      await inventarioCtrl.cargarMovimientos(prod);
-    }
-  },
-});
-
-const { abrirModalPrecio } = configurarModalPrecio({
-  apiRequest,
-  Modal,
-  mostrarToast,
-  onPrecioActualizado: async () => {
-    await catalogoCtrl.cargarProductos();
-    await refrescarPanelProductos();
-  },
-});
-
+// 2. Modales del cliente
 const { abrirModalPreguntas } = configurarModalPreguntas({
   apiRequest,
   Modal,
@@ -120,122 +80,13 @@ const { abrirModalPreguntas } = configurarModalPreguntas({
 
 configurarModalReclamaciones({ Modal, mostrarToast });
 
-// Vista "Productos" del personal (boceto del panel): tabla con pestañas Activos /
-// Desactivados / Stock bajo y el menú Gestionar; reactivar es una acción de la tabla.
-const panelProductos = crearPanelProductos({
-  apiRequest,
-  obtenerUsuario: () => estado.usuarioSesion,
-  obtenerCallbacks: () => ({
-    onCargarMovimientos: (prod) => {
-      sesionCtrl.cambiarVista("inventario");
-      void inventarioCtrl.cargarMovimientos(prod);
-    },
-    onAbrirModalStock: (prod) => abrirModalStock(prod),
-    onAbrirModalPrecio: (prod) => abrirModalPrecio(prod),
-    onAbrirModalEditar: (prod) => abrirModalEditarProducto(prod),
-  }),
-  confirmar: (opciones) => mostrarConfirmacion(opciones),
-  mostrarToast,
-  alCambiarEstado: async () => {
-    await catalogoCtrl.cargarProductos();
-  },
-});
-document
-  .querySelector("#seccion-gestion-productos .card-body")
-  ?.append(panelProductos.element);
-/** Recarga la tabla de productos solo si está a la vista (tras precio, stock o ficha). */
-async function refrescarPanelProductos() {
-  if (document.querySelector("#vista-productos")?.hidden === false)
-    await panelProductos.cargar();
-}
-document.addEventListener(
-  EVENTOS.PRODUCTO_CREADO,
-  () => void refrescarPanelProductos(),
-);
-
-const { abrirModalEditarProducto } = configurarModalEditarProducto({
-  apiRequest,
-  Modal,
-  mostrarToast,
-  onProductoActualizado: async () => {
-    await catalogoCtrl.cargarProductos();
-    await refrescarPanelProductos();
-  },
-});
-
-// 3. Panel de Administración
-const panelAdministracion = crearPanelAdministracion(apiRequest, async () => {
-  await catalogoCtrl.cargarCategorias();
-  await catalogoCtrl.cargarProductos();
-});
-document
-  .querySelector("#vista-administracion")
-  ?.append(panelAdministracion.element);
-const panelIncidencias = crearPanelIncidencias(apiRequest, mostrarToast);
-const panelAuditoria = crearPanelAuditoria(apiRequest);
-panelAdministracion.agregarSeccion({
-  id: "auditoria",
-  etiqueta: "Auditoría",
-  elemento: panelAuditoria.element,
-});
-panelAdministracion.agregarSeccion({
-  id: "incidencias",
-  etiqueta: "Incidencias",
-  elemento: panelIncidencias.element,
-});
-
-// 3c. "Mi atención" del cliente (spec 007, T012)
+// 3. "Mi atención" del cliente (spec 007, T012)
 const miAtencion = configurarMiAtencion({
   apiRequest,
   contenedor: document.querySelector("#vista-atencion"),
 });
 
-// 3b. Portal de Soporte (spec 006): reclamos, devoluciones y contexto del pedido
-const portalSoporte = configurarPortalSoporte({
-  apiRequest,
-  obtenerEstado: () => estado,
-  contenedor: document.querySelector("#vista-soporte"),
-  mostrarToast,
-});
-
-// 4. Panel de Inventario y Kardex
-const inventarioCtrl = configurarPanelInventario({
-  apiRequest,
-  obtenerEstado: () => estado,
-  mostrarToast,
-  cargarProductosCatalogo: async () => {
-    await catalogoCtrl.cargarProductos();
-  },
-  elementos: {
-    seccionInventario: document.querySelector("#seccion-inventario"),
-    seccionEntradaInventario: document.querySelector(
-      "#seccion-entrada-inventario",
-    ),
-    formularioEntradaInventario: document.querySelector(
-      "#form-entrada-inventario",
-    ),
-    selectorProductoEntrada: document.querySelector("#producto-entrada"),
-    cantidadEntrada: document.querySelector("#cantidad-entrada"),
-    motivoEntrada: document.querySelector("#motivo-entrada"),
-    estadoEntradaInventario: document.querySelector(
-      "#estado-entrada-inventario",
-    ),
-    formularioFiltrosMovimientos: document.querySelector(
-      "#filtros-movimientos",
-    ),
-    selectorProductoMovimientos: document.querySelector(
-      "#filtro-producto-movimientos",
-    ),
-    movimientosDesde: document.querySelector("#movimientos-desde"),
-    movimientosHasta: document.querySelector("#movimientos-hasta"),
-    estadoMovimientos: document.querySelector("#estado-movimientos"),
-    listaMovimientos: document.querySelector("#lista-movimientos"),
-    paginacionMovimientos: document.querySelector("#paginacion-movimientos"),
-    contenedorHistorial: document.querySelector("#contenedor-historial-stock"),
-  },
-});
-
-// 5. Bandeja de Notificaciones en Tiempo Real
+// 4. Bandeja de Notificaciones en Tiempo Real
 const notificacionesCtrl = configurarBandejaNotificaciones({
   apiRequest,
   obtenerUsuarioSesion: () => estado.usuarioSesion,
@@ -264,26 +115,7 @@ const notificacionesCtrl = configurarBandejaNotificaciones({
   },
 });
 
-// 6. Consultas para Vendedores
-const vendedorCtrl = configurarBandejaVendedor({
-  apiRequest,
-  obtenerEstado: () => estado,
-  elementos: {
-    seccionPreguntasVendedor: document.querySelector(
-      "#seccion-preguntas-vendedor",
-    ),
-    estadoPreguntasVendedor: document.querySelector(
-      "#estado-preguntas-vendedor",
-    ),
-    listaPreguntasVendedor: document.querySelector("#lista-preguntas-vendedor"),
-    btnActualizarPreguntas: document.querySelector(
-      "#actualizar-preguntas-vendedor",
-    ),
-  },
-  acciones: { mostrarToast },
-});
-
-// 7. Flujo de Pedidos
+// 5. "Mis compras" del cliente
 const pedidosCtrl = configurarControladorPedidos({
   apiRequest,
   Modal,
@@ -303,7 +135,7 @@ const pedidosCtrl = configurarControladorPedidos({
   },
 });
 
-// 8. Catálogo, Filtros y Vitrinas
+// 6. Catálogo, Filtros y Vitrinas
 const catalogoCtrl = configurarControladorCatalogo({
   apiRequest,
   estado,
@@ -323,24 +155,17 @@ const catalogoCtrl = configurarControladorCatalogo({
     selectorOrden: document.querySelector("#orden-catalogo"),
     switchSoloStock: document.querySelector("#solo-stock"),
     botonLimpiarFiltros: document.querySelector("#limpiar-filtros"),
-    formulario: document.querySelector("#form-producto"),
-    categoriaProducto: document.querySelector("#categoria-producto"),
-    resultadoFormulario: document.querySelector("#resultado-formulario"),
   },
   acciones: {
     mostrarToast,
     obtenerCallbacksTarjeta: () => ({
       onAgregarCarrito: (id, prod) => agregarProductoAlCarrito(id, prod),
       onAbrirPreguntas: (prod) => abrirModalPreguntas(prod),
-      onCargarMovimientos: (prod) => inventarioCtrl.cargarMovimientos(prod),
-      onAbrirModalStock: (prod) => abrirModalStock(prod),
-      onAbrirModalPrecio: (prod) => abrirModalPrecio(prod),
-      onAbrirModalEditar: (prod) => abrirModalEditarProducto(prod),
     }),
   },
 });
 
-// 9. Enrutador SPA por Location Hash
+// 7. Enrutador SPA por Location Hash
 const enrutadorSPA = configurarEnrutadorSPA({
   estado,
   elementos: {
@@ -368,7 +193,7 @@ const enrutadorSPA = configurarEnrutadorSPA({
   },
 });
 
-// 10. Controles de Interfaz Complementarios (Dropdown, Carruseles, Docks)
+// 8. Controles de Interfaz Complementarios (Dropdown, Carruseles, Docks)
 const uiCtrl = configurarControlesUI({
   apiRequest,
   estado,
@@ -394,7 +219,7 @@ const uiCtrl = configurarControlesUI({
   },
 });
 
-// 11. Sesión de Usuario y Vistas
+// 9. Sesión de Usuario y Vistas
 const sesionCtrl = configurarSesionYVistas({
   apiRequest,
   estado,
@@ -403,35 +228,15 @@ const sesionCtrl = configurarSesionYVistas({
     enlaceRegistro: document.querySelector("#enlace-registro"),
     usuarioActivo: document.querySelector("#usuario-activo"),
     botonCerrarSesion: document.querySelector("#cerrar-sesion"),
+    enlacePanelPersonal: document.querySelector("#enlace-panel-personal"),
     enlacePedidosNav: document.querySelector("#enlace-pedidos-nav"),
     enlaceCarritoNav: document.querySelector("#enlace-carrito-nav"),
-    seccionGestionProductos: document.querySelector(
-      "#seccion-gestion-productos",
-    ),
-    panelAdministracion,
-    seccionPreguntasVendedor: document.querySelector(
-      "#seccion-preguntas-vendedor",
-    ),
-    estadoPreguntasVendedor: document.querySelector(
-      "#estado-preguntas-vendedor",
-    ),
-    listaPreguntasVendedor: document.querySelector("#lista-preguntas-vendedor"),
-    seccionInventario: document.querySelector("#seccion-inventario"),
-    seccionEntradaInventario: document.querySelector(
-      "#seccion-entrada-inventario",
-    ),
-    listaMovimientos: document.querySelector("#lista-movimientos"),
     seccionPedidos: document.querySelector("#seccion-pedidos"),
     listaPedidos: document.querySelector("#lista-pedidos"),
     navModulos: document.querySelector("#navegacion-modulos"),
     mapaVistas: {
       tienda: document.querySelector("#vista-tienda"),
       pedidos: document.querySelector("#vista-pedidos"),
-      inventario: document.querySelector("#vista-inventario"),
-      productos: document.querySelector("#vista-productos"),
-      administracion: document.querySelector("#vista-administracion"),
-      consultas: document.querySelector("#vista-consultas"),
-      soporte: document.querySelector("#vista-soporte"),
       atencion: document.querySelector("#vista-atencion"),
     },
   },
@@ -450,29 +255,14 @@ const sesionCtrl = configurarSesionYVistas({
     mostrarToast,
     hayCarritoInvitado,
     onCambioVista: (vista, rol) => {
-      if (estado.usuarioSesion) {
-        if (vista === "productos" && ROLES_CATALOGO.includes(rol))
-          void panelProductos.cargar();
-        else if (vista === "pedidos") void pedidosCtrl.cargarPedidos();
-        else if (vista === "inventario" && ROLES_INVENTARIO.includes(rol))
-          void inventarioCtrl.iniciarPanelInventario();
-        else if (vista === "consultas" && rol === ROL.VENDEDOR)
-          void vendedorCtrl.cargarPreguntasVendedor();
-        else if (vista === "administracion" && rol === ROL.ADMIN) {
-          void panelAdministracion.cargar();
-          panelIncidencias.element.hidden = false;
-          void panelIncidencias.cargar();
-          void panelAuditoria.cargar();
-        } else if (vista === "soporte" && rol === ROL.SOPORTE)
-          void portalSoporte.cargar();
-        else if (vista === "atencion" && rol === ROL.CLIENTE)
-          void miAtencion.cargar();
-      }
+      if (!estado.usuarioSesion) return;
+      if (vista === "pedidos") void pedidosCtrl.cargarPedidos();
+      else if (vista === "atencion" && rol === ROL.CLIENTE) void miAtencion.cargar();
     },
   },
 });
 
-// 12. Inicialización de la Tienda
+// 10. Inicialización de la Tienda
 async function inicializarTienda() {
   const estadoCatalogo = document.querySelector("#estado-catalogo");
   try {

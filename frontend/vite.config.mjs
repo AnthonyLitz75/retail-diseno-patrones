@@ -7,7 +7,8 @@ export default defineConfig({
       input: {
         catalogo: fileURLToPath(new URL('./index.html', import.meta.url)),
         registro: fileURLToPath(new URL('./register.html', import.meta.url)),
-        login: fileURLToPath(new URL('./login.html', import.meta.url))
+        login: fileURLToPath(new URL('./login.html', import.meta.url)),
+        panel: fileURLToPath(new URL('./panel.html', import.meta.url))
       }
     }
   },

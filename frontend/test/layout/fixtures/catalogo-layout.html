@@ -1,0 +1,333 @@
+
+  <main id="contenido-principal" class="container py-4 storefront" tabindex="-1">
+    <nav id="navegacion-modulos" class="nav nav-pills modulo-tabs mb-4 gap-2 flex-wrap" role="tablist" aria-label="Módulos de la tienda" hidden>
+      <button class="nav-link active" id="tab-tienda" type="button" role="tab" data-vista="tienda" aria-selected="true">Tienda</button>
+      <button class="nav-link" id="tab-pedidos" type="button" role="tab" data-vista="pedidos" aria-selected="false" hidden>Pedidos</button>
+      <button class="nav-link" id="tab-atencion" type="button" role="tab" data-vista="atencion" aria-selected="false" hidden>Mi atención</button>
+    </nav>
+
+    <!-- Migas de Pan (Breadcrumbs) SPA (RF-02, RF-07) -->
+    <nav id="contenedor-breadcrumbs" class="store-breadcrumbs mb-3" aria-label="Migas de pan" hidden>
+      <ol class="breadcrumb mb-0" id="lista-breadcrumbs"></ol>
+    </nav>
+
+    <!-- Vista Detalle de Producto Individual (RF-07) -->
+    <div id="vista-detalle-producto" class="modulo-vista" hidden></div>
+
+    <!-- Vista 404 (Página o Producto No Encontrado) -->
+    <div id="vista-404" class="modulo-vista text-center py-5" hidden>
+      <div class="view-404-card card p-5 mx-auto shadow-sm card-404-max">
+        <div class="icon-404-bubble mx-auto mb-3">
+          <svg width="42" height="42" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <h2 class="h4 fw-bold text-dark mb-2">Producto o sección no encontrada</h2>
+        <p class="text-secondary small mb-4">La ruta que intentas visitar no existe o el producto fue retirado temporalmente del catálogo.</p>
+        <div class="d-flex justify-content-center gap-2">
+          <a href="#/" class="btn btn-primary btn-sm px-3 fw-bold">Ir al inicio</a>
+          <a href="#/catalogo" class="btn btn-outline-secondary btn-sm px-3 fw-semibold">Ver catálogo completo</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Vista Tienda -->
+    <div id="vista-tienda" class="modulo-vista">
+      <!-- BLOQUE VITRINA COMERCIAL INICIO (RF-04: visible en #/) -->
+      <div id="bloque-vitrina-inicio">
+        <div id="hero-test"></div>
+
+        <!-- Boceto "Inicio": accesos directos a cada categoría (se muestra al cargar el árbol) -->
+        <section id="seccion-compra-categoria" class="mb-5" aria-labelledby="titulo-compra-categoria" hidden>
+          <h2 id="titulo-compra-categoria" class="section-title mb-3">COMPRA POR CATEGORÍA</h2>
+          <nav id="chips-categorias-inicio" class="chips-categorias" aria-label="Categorías de la tienda"></nav>
+        </section>
+
+        <!-- 4. Sección Destacados: hasta 8 productos en grilla con enlace "Ver más →" (RF-04) -->
+        <section id="seccion-destacados" class="mb-5" aria-labelledby="titulo-productos-destacados">
+          <div class="section-title-wrap d-flex justify-content-between align-items-center mb-3">
+            <div>
+              <p class="store-section-kicker mb-1">SELECCIÓN OFICIAL</p>
+              <h2 id="titulo-productos-destacados" class="section-title mb-0">PRODUCTOS DESTACADOS</h2>
+            </div>
+            <a href="#/catalogo" class="btn btn-sm btn-outline-primary fw-semibold px-3 d-inline-flex align-items-center gap-1">
+              <span>Ver más</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </a>
+          </div>
+          <div id="grid-destacados" class="catalog-grid products-grid">
+            <!-- Hasta 8 productos destacados sin agotados cargados dinámicamente -->
+          </div>
+        </section>
+
+        <!-- 5. Carrusel Horizontal: Nuevos Productos (RF-04: hasta 8) -->
+        <section id="seccion-nuevos" class="shelf-carousel-section mb-5" aria-labelledby="titulo-nuevos-productos">
+          <div class="section-title-wrap d-flex justify-content-between align-items-center mb-3">
+            <div>
+              <p class="store-section-kicker mb-1">LO ÚLTIMO EN TIENDA</p>
+              <h2 id="titulo-nuevos-productos" class="section-title mb-0">NUEVOS PRODUCTOS</h2>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <a href="#/catalogo" class="btn btn-sm btn-outline-primary fw-semibold px-3 d-inline-flex align-items-center gap-1 me-2">
+                <span>Ver más</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+              </a>
+              <div class="section-carousel-controls">
+                <button id="btn-nuevos-prev" class="section-carousel-btn" type="button" aria-label="Anterior nuevo producto">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                </button>
+                <button id="btn-nuevos-next" class="section-carousel-btn" type="button" aria-label="Siguiente nuevo producto">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div id="carrusel-nuevos-track" class="product-carousel-track">
+            <!-- Tarjetas de nuevos productos cargadas dinámicamente -->
+          </div>
+        </section>
+
+        <!-- 6. Carrusel Horizontal: Ofertas Destacadas (RF-04: hasta 8) -->
+        <section id="seccion-ofertas" class="shelf-carousel-section mb-5" aria-labelledby="titulo-ofertas-destacadas">
+          <div class="section-title-wrap d-flex justify-content-between align-items-center mb-3">
+            <div>
+              <p class="store-section-kicker mb-1">PRECIOS ESPECIALES</p>
+              <h2 id="titulo-ofertas-destacadas" class="section-title mb-0">OFERTAS DESTACADAS</h2>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <a href="#/catalogo" class="btn btn-sm btn-outline-primary fw-semibold px-3 d-inline-flex align-items-center gap-1 me-2">
+                <span>Ver más</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+              </a>
+              <div class="section-carousel-controls">
+                <button id="btn-ofertas-prev" class="section-carousel-btn" type="button" aria-label="Anterior oferta">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                </button>
+                <button id="btn-ofertas-next" class="section-carousel-btn" type="button" aria-label="Siguiente oferta">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div id="carrusel-ofertas-track" class="product-carousel-track">
+            <!-- Tarjetas de ofertas cargadas dinámicamente -->
+          </div>
+        </section>
+
+        <!-- 7. Sección Fila: Componentes para PC (RF-04: fila de 4) con enlace "Ver todos" -->
+        <section id="seccion-componentes" class="mb-5" aria-labelledby="titulo-seccion-componentes">
+          <div class="section-title-wrap d-flex justify-content-between align-items-center mb-3">
+            <div>
+              <p class="store-section-kicker mb-1">HARDWARE Y UPGRADES</p>
+              <h2 id="titulo-seccion-componentes" class="section-title mb-0">COMPONENTES PARA PC</h2>
+            </div>
+            <a href="#/categoria/componentes-para-pc" class="btn btn-sm btn-outline-primary fw-semibold px-3 d-inline-flex align-items-center gap-1">
+              <span>Ver todos</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </a>
+          </div>
+          <div id="grid-componentes" class="catalog-grid products-grid">
+            <!-- 4 productos de hardware cargados dinámicamente -->
+          </div>
+        </section>
+
+        <!-- 8. Banner CTA Final hacia el Catálogo Completo (RF-04) -->
+        <section class="home-cta-banner card border-0 p-4 p-md-5 text-center text-white mb-4 shadow-sm">
+          <div class="mx-auto home-cta-wrap">
+            <span class="badge mb-2 text-uppercase fw-bold home-cta-badge">Todo nuestro inventario</span>
+            <h3 class="h2 fw-bold mb-2">¿Buscas algo específico?</h3>
+            <p class="text-white-50 mb-4 fs-6">Explora nuestro catálogo completo de periféricos, componentes de hardware y accesorios con filtros por categoría, precio y stock en tiempo real.</p>
+            <a href="#/catalogo" class="btn btn-light btn-lg px-4 py-2 fw-bold text-primary shadow-sm d-inline-flex align-items-center gap-2 rounded-pill">
+              <span>Ver todo el catálogo</span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </a>
+            <p id="resumen-catalogo-inicio" class="text-white-50 small mt-3 mb-0"></p>
+          </div>
+        </section>
+      </div>
+
+      <!-- BLOQUE CATÁLOGO COMPLETO (RF-02, RF-03: visible en #/catalogo, #/categoria/..., #/buscar) -->
+      <div id="bloque-catalogo-completo" hidden>
+        <section id="categorias" class="category-shelf mb-4" aria-labelledby="titulo-categorias-destacadas">
+          <div class="d-flex flex-wrap align-items-end justify-content-between gap-2 mb-3">
+            <div>
+              <p class="store-section-kicker mb-1">EXPLORA LA TIENDA</p>
+              <h2 id="titulo-categorias-destacadas" class="h4 mb-0">Categorías</h2>
+            </div>
+            <span class="small text-secondary">Opciones disponibles en el catálogo</span>
+          </div>
+          <div id="categorias-destacadas" class="category-pills" aria-label="Filtrar por categoría"></div>
+        </section>
+
+
+        <!-- Barra compacta de filtros sin controles duplicados -->
+        <section class="catalog-toolbar card shadow-sm border-0 mb-3" aria-label="Filtros del catálogo">
+          <div class="card-body p-2 p-md-3">
+            <!-- Inputs ocultos para sincronización con API -->
+            <input id="busqueda" type="hidden" value="">
+            <select id="filtro-categoria" hidden aria-hidden="true">
+              <option value="">Todas las categorías</option>
+            </select>
+
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+              <!-- Rango de Precios compacto -->
+              <div class="d-flex align-items-center gap-2">
+                <span class="small fw-semibold text-secondary text-nowrap">Precio:</span>
+                <div class="input-group input-group-sm catalog-price-input-group">
+                  <span class="input-group-text py-1 px-2 text-muted">S/</span>
+                  <input id="precio-min" class="form-control form-control-sm" type="number" min="0" step="0.01" placeholder="Mín" aria-label="Precio mínimo en soles">
+                </div>
+                <span class="text-muted small">&ndash;</span>
+                <div class="input-group input-group-sm catalog-price-input-group">
+                  <span class="input-group-text py-1 px-2 text-muted">S/</span>
+                  <input id="precio-max" class="form-control form-control-sm" type="number" min="0" step="0.01" placeholder="Máx" aria-label="Precio máximo en soles">
+                </div>
+              </div>
+
+              <!-- Switch Solo en stock -->
+              <div class="form-check form-switch mb-0 d-flex align-items-center gap-2">
+                <input class="form-check-input mt-0" type="checkbox" role="switch" id="filtro-solo-stock">
+                <label class="form-check-label small fw-semibold text-dark text-nowrap" for="filtro-solo-stock">Solo en stock</label>
+              </div>
+
+              <!-- Ordenamiento -->
+              <div class="d-flex align-items-center gap-2 ms-md-auto">
+                <label for="orden-productos" class="small fw-semibold text-secondary text-nowrap mb-0">Ordenar:</label>
+                <select id="orden-productos" class="form-select form-select-sm" style="width: auto; min-width: 160px;">
+                  <option value="defecto">Relevancia</option>
+                  <option value="precio_asc">Precio: Menor a mayor</option>
+                  <option value="precio_desc">Precio: Mayor a menor</option>
+                  <option value="nombre_asc">Nombre: A a Z</option>
+                  <option value="nombre_desc">Nombre: Z a A</option>
+                </select>
+              </div>
+
+              <!-- Botón Limpiar filtros -->
+              <button id="limpiar-filtros" class="btn btn-outline-secondary btn-sm px-3" type="button" aria-label="Limpiar filtros">
+                Limpiar
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Barra de estado y chips de filtros activos -->
+        <div id="barra-estado-filtros" class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+          <p id="estado-catalogo" class="fw-bold text-dark small mb-0" role="status">Cargando productos...</p>
+          <div id="chips-filtros-activos" class="d-flex flex-wrap align-items-center gap-2"></div>
+        </div>
+
+        <section id="productos" class="catalog-grid products-grid mb-4" aria-label="Productos"></section>
+
+        <!-- Paginación del Catálogo (RF-03: 12 productos por página) -->
+        <nav id="contenedor-paginacion" class="catalog-pagination-nav d-flex justify-content-center my-4" aria-label="Paginación de productos" hidden>
+          <ul id="lista-paginacion" class="pagination pagination-sm mb-0 shadow-sm"></ul>
+        </nav>
+      </div>
+
+      <section id="historial" class="mt-5" aria-live="polite"></section>
+    </div>
+
+    <!-- Vista Pedidos -->
+    <div id="vista-pedidos" class="modulo-vista" hidden>
+      <section id="seccion-pedidos" class="card shadow-sm mb-4" aria-labelledby="titulo-pedidos">
+        <div class="card-body">
+          <h2 id="titulo-pedidos" class="h4">Pedidos</h2>
+          <p id="estado-pedidos" class="text-secondary" role="status" aria-live="polite"></p>
+          <div id="lista-pedidos" class="list-group"></div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Vista Mi atención del cliente (spec 007, T012) -->
+    <div id="vista-atencion" class="modulo-vista" hidden></div>
+
+    <!-- Offcanvas Lateral: Carrito de Compras -->
+    <div id="seccion-carrito" class="offcanvas offcanvas-end" tabindex="-1" aria-labelledby="titulo-carrito" data-foco-respaldo="#enlace-carrito-nav">
+      <div class="offcanvas-header border-bottom py-3">
+        <div class="d-flex align-items-center gap-2">
+          <h2 id="titulo-carrito" class="offcanvas-title h5 mb-0 fw-bold">Mi carrito</h2>
+          <span id="cart-drawer-count" class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill">0 items</span>
+        </div>
+        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Cerrar carrito"></button>
+      </div>
+      <div class="offcanvas-body d-flex flex-column p-3">
+        <!-- Pasos del checkout (boceto "Confirmar compra"): Carrito → Entrega y pago → Confirmación -->
+        <ol id="checkout-pasos" class="checkout-pasos" aria-label="Pasos de la compra">
+          <li data-paso="carrito" aria-current="step"><span class="checkout-paso-numero">1</span><span class="checkout-paso-texto">Carrito</span></li>
+          <li data-paso="entrega"><span class="checkout-paso-numero">2</span><span class="checkout-paso-texto">Entrega y pago</span></li>
+          <li data-paso="confirmacion"><span class="checkout-paso-numero">3</span><span class="checkout-paso-texto">Confirmación</span></li>
+        </ol>
+        <p id="estado-carrito" class="small mb-2" role="status" aria-live="polite"></p>
+
+        <!-- Paso 1: Carrito -->
+        <section id="checkout-paso-carrito" class="checkout-paso d-flex flex-column flex-grow-1" aria-label="Paso 1: carrito">
+          <ul id="productos-carrito" class="list-group list-group-flush flex-grow-1 overflow-y-auto mb-3"></ul>
+          <div class="cart-drawer-footer border-top pt-3 mt-auto">
+            <div class="cart-order-summary bg-light rounded-3 p-3 mb-3 border">
+              <div class="d-flex justify-content-between align-items-center small text-secondary mb-1">
+                <span>Envío nacional:</span>
+                <span class="text-success fw-semibold">Gratis</span>
+              </div>
+              <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+                <span class="fw-bold text-dark">Total:</span>
+                <span id="total-carrito" class="fs-5 fw-bold text-primary">S/ 0.00</span>
+              </div>
+            </div>
+            <button id="continuar-checkout" class="btn btn-primary w-100 py-2 fw-semibold" type="button" disabled>
+              <span id="continuar-checkout-texto">Continuar con la entrega</span>
+            </button>
+            <p class="small text-secondary text-center mt-2 mb-0">Tu carrito no reserva stock: la disponibilidad se vuelve a validar al confirmar.</p>
+          </div>
+        </section>
+
+        <!-- Paso 2: Entrega y pago -->
+        <section id="checkout-paso-entrega" class="checkout-paso d-flex flex-column flex-grow-1" aria-label="Paso 2: entrega y pago" hidden>
+          <div class="flex-grow-1 overflow-y-auto">
+            <h3 class="h6 fw-bold mb-2">Dirección de entrega</h3>
+            <div class="mb-2">
+              <label for="checkout-destinatario" class="form-label small fw-semibold mb-1 text-secondary">Destinatario</label>
+              <input id="checkout-destinatario" class="form-control form-control-sm" type="text" maxlength="120" autocomplete="name" placeholder="Nombre de quien recibe (opcional)">
+            </div>
+            <div class="mb-3">
+              <label for="checkout-direccion" class="form-label small fw-semibold mb-1 text-secondary">Dirección</label>
+              <input id="checkout-direccion" class="form-control form-control-sm" type="text" maxlength="250" autocomplete="street-address" placeholder="Calle, número y distrito (opcional)">
+            </div>
+
+            <fieldset class="mb-3">
+              <legend class="h6 fw-bold mb-2">Método de pago</legend>
+              <p class="alert alert-warning py-2 small mb-2">Pago simulado de la demo: no se solicitan tarjetas ni se cobra dinero real.</p>
+              <label class="checkout-metodo">
+                <input class="form-check-input" type="radio" name="checkout-metodo-pago" value="PRUEBA_APROBADA" checked>
+                <span><strong class="d-block">Pago de prueba aprobado</strong><span class="small text-secondary">La compra se registra y el pago queda APROBADO.</span></span>
+              </label>
+              <label class="checkout-metodo">
+                <input class="form-check-input" type="radio" name="checkout-metodo-pago" value="PRUEBA_RECHAZADA">
+                <span><strong class="d-block">Pago de prueba rechazado</strong><span class="small text-secondary">Para probar qué ocurre cuando el pago falla: no se crea el pedido.</span></span>
+              </label>
+            </fieldset>
+
+            <h3 class="h6 fw-bold mb-2">Tu pedido</h3>
+            <ul id="checkout-resumen" class="list-unstyled small mb-0"></ul>
+          </div>
+          <div class="cart-drawer-footer border-top pt-3 mt-3">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <span class="fw-bold text-dark">Total a pagar:</span>
+              <span id="checkout-total" class="fs-5 fw-bold text-primary">S/ 0.00</span>
+            </div>
+            <button id="confirmar-compra" class="btn btn-success w-100 py-2 fw-semibold d-flex align-items-center justify-content-center gap-2 shadow-sm" type="button" disabled>
+              <span id="confirmar-compra-spinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+              <span id="confirmar-compra-texto">Confirmar y pagar</span>
+            </button>
+            <p class="small text-secondary text-center mt-2 mb-0">
+              Si haces clic dos veces por error, la compra no se duplica.
+              <button id="volver-carrito" class="btn btn-link btn-sm p-0 align-baseline" type="button">Volver al carrito</button>
+            </p>
+          </div>
+        </section>
+
+        <!-- Paso 3: Confirmación (boceto "Compra confirmada") -->
+        <section id="checkout-paso-confirmacion" class="checkout-paso flex-grow-1" aria-label="Paso 3: confirmación" tabindex="-1" hidden></section>
+      </div>
+    </div>
+  </main>
+  

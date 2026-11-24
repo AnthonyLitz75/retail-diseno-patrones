@@ -62,8 +62,15 @@ export function crearFilaAuditoria(registro) {
   const actor = el("div");
   actor.append(el("span", "d-block", describirActor(registro)));
   if (correo) actor.append(el("span", "d-block small text-secondary", correo));
-  const celdaUsuario = el("td");
+  // El usuario identifica la fila: encabezado de fila para lectores de pantalla.
+  const celdaUsuario = el("th");
+  celdaUsuario.setAttribute("scope", "row");
   celdaUsuario.append(actor);
+  // Insignia de la acción: el código en data-accion permite darle color y forma por CSS.
+  const insignia = el("span", "insignia-accion", registro.accionEtiqueta || registro.accion);
+  insignia.dataset.accion = registro.accion ?? "";
+  const celdaAccion = el("td", "fw-semibold");
+  celdaAccion.append(insignia);
   fila.append(
     el(
       "td",
@@ -73,7 +80,7 @@ export function crearFilaAuditoria(registro) {
         : fecha.toLocaleString("es-PE", FORMATO_FECHA),
     ),
     celdaUsuario,
-    el("td", "fw-semibold", registro.accionEtiqueta || registro.accion),
+    celdaAccion,
     el("td", "text-nowrap small", describirEntidad(registro)),
     el("td", "small", registro.detalle),
   );
@@ -203,6 +210,7 @@ export function crearPanelAuditoria(apiRequest) {
       return;
     }
     mostrarEstado("Consultando auditoría…");
+    envoltura.setAttribute("aria-busy", "true");
     try {
       const datos = await (
         await apiRequest(`/api/admin/auditoria?${consulta}`)
@@ -232,13 +240,16 @@ export function crearPanelAuditoria(apiRequest) {
           cargarPagina,
         ),
       );
-    } catch (error) {
+    } catch {
       cuerpo.replaceChildren();
       paginacion.hidden = true;
-      mostrarEstado(
-        `No se pudo consultar la auditoría. ${error.message}`,
-        "danger",
-      );
+      mostrarEstado("No se pudo cargar la auditoría.", "danger");
+      const reintentar = el("button", "btn btn-outline-danger btn-sm ms-2", "Reintentar");
+      reintentar.type = "button";
+      reintentar.addEventListener("click", () => cargarPagina(pagina));
+      estado.append(reintentar);
+    } finally {
+      envoltura.setAttribute("aria-busy", "false");
     }
   }
 

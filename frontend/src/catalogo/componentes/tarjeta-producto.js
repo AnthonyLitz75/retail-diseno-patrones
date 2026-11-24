@@ -9,8 +9,7 @@ import { esFavorito, alternarFavorito } from "./favoritos.js";
 import { mostrarToast } from "../../utilidades/notificaciones.js";
 import { formatoPrecio } from "../../utilidades/formato.js";
 import { asignarImagenConRespaldo, resolverImagenProducto } from "./imagen-producto.js";
-import { crearMenuAcciones } from "../../utilidades/menu-acciones.js";
-import { ROL, ROLES_CATALOGO, ROLES_INVENTARIO } from "../../utilidades/constantes.js";
+import { ROL } from "../../utilidades/constantes.js";
 import { html } from "../../utilidades/seguridad.js";
 
 /**
@@ -183,18 +182,13 @@ export function crearElementoTarjetaProducto(
     pricingBox.append(oldPrice);
   }
 
-  // 7. Acciones según Rol (Cliente, Invitado o Staff)
+  // 7. Acciones según Rol: el cliente y el invitado compran y preguntan. El personal ve la
+  // tarjeta sin acciones (panel del personal, T11): gestiona los productos desde su panel.
   const actionsBox = document.createElement("div");
   actionsBox.className = "mt-auto pt-2";
 
   const esCliente = usuarioSesion?.rol === ROL.CLIENTE;
   const esInvitado = !usuarioSesion;
-  const puedeGestionarInventario = ROLES_INVENTARIO.includes(
-    usuarioSesion?.rol,
-  );
-  const puedeGestionarCatalogo = ROLES_CATALOGO.includes(
-    usuarioSesion?.rol,
-  );
 
   if (esCliente || esInvitado) {
     const btnAdd = document.createElement("button");
@@ -225,20 +219,6 @@ export function crearElementoTarjetaProducto(
       });
       actionsBox.append(btnPreguntas);
     }
-  }
-
-  if (puedeGestionarInventario || puedeGestionarCatalogo) {
-    // Revisión UX (punto 7): las acciones del personal van en un solo menú "Gestionar".
-    actionsBox.append(
-      crearMenuAcciones({
-        nombreAccesible: `Gestionar ${producto.nombre}`,
-        acciones: accionesPersonalProducto(producto, {
-          puedeGestionarInventario,
-          puedeGestionarCatalogo,
-          callbacks,
-        }),
-      }),
-    );
   }
 
   tarjeta.append(

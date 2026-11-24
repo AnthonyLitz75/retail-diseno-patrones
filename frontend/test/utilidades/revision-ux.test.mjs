@@ -4,6 +4,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readdirSync, readFileSync } from "node:fs";
 import { renderizarCatalogoLayout } from "../../src/layout/catalogo-layout.js";
+import { renderizarVistaInventario } from "../../src/layout/vistas-personal.js";
 import {
   asignarImagenConRespaldo,
   IMAGEN_PLACEHOLDER_DEFECTO,
@@ -116,5 +117,6 @@ test("el atributo hidden gana a las utilidades d-flex de Bootstrap (paginaciones
   // style.css (que importa base.css) se carga después de Bootstrap, así que la regla gana.
   const main = leer("../../src/main.js");
   assert.ok(main.indexOf('import "./style.css"') > main.indexOf("bootstrap.min.css"));
-  assert.match(renderizarCatalogoLayout(), /id="paginacion-movimientos" class="d-flex[^"]*"[^>]*hidden/);
+  // T11: el kardex ya no está en la tienda; su plantilla (vistas-personal.js) la usa el panel.
+  assert.match(renderizarVistaInventario(), /id="paginacion-movimientos" class="d-flex[^"]*"[^>]*hidden/);
 });

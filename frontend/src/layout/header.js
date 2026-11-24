@@ -43,6 +43,7 @@ export function renderizarHeader() {
           <a id="enlace-login" class="header-link-login" href="/login.html">Iniciar sesión</a>
           <a id="enlace-registro" class="btn btn-outline-primary btn-sm rounded-pill px-3" href="/register.html">Crear cuenta</a>
           <span id="usuario-activo" class="text-secondary small fw-semibold" aria-live="polite" hidden></span>
+          <a id="enlace-panel-personal" class="btn btn-outline-secondary btn-sm header-btn-panel" href="/panel.html#/inicio" hidden>Panel del personal</a>
           <button id="cerrar-sesion" class="btn btn-outline-secondary btn-sm header-btn-salir" type="button" hidden>
             <svg class="header-btn-salir-icono" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/>

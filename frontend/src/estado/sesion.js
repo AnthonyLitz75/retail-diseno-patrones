@@ -11,6 +11,7 @@ import {
   usaMenuLateral,
 } from "../utilidades/navegacion.js";
 import { ROL, ROLES_CATALOGO, ROLES_OPERACION } from "../utilidades/constantes.js"
+import { esPersonal } from "../panel/acceso.js";
 
 /**
  * Configura y orquesta el estado de sesión del usuario y el cambio dinámico de vistas.
@@ -28,6 +29,7 @@ export function configurarSesionYVistas({
     enlaceRegistro,
     usuarioActivo,
     botonCerrarSesion,
+    enlacePanelPersonal,
     enlacePedidosNav,
     enlaceCarritoNav,
     seccionGestionProductos,
@@ -167,6 +169,7 @@ export function configurarSesionYVistas({
       usuarioActivo.textContent = `Sesión: ${usuario.nombre} (${usuario.rol})`;
     }
     if (botonCerrarSesion) botonCerrarSesion.hidden = false;
+    if (enlacePanelPersonal) enlacePanelPersonal.hidden = !esPersonal(usuario.rol);
     // "MIS COMPRAS" es del cliente; el personal llega a los pedidos desde su panel.
     if (enlacePedidosNav) enlacePedidosNav.hidden = usuario.rol !== ROL.CLIENTE;
     if (enlaceCarritoNav) enlaceCarritoNav.hidden = usuario.rol !== ROL.CLIENTE;
@@ -235,6 +238,7 @@ export function configurarSesionYVistas({
       usuarioActivo.textContent = "";
     }
     if (botonCerrarSesion) botonCerrarSesion.hidden = true;
+    if (enlacePanelPersonal) enlacePanelPersonal.hidden = true;
     if (enlacePedidosNav) enlacePedidosNav.hidden = true;
     if (enlaceCarritoNav) enlaceCarritoNav.hidden = false; // Siempre visible para invitados
 

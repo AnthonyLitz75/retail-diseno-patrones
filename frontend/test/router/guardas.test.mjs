@@ -9,12 +9,16 @@ test('las rutas del catálogo son públicas para todos', () => {
   }
 })
 
-test('#/pedidos: invitado va al login; roles con pedidos entran', () => {
+test('#/pedidos: invitado va al login; el cliente entra; el personal vuelve a la tienda (T11)', () => {
   const invitado = evaluarAcceso('pedidos', null)
   assert.equal(invitado.permitido, false)
   assert.equal(invitado.destino, 'login')
-  for (const rol of ['CLIENTE', 'VENDEDOR', 'ALMACEN', 'ADMIN']) {
-    assert.deepEqual(evaluarAcceso('pedidos', rol), { permitido: true }, rol)
+  assert.deepEqual(evaluarAcceso('pedidos', 'CLIENTE'), { permitido: true })
+  // T11: los pedidos del personal están en el panel; en la tienda ninguno tiene esa vista.
+  for (const rol of ['VENDEDOR', 'ALMACEN', 'ADMIN']) {
+    const acceso = evaluarAcceso('pedidos', rol)
+    assert.equal(acceso.permitido, false, rol)
+    assert.equal(acceso.destino, 'tienda', rol)
   }
 })
 

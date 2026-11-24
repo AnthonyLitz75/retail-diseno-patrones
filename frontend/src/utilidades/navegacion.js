@@ -10,16 +10,12 @@ export const VISTAS_DISPONIBLES = {
   atencion: { id: 'vista-atencion', tabId: 'tab-atencion' }
 }
 
+/**
+ * Vistas de la tienda por rol. El personal (ADMIN, VENDEDOR, ALMACEN, SOPORTE) trabaja en el
+ * panel (panel.html, T11): en la tienda solo ve la tienda, como un visitante con sesión.
+ */
 export function determinarVistasPorRol(rol) {
   switch (rol) {
-    case ROL.ADMIN:
-      return ['administracion', 'productos', 'tienda', 'pedidos', 'inventario']
-    case ROL.ALMACEN:
-      return ['pedidos', 'inventario', 'tienda']
-    case ROL.VENDEDOR:
-      return ['tienda', 'productos', 'consultas', 'pedidos', 'inventario']
-    case ROL.SOPORTE:
-      return ['soporte', 'tienda']
     case ROL.CLIENTE:
       return ['tienda', 'pedidos', 'atencion']
     default:
@@ -27,17 +23,8 @@ export function determinarVistasPorRol(rol) {
   }
 }
 
-export function obtenerVistaPorDefecto(rol) {
-  switch (rol) {
-    case ROL.ADMIN:
-      return 'administracion'
-    case ROL.ALMACEN:
-      return 'pedidos'
-    case ROL.SOPORTE:
-      return 'soporte'
-    default:
-      return 'tienda'
-  }
+export function obtenerVistaPorDefecto() {
+  return 'tienda'
 }
 
 export function obtenerEtiquetaPestaña(vista, rol) {

@@ -12,6 +12,7 @@ import {
 import { indicadoresDestacados } from "../../src/administracion/administracion.js";
 import { obtenerEtiquetaPestaña, usaMenuLateral } from "../../src/utilidades/navegacion.js";
 import { renderizarCatalogoLayout } from "../../src/layout/catalogo-layout.js";
+import { renderizarVistaProductos } from "../../src/layout/vistas-personal.js";
 
 const productos = [
   { id: 1, sku: "PA-0003", nombre: "Teclado inalámbrico K380", categoria: "Teclados", stock: 22, activo: true },
@@ -46,20 +47,24 @@ test("paginación de 10 en 10 y página fuera de rango ajustada", () => {
   assert.equal(paginarLista([], 1).totalPaginas, 1);
 });
 
-test("la vista Productos existe, tiene su pestaña y contiene el formulario de alta", () => {
-  const html = renderizarCatalogoLayout();
-  assert.match(html, /id="tab-productos"[^>]*data-vista="productos"[^>]*hidden/);
-  const vista = html.slice(html.indexOf('id="vista-productos"'), html.indexOf("<!-- Vista Administración -->"));
+test("la vista Productos contiene el formulario de alta y ya no está en la tienda (T11)", () => {
+  // T11: la vista Productos se monta en el panel; la tienda ya no tiene ni la vista ni su pestaña.
+  const tienda = renderizarCatalogoLayout();
+  assert.doesNotMatch(tienda, /id="tab-productos"/);
+  assert.doesNotMatch(tienda, /id="vista-productos"/);
+  const vista = renderizarVistaProductos();
   assert.match(vista, /id="seccion-gestion-productos"/);
   assert.match(vista, /id="form-producto"/);
   assert.match(vista, /id="resumen-gestion-productos"/);
   assert.equal(obtenerEtiquetaPestaña("productos", "VENDEDOR"), "Productos");
 });
 
-test("menú lateral solo para el personal con más de un módulo", () => {
-  assert.equal(usaMenuLateral("ADMIN"), true);
-  assert.equal(usaMenuLateral("VENDEDOR"), true);
-  assert.equal(usaMenuLateral("SOPORTE"), true);
+test("menú lateral solo con más de un módulo; el personal ya no lo tiene en la tienda (T11)", () => {
+  // T11: el personal solo tiene la tienda, así que no usa el menú lateral de la tienda.
+  assert.equal(usaMenuLateral("ADMIN"), false);
+  assert.equal(usaMenuLateral("VENDEDOR"), false);
+  assert.equal(usaMenuLateral("SOPORTE"), false);
+  assert.equal(usaMenuLateral("ADMIN", ["administracion", "productos"]), true, "la regla de la función no cambió");
   assert.equal(usaMenuLateral("CLIENTE"), false, "el cliente conserva las pestañas de la tienda");
   assert.equal(usaMenuLateral(null), false);
   assert.equal(usaMenuLateral("ADMIN", ["administracion"]), false);

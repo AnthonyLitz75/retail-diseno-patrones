@@ -356,6 +356,14 @@
   display: none;
 }
 
+/* Panel del personal (adelanto de T11): acceso al panel solo para el personal. */
+.header-btn-panel {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  white-space: nowrap;
+}
+
 /*
  * Revisión UX (punto 6): en celular la cabecera ocupaba ~240 px antes del contenido
  * (logo, texto de sesión, botones y buscador en filas separadas). Bajo 576 px queda en

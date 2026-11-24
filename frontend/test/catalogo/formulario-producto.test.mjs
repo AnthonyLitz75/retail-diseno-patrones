@@ -8,7 +8,7 @@ import {
   productoVistaPrevia,
   validarNuevoProducto,
 } from "../../src/catalogo/gestion/formulario-producto.js";
-import { renderizarCatalogoLayout } from "../../src/layout/catalogo-layout.js";
+import { renderizarVistaProductos } from "../../src/layout/vistas-personal.js";
 
 const valida = {
   sku: " pa-0099 ",
@@ -86,7 +86,8 @@ test("la vista previa usa lo escrito o textos de ejemplo, y descarta datos invá
 });
 
 test("la plantilla tiene un control y un mensaje de error por cada campo", () => {
-  const html = renderizarCatalogoLayout();
+  // T11: el formulario de alta ya no está en la tienda; su plantilla la usa el panel.
+  const html = renderizarVistaProductos();
   for (const [campo, id] of Object.entries(CONTROLES)) {
     assert.match(html, new RegExp(`id="${id}"`), `falta el control de ${campo}`);
     if (campo !== "nuevo") {
