@@ -1,7 +1,8 @@
 package com.grupo.retail.patterns.observer;
 
 import com.grupo.retail.model.EventoNotificacion;
-import com.grupo.retail.patterns.factory.FabricaNotificadorConsola;
+import com.grupo.retail.patterns.factory.FabricaNotificador;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 /**
@@ -9,14 +10,14 @@ import org.springframework.stereotype.Component;
  *
  * <p>Simula el aviso por correo escribiéndolo en la consola, solo cuando el cambio ya está
  * confirmado: un pedido revertido nunca genera un "correo". Obtiene el canal con el
- * Factory Method de consola. No representa una entrega real.</p>
+ * Factory Method de consola cumpliendo DIP ({@link FabricaNotificador}). No representa una entrega real.</p>
  */
 @Component
 public class CorreoSimuladoObservador implements ObservadorPedidoPostCommit {
 
-    private final FabricaNotificadorConsola fabrica;
+    private final FabricaNotificador fabrica;
 
-    public CorreoSimuladoObservador(FabricaNotificadorConsola fabrica) {
+    public CorreoSimuladoObservador(@Qualifier("fabricaNotificadorConsola") FabricaNotificador fabrica) {
         this.fabrica = fabrica;
     }
 

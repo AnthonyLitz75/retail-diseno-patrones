@@ -43,7 +43,27 @@ public class ProductoDAO {
         StringBuilder sql = new StringBuilder(SELECT_PRODUCTOS)
                 .append(" WHERE p.activo = TRUE AND (c.activa IS NULL OR c.activa = TRUE)");
         List<Object> parametros = new ArrayList<>();
+        aplicarFiltrosListado(sql, parametros, nombre, categoria, precioMin, precioMax);
+        sql.append(" ORDER BY p.id");
 
+        List<Producto> productos = new ArrayList<>();
+        try (Connection conexion = proveedorConexiones.obtenerConexion();
+                PreparedStatement consulta = conexion.prepareStatement(sql.toString())) {
+            asignarParametros(consulta, parametros);
+            try (ResultSet resultado = consulta.executeQuery()) {
+                while (resultado.next()) {
+                    productos.add(mapearProducto(resultado));
+                }
+            }
+            return productos;
+        } catch (SQLException error) {
+            throw new ErrorAccesoDatosException("No se pudieron consultar los productos", error);
+        }
+    }
+
+    private static void aplicarFiltrosListado(
+            StringBuilder sql, List<Object> parametros,
+            String nombre, String categoria, BigDecimal precioMin, BigDecimal precioMax) {
         if (nombre != null && !nombre.isBlank()) {
             sql.append(" AND (p.nombre ILIKE ? OR p.marca ILIKE ? OR p.sku ILIKE ?)");
             String patron = "%" + nombre.trim() + "%";
@@ -69,27 +89,16 @@ public class ProductoDAO {
             sql.append(" AND p.precio <= ?");
             parametros.add(precioMax);
         }
-        sql.append(" ORDER BY p.id");
+    }
 
-        List<Producto> productos = new ArrayList<>();
-        try (Connection conexion = proveedorConexiones.obtenerConexion();
-                PreparedStatement consulta = conexion.prepareStatement(sql.toString())) {
-            for (int i = 0; i < parametros.size(); i++) {
-                Object parametro = parametros.get(i);
-                if (parametro instanceof BigDecimal decimal) {
-                    consulta.setBigDecimal(i + 1, decimal);
-                } else {
-                    consulta.setString(i + 1, (String) parametro);
-                }
+    private static void asignarParametros(PreparedStatement consulta, List<Object> parametros) throws SQLException {
+        for (int i = 0; i < parametros.size(); i++) {
+            Object parametro = parametros.get(i);
+            if (parametro instanceof BigDecimal decimal) {
+                consulta.setBigDecimal(i + 1, decimal);
+            } else {
+                consulta.setString(i + 1, (String) parametro);
             }
-            try (ResultSet resultado = consulta.executeQuery()) {
-                while (resultado.next()) {
-                    productos.add(mapearProducto(resultado));
-                }
-            }
-            return productos;
-        } catch (SQLException error) {
-            throw new ErrorAccesoDatosException("No se pudieron consultar los productos", error);
         }
     }
 
@@ -101,7 +110,7 @@ public class ProductoDAO {
         }
     }
 
-    private Optional<Producto> buscarPorId(Connection conexion, Long id) throws SQLException {
+    public Optional<Producto> buscarPorId(Connection conexion, Long id) throws SQLException {
         String sql = SELECT_PRODUCTOS + " WHERE p.id = ? AND p.activo = TRUE";
         try (PreparedStatement consulta = conexion.prepareStatement(sql)) {
             consulta.setLong(1, id);
@@ -186,6 +195,14 @@ public class ProductoDAO {
     }
 
     public Optional<Producto> actualizarPrecio(Long id, BigDecimal precio) {
+        try (Connection conexion = proveedorConexiones.obtenerConexion()) {
+            return actualizarPrecio(conexion, id, precio);
+        } catch (SQLException error) {
+            throw new ErrorAccesoDatosException("No se pudo actualizar el precio", error);
+        }
+    }
+
+    public Optional<Producto> actualizarPrecio(Connection conexion, Long id, BigDecimal precio) throws SQLException {
         String sql = """
                 UPDATE producto
                 SET precio_anterior = CASE
@@ -196,8 +213,7 @@ public class ProductoDAO {
                     precio = ?
                 WHERE id = ? AND activo = TRUE
                 """;
-        try (Connection conexion = proveedorConexiones.obtenerConexion();
-                PreparedStatement consulta = conexion.prepareStatement(sql)) {
+        try (PreparedStatement consulta = conexion.prepareStatement(sql)) {
             consulta.setBigDecimal(1, precio);
             consulta.setBigDecimal(2, precio);
             consulta.setBigDecimal(3, precio);
@@ -206,8 +222,6 @@ public class ProductoDAO {
                 return Optional.empty();
             }
             return buscarPorId(conexion, id);
-        } catch (SQLException error) {
-            throw new ErrorAccesoDatosException("No se pudo actualizar el precio", error);
         }
     }
 
@@ -280,42 +294,34 @@ public class ProductoDAO {
      * @return vacío si el producto no existe (404)
      * @throws IllegalArgumentException si la categoría no existe o está inactiva (400)
      */
-    public Optional<Producto> actualizarFicha(long id, EditarProducto datos) {
-        try (Connection conexion = proveedorConexiones.obtenerConexion()) {
-            int actualizados;
-            try (PreparedStatement consulta = conexion.prepareStatement(ACTUALIZAR_FICHA_SQL)) {
-                consulta.setString(1, datos.nombre());
-                consulta.setString(2, datos.marca());
-                consulta.setString(3, datos.descripcion());
-                consulta.setString(4, datos.imagen());
-                consulta.setLong(5, id);
-                consulta.setString(6, datos.categoria());
-                actualizados = consulta.executeUpdate();
-            }
-            Optional<Producto> producto = buscarParaGestion(conexion, id);
-            if (actualizados == 0 && producto.isPresent()) {
-                throw new IllegalArgumentException("La categoría seleccionada no existe o está inactiva");
-            }
-            return producto;
-        } catch (SQLException error) {
-            throw new ErrorAccesoDatosException("No se pudo actualizar la ficha del producto", error);
+    public Optional<Producto> actualizarFicha(Connection conexion, long id, EditarProducto datos) throws SQLException {
+        int actualizados;
+        try (PreparedStatement consulta = conexion.prepareStatement(ACTUALIZAR_FICHA_SQL)) {
+            consulta.setString(1, datos.nombre());
+            consulta.setString(2, datos.marca());
+            consulta.setString(3, datos.descripcion());
+            consulta.setString(4, datos.imagen());
+            consulta.setLong(5, id);
+            consulta.setString(6, datos.categoria());
+            actualizados = consulta.executeUpdate();
         }
+        Optional<Producto> producto = buscarParaGestion(conexion, id);
+        if (actualizados == 0 && producto.isPresent()) {
+            throw new IllegalArgumentException("La categoría seleccionada no existe o está inactiva");
+        }
+        return producto;
     }
 
     /** @return vacío si el producto no existe */
-    public Optional<Producto> cambiarEstado(long id, boolean activo) {
-        try (Connection conexion = proveedorConexiones.obtenerConexion()) {
-            try (PreparedStatement consulta = conexion.prepareStatement(CAMBIAR_ESTADO_SQL)) {
-                consulta.setBoolean(1, activo);
-                consulta.setLong(2, id);
-                if (consulta.executeUpdate() == 0) {
-                    return Optional.empty();
-                }
+    public Optional<Producto> cambiarEstado(Connection conexion, long id, boolean activo) throws SQLException {
+        try (PreparedStatement consulta = conexion.prepareStatement(CAMBIAR_ESTADO_SQL)) {
+            consulta.setBoolean(1, activo);
+            consulta.setLong(2, id);
+            if (consulta.executeUpdate() == 0) {
+                return Optional.empty();
             }
-            return buscarParaGestion(conexion, id);
-        } catch (SQLException error) {
-            throw new ErrorAccesoDatosException("No se pudo cambiar el estado del producto", error);
         }
+        return buscarParaGestion(conexion, id);
     }
 
     private Optional<Producto> buscarParaGestion(Connection conexion, long id) throws SQLException {

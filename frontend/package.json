@@ -13,6 +13,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "node --test",
+    "test:coverage": "node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=lcov.info",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
   },

@@ -23,6 +23,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -69,15 +70,6 @@ public class CheckoutFacade {
                 ejecutorTransaccion, "ejecutorTransaccion no puede ser null");
         this.publicadorEventos = Objects.requireNonNull(
                 publicadorEventos, "publicadorEventos no puede ser null");
-    }
-
-    public CheckoutFacade(
-            PedidoDAO pedidoDAO,
-            InventarioDAO inventarioDAO,
-            PuertoPago puertoPago,
-            EjecutorTransaccion ejecutorTransaccion,
-            PublicadorEventosPedido publicadorEventos) {
-        this(pedidoDAO, pedidoDAO.getCarritoDAO(), inventarioDAO, puertoPago, ejecutorTransaccion, publicadorEventos);
     }
 
     public PedidoConfirmado confirmarCompra(Long usuarioId, String metodoPago) {
@@ -143,7 +135,20 @@ public class CheckoutFacade {
         }
 
         // Lectura de carrito y productos SIN bloqueo FOR UPDATE de inventario
-        long carritoId = carritoDAO.bloquearCarritoActivo(conexion, usuarioId);
+        long carritoId;
+        try {
+            carritoId = carritoDAO.bloquearCarritoActivo(conexion, usuarioId);
+        } catch (NoSuchElementException sinCarrito) {
+            // Un reintento concurrente pudo cerrar el carrito y confirmar el pedido entre ambos SELECT
+            if (clave != null) {
+                Optional<PedidoConfirmado> recienConfirmado =
+                        pedidoDAO.buscarPorClaveConfirmacion(conexion, usuarioId, clave);
+                if (recienConfirmado.isPresent()) {
+                    return new PrevalidacionCompra(recienConfirmado.get(), null, null);
+                }
+            }
+            throw sinCarrito;
+        }
         List<ProductoEnCompra> productos = carritoDAO.leerProductos(conexion, carritoId);
         validarProductos(productos);
         BigDecimal total = calcularTotal(productos);

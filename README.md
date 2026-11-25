@@ -107,7 +107,7 @@ No hace falta ejecutar scripts a mano: al iniciar el backend, **Flyway** aplica 
 | `V3__notificacion_pedido_confirmado.sql`   | Notificación al confirmar un pedido.                                                                  |
 | `V4__registro_auditoria.sql`               | Tabla `registro_auditoria` del módulo de auditoría.                                                   |
 
-Con el perfil `dev` se cargan además los datos de demostración de `db/dev` (cuentas, 32 productos con fotos, categorías y un carrito de ejemplo).
+Con el perfil `dev` se cargan además los datos unificados de desarrollo y demostración (`db/dev` + `db/demo`: 11 cuentas con nombres reales, 32 productos con fotos, categorías, 20 pedidos de los últimos 14 días, 6 reclamos, 4 devoluciones, 5 consultas, kardex, auditoría y carrito de ejemplo).
 
 > Los scripts manuales antiguos se conservan como referencia histórica en `database/legado/`.
 
@@ -163,25 +163,23 @@ npm run dev
 
 La aplicación se abrirá en `http://localhost:5173`. Vite redirige las peticiones a `/api` hacia el backend en el puerto 8081.
 
-### Cuentas de demostración (perfil `dev`)
+### Cuentas y escenario de demostración (perfil `dev`)
 
-| Rol           | Correo                        |
-| :------------ | :---------------------------- |
-| Cliente       | `registro.web@example.com`    |
-| Administrador | `admin.prueba@example.com`    |
-| Vendedor      | `vendedor.prueba@example.com` |
-| Almacén       | `almacen.prueba@example.com`  |
-| Soporte       | `soporte.prueba@example.com`  |
+El perfil `dev` unifica `db/dev` (`V1000`–`V1003`) y `db/demo` (`V2000`–`V2004`): carga 32 productos con fotos, 11 cuentas con nombres reales (administradora, vendedor, almacén, dos agentes de soporte y 6 clientes), 20 pedidos de los últimos 14 días en todos los estados, 6 reclamos, 4 devoluciones, 5 consultas de clientes, kardex y auditoría coherentes. Todas las fechas son relativas al momento de levantar la base (`NOW() - INTERVAL ...`). El detalle completo de cuentas y casos está en `specs/panel-personal/escenario-demo.md`.
 
-Las contraseñas de estas cuentas están en `backend/src/main/resources/db/dev/V1000__datos_prueba.sql`.
+| Rol           | Nombre                | Correo                              |
+| :------------ | :-------------------- | :---------------------------------- |
+| Cliente       | Carmen Vargas Lozano  | `carmen.vargas@correo.example`      |
+| Administrador | Lucía Paredes Quispe  | `lucia.paredes@pixelandino.example` |
+| Vendedor      | Diego Salazar Rojas   | `diego.salazar@pixelandino.example` |
+| Almacén       | Marco Huamán Torres   | `marco.huaman@pixelandino.example`  |
+| Soporte       | Andrea Flores Mendoza | `andrea.flores@pixelandino.example` |
 
-### Escenario de demostración (perfil `demo`)
+La contraseña compartida de estas cuentas está en `backend/src/main/resources/db/dev/V1000__datos_prueba.sql`.
 
-Para mostrar el panel con datos creíbles hay un perfil aparte, `demo`, que añade a las migraciones de `dev` las de `backend/src/main/resources/db/demo` (de `V2000` en adelante). Carga un equipo con nombres reales (administradora, vendedor, almacén y dos agentes de soporte), 6 clientes, 20 pedidos de los últimos 14 días en todos los estados, 6 reclamos, 4 devoluciones, 5 consultas de clientes, el kardex que corresponde a cada venta y la auditoría coherente con todo ello. Todas las fechas son relativas al momento de levantar la base (`NOW() - INTERVAL ...`), así que el escenario siempre se ve reciente. El resumen de cuentas y casos, para escribir el guion, está en `specs/panel-personal/escenario-demo.md`.
+> **Uso en despliegue demo (Render) vs. producción real:** el perfil `dev` usa credenciales públicas de demostración. Actívalo (`SPRING_PROFILES_ACTIVE=dev`) únicamente en despliegues de demostración académica o entornos locales; para una instancia productiva sin datos de ejemplo, deja `SPRING_PROFILES_ACTIVE` sin `dev`.
 
-> **El perfil `demo` nunca debe activarse en producción.** Crea cuentas con una contraseña conocida (la de `V1000`) y datos ficticios. Solo es para esta base local de demostración.
-
-**1. Crear la base exclusiva** (un contenedor PostgreSQL que solo escucha en `127.0.0.1:55433`):
+**Opción alternativa con contenedor aislado en Docker** (útil para reiniciar las fechas relativas desde cero, escuchando solo en `127.0.0.1:55433`):
 
 ```bash
 docker run -d --name pixel-andino-demo \
@@ -189,25 +187,17 @@ docker run -d --name pixel-andino-demo \
   -p 127.0.0.1:55433:5432 postgres:15-alpine
 ```
 
-**2. Levantar el backend apuntando a ella** (en `backend/`):
-
-```bash
-export DB_URL="jdbc:postgresql://127.0.0.1:55433/retail_demo"
-export DB_USER="postgres"
-export DB_PASSWORD="demo_local"
-./mvnw spring-boot:run -Dspring-boot.run.profiles=demo
+```powershell
+$env:DB_URL = "jdbc:postgresql://127.0.0.1:55433/retail_demo"
+$env:DB_USER = "postgres"
+$env:DB_PASSWORD = "demo_local"
+cd backend
+.\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=dev"
 ```
 
-En PowerShell: `$env:DB_URL = "jdbc:postgresql://127.0.0.1:55433/retail_demo"; $env:DB_USER = "postgres"; $env:DB_PASSWORD = "demo_local"; .\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=demo"`. Flyway aplica `V1`–`V4`, `V1000`–`V1003` y `V2000`–`V2004` la primera vez. Después levanta el frontend como siempre (`npm run dev`).
+Flyway aplica `V1`–`V4`, `V1000`–`V1003` y `V2000`–`V2004` la primera vez. Para reiniciar las fechas desde cero basta con `docker rm -f pixel-andino-demo` y recrear el contenedor.
 
-**3. Reiniciarla desde cero.** Las migraciones ya aplicadas no se editan y las fechas se calculan al aplicarlas; para que el escenario vuelva a verse reciente hay que borrar el contenedor y crearlo otra vez:
-
-```bash
-docker rm -f pixel-andino-demo
-# y repetir el paso 1; al levantar el backend se vuelve a cargar todo
-```
-
-La prueba de integración `EscenarioDemoTest` levanta su propio contenedor con el perfil `demo` y comprueba la coherencia del escenario (stock contra kardex, totales, estados, conteos y fechas). Forma parte de `./mvnw verify`.
+La prueba de integración `EscenarioDemoTest` levanta su propio contenedor con el perfil `dev` y comprueba la coherencia del catálogo, carrito, jerarquía de categorías, stock contra kardex, totales, estados, auditoría y fechas. Forma parte de `./mvnw verify`.
 
 ## Panel del personal
 
@@ -217,7 +207,7 @@ La prueba de integración `EscenarioDemoTest` levanta su propio contenedor con e
 - Desde la tienda, con la sesión del personal abierta, el botón **«Panel del personal»** de la cabecera lleva al panel.
 - Sin sesión, `/panel.html` lleva al inicio de sesión; un cliente que lo abre vuelve a la tienda.
 
-Para probarlo, usa las [cuentas de demostración](#cuentas-de-demostración-perfil-dev) del personal.
+Para probarlo, usa las [cuentas de demostración](#cuentas-y-escenario-de-demostración-perfil-dev) del personal.
 
 **Qué ve cada rol:**
 
@@ -277,7 +267,7 @@ El frontend está organizado por dominio funcional (catálogo, carrito, pedidos,
 | **Singleton**      | Creacional     | `ProveedorConexiones` es el punto único de acceso a las conexiones JDBC (componente de alcance singleton que envuelve el pool HikariCP).                                                                                                |
 | **Factory Method** | Creacional     | `FabricaNotificador` crea el canal de aviso: `NotificadorInApp` (persistido en la base) o `NotificadorConsola`.                                                                                                                         |
 | **Adapter**        | Estructural    | `PuertoPago` y `PagoPruebaAdapter` aíslan el checkout de la API del proveedor de pagos simulado.                                                                                                                                        |
-| **Facade**         | Estructural    | `CheckoutFacade.confirmarCompra` es la única entrada a la compra: valida stock, descuenta inventario, registra el pago y emite el pedido en una transacción, con **clave de idempotencia** para que un reintento no duplique la compra. |
+| **Facade**         | Estructural    | `CheckoutFacade.confirmarCompra` es la única entrada a la compra: coordina dos transacciones cortas (`prevalidarEnTransaccion` y `confirmarEnTransaccion`) con el cobro externo de `PuertoPago` fuera de bloqueos de base de datos, **clave de idempotencia** y compensación ante fallo. |
 | **Composite**      | Estructural    | Árbol de categorías y subcategorías (`CategoriaComponente`, `ArbolCategoriaBuilder`), usado por el menú multinivel, los chips de categorías y las migas de pan.                                                                         |
 | **State**          | Comportamental | Ciclo de vida del pedido (`PENDIENTE` → `EN_PREPARACION` → `DESPACHADO` → `ENTREGADO` / `CANCELADO`) en `patterns/state`; el frontend lo refleja en el avance de Mis compras.                                                           |
 | **Observer**       | Comportamental | `PublicadorEventosPedido` avisa a sus observadores cuando cambia un estado: dentro de la transacción (notificación en la app y **registro de auditoría**) y después del commit (registro en consola y correo simulado).                 |
@@ -326,6 +316,7 @@ Qué cubren las pruebas del backend:
 cd frontend
 npm test
 npm run lint
+npm run test:coverage   # genera frontend/lcov.info para análisis estático
 ```
 
 **Build de producción:**
@@ -335,10 +326,28 @@ cd frontend
 npm run build
 ```
 
+### Producción (Docker / Render)
+
+El [`Dockerfile`](Dockerfile) compila el frontend en `node:22-alpine`, lo empaqueta dentro del JAR en `eclipse-temurin:25-jdk` (`src/main/resources/static/`) y ejecuta la aplicación sobre `eclipse-temurin:25-jre` como usuario no privilegiado.
+
+```bash
+docker build -t pixel-andino-retail .
+docker run --rm -p 8081:8081 \
+  -e DB_URL="jdbc:postgresql://<host>:5432/<db>" \
+  -e DB_USER="<usuario>" \
+  -e DB_PASSWORD="<clave>" \
+  -e SESSION_COOKIE_SECURE=true \
+  -e SPRING_PROFILES_ACTIVE=dev \
+  pixel-andino-retail
+```
+
+Variables esperadas en Render: `DB_URL`, `DB_USER`, `DB_PASSWORD`, `PORT` (asignado por Render; el `Dockerfile` fija `SESSION_COOKIE_SECURE=true`) y `SPRING_PROFILES_ACTIVE=dev` para servir el escenario académico unificado (para una instancia limpia sin datos demo, omite `dev`).
+
 ## Estructura del proyecto
 
 ```text
 retail/
+├── Dockerfile                 # Build multi-etapa (Vite + Spring Boot + JRE 25)
 ├── backend/
 │   └── src/
 │       ├── main/java/com/grupo/retail/
@@ -351,13 +360,14 @@ retail/
 │       │   ├── config/        # Spring Security y configuración
 │       │   ├── model/  dto/   # Dominio y objetos de transferencia
 │       │   └── exception/     # Manejo global de errores
-│       ├── main/resources/db/ # migration (Flyway) y dev (datos de demostración)
+│       ├── main/resources/db/ # migration (Flyway), dev y demo (escenario unificado en perfil dev)
 │       └── test/java/         # Unitarias, integración (integracion/) y seguridad (security/)
 ├── frontend/
 │   ├── src/
 │   │   ├── catalogo/          # vistas/, componentes/, gestion/ y catalogo-controlador.js
 │   │   ├── carrito/  pedidos/  atencion/  soporte/
 │   │   ├── inventario/  administracion/  vendedor/  notificaciones/
+│   │   ├── panel/             # Panel operativo del personal (inicio/, pantallas/, marco y rutas)
 │   │   ├── autenticacion/  api/  estado/  modales/  utilidades/
 │   │   ├── router/            # router.js (SPA), parser-rutas.js y guardas.js
 │   │   ├── layout/            # Componentes y plantillas HTML

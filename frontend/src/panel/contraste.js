@@ -17,9 +17,9 @@ export function parsearColor(color) {
   if (hex) {
     const digitos = hex[1].length === 3 ? [...hex[1]].map((d) => d + d).join("") : hex[1];
     return {
-      r: parseInt(digitos.slice(0, 2), 16),
-      g: parseInt(digitos.slice(2, 4), 16),
-      b: parseInt(digitos.slice(4, 6), 16),
+      r: Number.parseInt(digitos.slice(0, 2), 16),
+      g: Number.parseInt(digitos.slice(2, 4), 16),
+      b: Number.parseInt(digitos.slice(4, 6), 16),
       a: 1,
     };
   }

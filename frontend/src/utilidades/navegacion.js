@@ -1,14 +1,4 @@
 import { ROL } from "./constantes.js"
-export const VISTAS_DISPONIBLES = {
-  tienda: { id: 'vista-tienda', tabId: 'tab-tienda' },
-  pedidos: { id: 'vista-pedidos', tabId: 'tab-pedidos' },
-  inventario: { id: 'vista-inventario', tabId: 'tab-inventario' },
-  productos: { id: 'vista-productos', tabId: 'tab-productos' },
-  administracion: { id: 'vista-administracion', tabId: 'tab-administracion' },
-  consultas: { id: 'vista-consultas', tabId: 'tab-consultas' },
-  soporte: { id: 'vista-soporte', tabId: 'tab-soporte' },
-  atencion: { id: 'vista-atencion', tabId: 'tab-atencion' }
-}
 
 /**
  * Vistas de la tienda por rol. El personal (ADMIN, VENDEDOR, ALMACEN, SOPORTE) trabaja en el
@@ -61,5 +51,5 @@ const VISTA_POR_HASH = { '#/pedidos': 'pedidos' }
  */
 export function obtenerVistaInicial (rol, hash = '') {
   const solicitada = Object.hasOwn(VISTA_POR_HASH, hash) ? VISTA_POR_HASH[hash] : null
-  return solicitada && esVistaPermitida(solicitada, rol) ? solicitada : obtenerVistaPorDefecto(rol)
+  return solicitada && esVistaPermitida(solicitada, rol) ? solicitada : obtenerVistaPorDefecto()
 }

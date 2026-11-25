@@ -1,7 +1,7 @@
 package com.grupo.retail;
 
 import com.grupo.retail.model.EventoNotificacion;
-import com.grupo.retail.patterns.factory.FabricaNotificadorConsola;
+import com.grupo.retail.patterns.factory.FabricaNotificador;
 import com.grupo.retail.patterns.factory.FabricaNotificadorInApp;
 import com.grupo.retail.patterns.factory.Notificador;
 import com.grupo.retail.patterns.observer.AuditoriaConsolaObservador;
@@ -110,7 +110,7 @@ class ObserverPedidoTests {
 
     @Test
     void correoSimuladoUsaLaFabricaDeConsolaSinConexion() {
-        FabricaNotificadorConsola fabrica = mock(FabricaNotificadorConsola.class);
+        FabricaNotificador fabrica = mock(FabricaNotificador.class);
         Notificador notificador = mock(Notificador.class);
         when(fabrica.crearNotificador()).thenReturn(notificador);
 

@@ -4,7 +4,6 @@ import java.util.Locale;
 import com.grupo.retail.service.AuditoriaService;
 import com.grupo.retail.model.EventoAuditoria;
 import com.grupo.retail.model.AccionAuditoria;
-import com.grupo.retail.exception.CredencialesInvalidasException;
 import com.grupo.retail.exception.DemasiadosIntentosException;
 import com.grupo.retail.security.LimitadorIntentosLogin;
 import com.grupo.retail.dto.InicioSesion;

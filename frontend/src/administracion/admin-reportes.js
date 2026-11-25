@@ -11,6 +11,7 @@ import {
   tarjetasResumen,
 } from "./administracion.js";
 import { crearElemento } from "../utilidades/dom.js";
+import { guardarArchivo } from "../panel/utilidades-panel.js";
 
 /**
  * Inicializa el submódulo de reportes en el panel de administración.
@@ -111,12 +112,7 @@ export function inicializarAdminReportes({ seccion, apiRequest, mostrarEstado })
         const hasta = seccion.querySelector("#reporte-hasta")?.value || "";
         const consulta = crearParametrosReporte(desde, hasta);
         const respuesta = await solicitarCsv(apiRequest, tipo, consulta);
-        const url = URL.createObjectURL(await respuesta.blob());
-        const enlace = document.createElement("a");
-        enlace.href = url;
-        enlace.download = REPORTES_CSV[tipo].archivo;
-        enlace.click();
-        URL.revokeObjectURL(url);
+        await guardarArchivo(respuesta, REPORTES_CSV[tipo].archivo);
         if (estadoReporte) {
           mostrarEstado(
             estadoReporte,

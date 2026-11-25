@@ -87,15 +87,20 @@ public class ProductoService {
         });
     }
 
-    /** Cambia el precio y deja en la auditoría el precio anterior y el nuevo. */
+    /** Cambia el precio y deja en la auditoría el precio anterior y el nuevo dentro de la misma transacción. */
     public Optional<Producto> actualizarPrecio(Long id, BigDecimal precio, Long responsableId) {
-        Optional<Producto> anterior = productoDAO.buscarPorId(id);
-        Optional<Producto> actualizado = productoDAO.actualizarPrecio(id, precio);
-        actualizado.ifPresent(producto -> auditoriaService.registrarAparte(EventoAuditoria.de(
-                responsableId, AccionAuditoria.PRECIO_CAMBIADO, PRODUCTO, producto.id(),
-                describir(producto) + ": " + anterior.map(p -> soles(p.precio())).orElse("?")
-                        + " → " + soles(producto.precio()))));
-        return actualizado;
+        return ejecutorTransaccion.ejecutar("No se pudo actualizar el precio del producto", conexion -> {
+            Optional<Producto> anterior = productoDAO.buscarPorId(conexion, id);
+            Optional<Producto> actualizado = productoDAO.actualizarPrecio(conexion, id, precio);
+            if (actualizado.isPresent()) {
+                Producto producto = actualizado.get();
+                auditoriaService.registrar(conexion, EventoAuditoria.de(
+                        responsableId, AccionAuditoria.PRECIO_CAMBIADO, PRODUCTO, producto.id(),
+                        describir(producto) + ": " + anterior.map(p -> soles(p.precio())).orElse("?")
+                                + " → " + soles(producto.precio())));
+            }
+            return actualizado;
+        });
     }
 
     /**
@@ -128,23 +133,27 @@ public class ProductoService {
         return productoDAO.listarParaGestion();
     }
 
-    /** RF16: edita la ficha; 404 si no existe y 400 si la categoría no es válida. */
+    /** RF16: edita la ficha y audita en la misma transacción; 404 si no existe y 400 si la categoría no es válida. */
     public Producto editarFicha(long id, EditarProducto datos, Long responsableId) {
-        Producto editado = productoDAO.actualizarFicha(id, datos)
-                .orElseThrow(() -> new NoSuchElementException("No existe el producto solicitado"));
-        auditoriaService.registrarAparte(EventoAuditoria.de(responsableId, AccionAuditoria.PRODUCTO_EDITADO,
-                PRODUCTO, editado.id(), describir(editado) + " (categoría " + editado.categoria() + ")"));
-        return editado;
+        return ejecutorTransaccion.ejecutar("No se pudo actualizar la ficha del producto", conexion -> {
+            Producto editado = productoDAO.actualizarFicha(conexion, id, datos)
+                    .orElseThrow(() -> new NoSuchElementException("No existe el producto solicitado"));
+            auditoriaService.registrar(conexion, EventoAuditoria.de(responsableId, AccionAuditoria.PRODUCTO_EDITADO,
+                    PRODUCTO, editado.id(), describir(editado) + " (categoría " + editado.categoria() + ")"));
+            return editado;
+        });
     }
 
-    /** RF16: activa o desactiva; nunca hay borrado físico. */
+    /** RF16: activa o desactiva y audita en la misma transacción; nunca hay borrado físico. */
     public Producto cambiarEstado(long id, boolean activo, Long responsableId) {
-        Producto producto = productoDAO.cambiarEstado(id, activo)
-                .orElseThrow(() -> new NoSuchElementException("No existe el producto solicitado"));
-        auditoriaService.registrarAparte(EventoAuditoria.de(responsableId,
-                activo ? AccionAuditoria.PRODUCTO_ACTIVADO : AccionAuditoria.PRODUCTO_DESACTIVADO,
-                PRODUCTO, producto.id(), describir(producto)));
-        return producto;
+        return ejecutorTransaccion.ejecutar("No se pudo cambiar el estado del producto", conexion -> {
+            Producto producto = productoDAO.cambiarEstado(conexion, id, activo)
+                    .orElseThrow(() -> new NoSuchElementException("No existe el producto solicitado"));
+            auditoriaService.registrar(conexion, EventoAuditoria.de(responsableId,
+                    activo ? AccionAuditoria.PRODUCTO_ACTIVADO : AccionAuditoria.PRODUCTO_DESACTIVADO,
+                    PRODUCTO, producto.id(), describir(producto)));
+            return producto;
+        });
     }
 
     private static final String PRODUCTO = "PRODUCTO";

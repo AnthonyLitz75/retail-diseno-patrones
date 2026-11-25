@@ -117,7 +117,7 @@ export function renderizarColaReclamos(reclamos, usuarioId, ahora = new Date(), 
     const control = accion.tipo === "tomar"
       ? html`<button type="button" class="${clase}" data-tomar-reclamo="${r.id}">${accion.texto}</button>`
       : html`<a class="${clase}" href="${seguro(accion.ruta)}">${accion.texto}</a>`;
-    return html`<tr>
+    return html`<tr data-cliente-pedido="${r.pedidoId}">
   <th scope="row">#${r.pedidoId}</th>
   <td>${seguro(celdaClienteMotivo(r, nombres))}</td>
   <td>${seguro(etiquetaEspera(r.creadoEn, ahora))}</td>
@@ -143,7 +143,7 @@ export function renderizarEnManosDeOtros(reclamos, usuarioId, nombres = new Map(
       ? "Decide la administración"
       : r.agenteNombre ? `Lo atiende ${r.agenteNombre}` : "Lo atiende otro agente";
     const nombre = nombres.get(r.pedidoId);
-    return html`<li class="panel-otros-fila">
+    return html`<li class="panel-otros-fila" data-otros-pedido="${r.pedidoId}">
     <div class="panel-otros-texto">
       <p class="panel-otros-titulo">${nombre ? `#${r.pedidoId} · ${nombre}` : `#${r.pedidoId}`}</p>
       <p class="panel-otros-motivo">${resumirMotivo(r.motivo)}</p>
@@ -169,7 +169,7 @@ export function renderizarDevolucionesPorAtender(devoluciones, ahora = new Date(
     const accion = accionDevolucionInicio(d);
     const nombre = nombres.get(d.pedidoId);
     const cliente = nombre ? ` · ${nombre}` : "";
-    return html`<li class="panel-devolucion-fila">
+    return html`<li class="panel-devolucion-fila" data-devolucion-pedido="${d.pedidoId}">
     ${seguro(cuadroIcono("pedidos", "azul", " panel-icono-atencion"))}
     <div class="panel-devolucion-texto">
       <p class="panel-atencion-titulo">Pedido #${d.pedidoId}${cliente}</p>
@@ -251,7 +251,32 @@ export function montar(contenedor, { servicios }) {
     zonaDevoluciones.innerHTML = renderizarDevolucionesPorAtender(devoluciones, new Date(), nombres);
   }
 
-  /** Pide los nombres de los pedidos que se ven y repinta las listas con ellos. */
+  /** Inserta los nombres en el DOM ya pintado sin reconstruir botones ni perder clics. */
+  function actualizarNombresEnDom() {
+    zonaReclamos.querySelectorAll("tr[data-cliente-pedido]").forEach((fila) => {
+      const nombre = nombres.get(Number(fila.dataset.clientePedido));
+      const celda = fila.querySelector("td");
+      if (!nombre || !celda || celda.querySelector(".panel-reclamos-cliente")) return;
+      const span = document.createElement("span");
+      span.className = "panel-reclamos-cliente";
+      span.textContent = nombre;
+      celda.prepend(span);
+    });
+    zonaReclamos.querySelectorAll("li[data-otros-pedido]").forEach((item) => {
+      const id = Number(item.dataset.otrosPedido);
+      const nombre = nombres.get(id);
+      const titulo = item.querySelector(".panel-otros-titulo");
+      if (nombre && titulo) titulo.textContent = `#${id} · ${nombre}`;
+    });
+    zonaDevoluciones.querySelectorAll("li[data-devolucion-pedido]").forEach((item) => {
+      const id = Number(item.dataset.devolucionPedido);
+      const nombre = nombres.get(id);
+      const titulo = item.querySelector(".panel-atencion-titulo");
+      if (nombre && titulo) titulo.textContent = `Pedido #${id} · ${nombre}`;
+    });
+  }
+
+  /** Pide los nombres de los pedidos que se ven y los aplica sin reemplazar innerHTML. */
   async function cargarNombres() {
     const ids = [
       ...(reclamos ? colaReclamos(reclamos, usuarioId()).slice(0, MAX_FILAS_SOPORTE) : []),
@@ -259,8 +284,7 @@ export function montar(contenedor, { servicios }) {
       ...(devoluciones ? devolucionesParaInicio(devoluciones).slice(0, MAX_FILAS_SOPORTE) : []),
     ].map((e) => e.pedidoId);
     await contextos.cargar(ids);
-    if (reclamos) pintarReclamos();
-    if (devoluciones) pintarDevoluciones();
+    actualizarNombresEnDom();
   }
 
   const ocupado = (zona, valor) => (valor ? zona.setAttribute("aria-busy", "true") : zona.removeAttribute("aria-busy"));

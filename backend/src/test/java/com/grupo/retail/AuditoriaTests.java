@@ -7,6 +7,7 @@ import com.grupo.retail.dao.InventarioDAO;
 import com.grupo.retail.dao.ProductoDAO;
 import com.grupo.retail.dao.UsuarioDAO;
 import com.grupo.retail.dto.ActualizarRolUsuario;
+import com.grupo.retail.dto.EditarProducto;
 import com.grupo.retail.dto.InicioSesion;
 import com.grupo.retail.exception.DemasiadosIntentosException;
 import com.grupo.retail.model.AccionAuditoria;
@@ -174,8 +175,8 @@ class AuditoriaTests {
         AuditoriaService auditoria = mock(AuditoriaService.class);
         Producto antes = new Producto(4L, "PA-0004", "Teclado", null, "Teclados", 1L, null,
                 new BigDecimal("459"), null, 3, false, null, true);
-        when(productos.buscarPorId(4L)).thenReturn(Optional.of(antes));
-        when(productos.actualizarPrecio(4L, new BigDecimal("399.00"))).thenReturn(Optional.of(new Producto(4L,
+        when(productos.buscarPorId(conexion, 4L)).thenReturn(Optional.of(antes));
+        when(productos.actualizarPrecio(conexion, 4L, new BigDecimal("399.00"))).thenReturn(Optional.of(new Producto(4L,
                 "PA-0004", "Teclado", null, "Teclados", 1L, null, new BigDecimal("399.00"), new BigDecimal("459"), 3,
                 false, null, true)));
 
@@ -183,7 +184,9 @@ class AuditoriaTests {
                 .actualizarPrecio(4L, new BigDecimal("399.00"), 7L);
 
         ArgumentCaptor<EventoAuditoria> evento = ArgumentCaptor.forClass(EventoAuditoria.class);
-        verify(auditoria).registrarAparte(evento.capture());
+        verify(auditoria).registrar(eq(conexion), evento.capture());
+        verify(auditoria, never()).registrarAparte(any());
+        verify(conexion).commit();
         assertEquals(AccionAuditoria.PRECIO_CAMBIADO, evento.getValue().accion());
         assertEquals(7L, evento.getValue().usuarioId());
         assertEquals("Teclado (PA-0004): S/ 459.00 → S/ 399.00", evento.getValue().detalle());
@@ -193,12 +196,36 @@ class AuditoriaTests {
     void unPrecioDeUnProductoInexistenteNoSeAudita() throws Exception {
         ProductoDAO productos = mock(ProductoDAO.class);
         AuditoriaService auditoria = mock(AuditoriaService.class);
-        when(productos.actualizarPrecio(any(), any())).thenReturn(Optional.empty());
+        when(productos.actualizarPrecio(eq(conexion), any(), any())).thenReturn(Optional.empty());
 
         new ProductoService(productos, mock(CategoriaDAO.class), mock(InventarioDAO.class), ejecutor(), auditoria)
                 .actualizarPrecio(99L, BigDecimal.TEN, 7L);
 
+        verify(auditoria, never()).registrar(any(), any());
         verify(auditoria, never()).registrarAparte(any());
+    }
+
+    @Test
+    void editarFichaYCambiarEstadoAuditanEnLaMismaTransaccion() throws Exception {
+        ProductoDAO productos = mock(ProductoDAO.class);
+        AuditoriaService auditoria = mock(AuditoriaService.class);
+        EditarProducto datos = new EditarProducto("Teclado Pro", "Logitech", "Teclados", "Desc", null);
+        Producto editado = new Producto(4L, "PA-0004", "Teclado Pro", "Logitech", "Teclados", 1L,
+                "Desc", new BigDecimal("399.00"), null, 3, false, null, false);
+        when(productos.actualizarFicha(conexion, 4L, datos)).thenReturn(Optional.of(editado));
+        when(productos.cambiarEstado(conexion, 4L, false)).thenReturn(Optional.of(editado));
+
+        ProductoService servicio = new ProductoService(
+                productos, mock(CategoriaDAO.class), mock(InventarioDAO.class), ejecutor(), auditoria);
+        servicio.editarFicha(4L, datos, 7L);
+        servicio.cambiarEstado(4L, false, 7L);
+
+        ArgumentCaptor<EventoAuditoria> eventos = ArgumentCaptor.forClass(EventoAuditoria.class);
+        verify(auditoria, org.mockito.Mockito.times(2)).registrar(eq(conexion), eventos.capture());
+        verify(auditoria, never()).registrarAparte(any());
+        verify(conexion, org.mockito.Mockito.times(2)).commit();
+        assertEquals(AccionAuditoria.PRODUCTO_EDITADO, eventos.getAllValues().get(0).accion());
+        assertEquals(AccionAuditoria.PRODUCTO_DESACTIVADO, eventos.getAllValues().get(1).accion());
     }
 
     @Test

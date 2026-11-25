@@ -5,7 +5,6 @@ import com.grupo.retail.model.DetallePedido;
 import com.grupo.retail.model.EventoEstadoPedido;
 import com.grupo.retail.model.EnvioPedido;
 import com.grupo.retail.model.LineaReposicion;
-import com.grupo.retail.exception.CodigoSeguimientoDuplicadoException;
 import com.grupo.retail.model.PedidoBloqueado;
 import com.grupo.retail.model.PedidoConfirmado;
 import com.grupo.retail.model.PedidoVista;
@@ -559,6 +558,15 @@ public class PedidoDAO {
             }
         }
 
+        List<DetallePedido> detalles = leerDetallesConfirmados(conexion, pedidoId);
+
+        return Optional.of(new PedidoConfirmado(
+                pedidoId, estado, total, creadoEn,
+                metodo, estadoPago, referencia, detalles,
+                claveConfirmacion, destinatario, direccionEnvio));
+    }
+
+    private List<DetallePedido> leerDetallesConfirmados(Connection conexion, long pedidoId) throws SQLException {
         String detallesSql = """
                 SELECT producto_id, nombre_producto, precio_unitario, cantidad, subtotal
                 FROM pedido_detalle
@@ -579,11 +587,7 @@ public class PedidoDAO {
                 }
             }
         }
-
-        return Optional.of(new PedidoConfirmado(
-                pedidoId, estado, total, creadoEn,
-                metodo, estadoPago, referencia, List.copyOf(detalles),
-                claveConfirmacion, destinatario, direccionEnvio));
+        return List.copyOf(detalles);
     }
 
     public long bloquearCarritoActivo(Connection conexion, Long usuarioId) throws SQLException {

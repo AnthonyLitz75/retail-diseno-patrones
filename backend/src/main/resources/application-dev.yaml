@@ -1,3 +1,4 @@
+# Perfil unificado de desarrollo y demostración: esquema base + catálogo + escenario completo (V2000–V2004).
 spring:
   flyway:
-    locations: classpath:db/migration,classpath:db/dev
+    locations: classpath:db/migration,classpath:db/dev,classpath:db/demo

@@ -28,6 +28,7 @@ import java.math.BigDecimal;
 import java.sql.Connection;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -243,6 +244,23 @@ class PedidoConfirmacionTests {
         assertThrows(IllegalArgumentException.class,
                 () -> facade.confirmarCompra(1L, null));
         verifyNoInteractions(dao, carritoDAO, puerto);
+    }
+
+    @Test
+    void checkoutFacadeRecuperaPedidoSiOtroReintentoCerroElCarritoDurantePrevalidacion() throws Exception {
+        String clave = UUID.randomUUID().toString();
+        PedidoConfirmado existente = pedido(42L, clave);
+        when(dao.buscarPorClaveConfirmacion(conexion, 5L, clave))
+                .thenReturn(Optional.empty())
+                .thenReturn(Optional.of(existente));
+        when(dao.claveConfirmacionRegistrada(conexion, clave)).thenReturn(false);
+        when(carritoDAO.bloquearCarritoActivo(conexion, 5L))
+                .thenThrow(new NoSuchElementException("No tienes un carrito activo"));
+
+        PedidoConfirmado resultado = facade.confirmarCompra(5L, "PRUEBA_APROBADA", clave, "Juan", "Av. Perú 123");
+
+        assertSame(existente, resultado);
+        verifyNoInteractions(puerto);
     }
 
     @Test

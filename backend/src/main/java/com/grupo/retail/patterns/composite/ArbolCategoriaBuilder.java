@@ -30,16 +30,31 @@ public final class ArbolCategoriaBuilder {
             Map<Long, Integer> conteoPorCategoria,
             int productosSinCategoria) {
         if (categorias == null || categorias.isEmpty()) {
-            if (productosSinCategoria > 0) {
-                return List.of(new CategoriaSimple(null, "Otros", productosSinCategoria));
-            }
-            return Collections.emptyList();
+            return productosSinCategoria > 0
+                    ? List.of(new CategoriaSimple(null, "Otros", productosSinCategoria))
+                    : Collections.emptyList();
         }
 
         Map<Long, Integer> conteos = conteoPorCategoria != null ? conteoPorCategoria : Collections.emptyMap();
         Map<Long, List<Categoria>> subcategoriasPorPadre = new HashMap<>();
-        List<Categoria> principales = new ArrayList<>();
+        List<Categoria> principales = clasificarCategorias(categorias, subcategoriasPorPadre);
 
+        List<CategoriaComponente> resultado = new ArrayList<>();
+        for (Categoria principal : principales) {
+            List<Categoria> hijas = subcategoriasPorPadre.getOrDefault(
+                    principal.idCategoria(), Collections.emptyList());
+            construirNodo(principal, hijas, conteos).ifPresent(resultado::add);
+        }
+        if (productosSinCategoria > 0) {
+            resultado.add(new CategoriaSimple(null, "Otros", productosSinCategoria));
+        }
+        return List.copyOf(resultado);
+    }
+
+    private static List<Categoria> clasificarCategorias(
+            List<Categoria> categorias,
+            Map<Long, List<Categoria>> subcategoriasPorPadre) {
+        List<Categoria> principales = new ArrayList<>();
         for (Categoria cat : categorias) {
             if (cat.categoriaPadreId() == null) {
                 principales.add(cat);
@@ -49,43 +64,29 @@ public final class ArbolCategoriaBuilder {
                         .add(cat);
             }
         }
+        return principales;
+    }
 
-        List<CategoriaComponente> resultado = new ArrayList<>();
-
-        for (Categoria principal : principales) {
-            List<Categoria> hijas = subcategoriasPorPadre.getOrDefault(
-                    principal.idCategoria(), Collections.emptyList());
-            int conteoPropio = conteos.getOrDefault(principal.idCategoria(), 0);
-
-            if (!hijas.isEmpty()) {
-                CategoriaCompuesta compuesta = new CategoriaCompuesta(
-                        principal.idCategoria(), principal.nombre(), conteoPropio);
-                for (Categoria hija : hijas) {
-                    int conteoHija = conteos.getOrDefault(hija.idCategoria(), 0);
-                    // Omitir subcategorías con 0 productos
-                    if (conteoHija > 0) {
-                        compuesta.agregarSubcategoria(
-                                new CategoriaSimple(hija.idCategoria(), hija.nombre(), conteoHija));
-                    }
-                }
-                // Omitir categorías compuestas si el total acumulado es 0
-                if (compuesta.getTotalProductos() > 0) {
-                    resultado.add(compuesta);
-                }
-            } else {
-                // Categoría simple / hoja sin subcategorías
-                if (conteoPropio > 0) {
-                    resultado.add(new CategoriaSimple(
-                            principal.idCategoria(), principal.nombre(), conteoPropio));
-                }
+    private static java.util.Optional<CategoriaComponente> construirNodo(
+            Categoria principal,
+            List<Categoria> hijas,
+            Map<Long, Integer> conteos) {
+        int conteoPropio = conteos.getOrDefault(principal.idCategoria(), 0);
+        if (hijas.isEmpty()) {
+            return conteoPropio > 0
+                    ? java.util.Optional.of(new CategoriaSimple(principal.idCategoria(), principal.nombre(), conteoPropio))
+                    : java.util.Optional.empty();
+        }
+        CategoriaCompuesta compuesta = new CategoriaCompuesta(
+                principal.idCategoria(), principal.nombre(), conteoPropio);
+        for (Categoria hija : hijas) {
+            int conteoHija = conteos.getOrDefault(hija.idCategoria(), 0);
+            if (conteoHija > 0) {
+                compuesta.agregarSubcategoria(new CategoriaSimple(hija.idCategoria(), hija.nombre(), conteoHija));
             }
         }
-
-        // Categoría virtual "Otros" para productos sin categoría asignada (solo si hay al menos uno)
-        if (productosSinCategoria > 0) {
-            resultado.add(new CategoriaSimple(null, "Otros", productosSinCategoria));
-        }
-
-        return List.copyOf(resultado);
+        return compuesta.getTotalProductos() > 0
+                ? java.util.Optional.of(compuesta)
+                : java.util.Optional.empty();
     }
 }

@@ -51,6 +51,7 @@ specs/
 **/.env.*
 !**/.env.example
 
-# Caché local del escáner de SonarQube
+# Caché local del escáner de SonarQube y cobertura frontend generada
 .sonar/
 **/.sonar/
+frontend/lcov.info

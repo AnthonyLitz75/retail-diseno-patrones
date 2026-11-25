@@ -1,6 +1,5 @@
 package com.grupo.retail.controller;
 
-import com.grupo.retail.model.Rol;
 import com.grupo.retail.dto.SolicitudConfirmarPedido;
 import com.grupo.retail.dto.SolicitudDespachoPedido;
 import com.grupo.retail.patterns.facade.CheckoutFacade;
@@ -64,17 +63,9 @@ public class PedidoController {
         return pedidoService.listarPendientes();
     }
 
-    public List<PedidoVista> listarPendientes(HttpServletRequest peticion) {
-        return listarPendientes();
-    }
-
     @GetMapping("/operativos")
     public List<PedidoVista> listarOperativos() {
         return pedidoService.listarOperativos();
-    }
-
-    public List<PedidoVista> listarOperativos(HttpServletRequest peticion) {
-        return listarOperativos();
     }
 
     @PutMapping("/{id}/preparar")

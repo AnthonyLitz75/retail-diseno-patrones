@@ -146,27 +146,13 @@ public class DevolucionService {
      * de datos sobre el inventario. Si el reembolso es rechazado, no se modifica stock ni estado
      * y la devolución permanece APROBADA. Repetir el cierre responde 409 y no duplica reposición.
      */
+    private record DatosReembolso(
+            Devolucion devolucion, Map<Long, Boolean> reintegros, BigDecimal importe, String referenciaCobro) {}
+
     public Devolucion cerrar(long devolucionId, long soporteId, RecepcionDevolucion datos) {
         // 1. Fase preliminar: validación de estado, recepción e importe del reembolso
-        record DatosReembolso(
-                Devolucion devolucion, Map<Long, Boolean> reintegros, BigDecimal importe, String referenciaCobro) {}
-
-        DatosReembolso prep = ejecutorTransaccion.ejecutar("No se pudo verificar la devolución", conexion -> {
-            Devolucion devolucion = bloquear(conexion, devolucionId);
-            devolucion.estado().validarTransicion(EstadoDevolucion.CERRADA);
-            Map<Long, Boolean> reintegros = validarRecepcion(devolucion, datos);
-
-            BigDecimal importe = devolucion.lineas().stream()
-                    .map(DetalleDevolucion::subtotalReembolso)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-            PagoReembolsable pago = pagoDAO.bloquearPagoAprobado(conexion, devolucion.pedidoId())
-                    .orElseThrow(() -> new IllegalStateException("El pedido no tiene un cobro aprobado que reembolsar"));
-            if (importe.compareTo(pago.disponible()) > 0) {
-                throw new IllegalStateException("El reembolso supera lo cobrado y aún no reembolsado");
-            }
-            return new DatosReembolso(devolucion, reintegros, importe, pago.referencia());
-        });
+        DatosReembolso prep = ejecutorTransaccion.ejecutar(
+                "No se pudo verificar la devolución", conexion -> prepararCierre(conexion, devolucionId, datos));
 
         // 2. I/O externo con la pasarela de pago FUERA de cualquier bloqueo de base de datos
         ResultadoPago resultado = puertoPago.reembolsar(prep.importe(), prep.referenciaCobro(), datos.escenarioReembolso());
@@ -176,39 +162,62 @@ public class DevolucionService {
         }
 
         // 3. Transacción SQL: bloqueo pesimista, reposición de stock, kardex, acumular reembolso y cerrar
-        return ejecutorTransaccion.ejecutar("No se pudo cerrar la devolución", conexion -> {
-            Devolucion devolucion = bloquear(conexion, devolucionId);
-            devolucion.estado().validarTransicion(EstadoDevolucion.CERRADA);
-            Map<Long, Boolean> reintegros = validarRecepcion(devolucion, datos);
+        return ejecutorTransaccion.ejecutar(
+                "No se pudo cerrar la devolución", conexion -> confirmarCierre(conexion, devolucionId, soporteId, datos));
+    }
 
-            List<DetalleDevolucion> aptas = devolucion.lineas().stream()
-                    .filter(linea -> reintegros.get(linea.id()))
-                    .sorted(Comparator.comparingLong(DetalleDevolucion::productoId))
-                    .toList();
-            for (DetalleDevolucion linea : devolucion.lineas()) {
-                devolucionDAO.marcarReintegro(conexion, linea.id(), reintegros.get(linea.id()));
-            }
-            for (DetalleDevolucion linea : aptas) {
-                inventarioDAO.sumarStock(conexion, linea.productoId(), linea.cantidad());
-                inventarioDAO.registrarMovimiento(conexion, new RegistroMovimiento(
-                        linea.productoId(), TipoMovimiento.DEVOLUCION, linea.cantidad(),
-                        "Devolución #" + devolucionId + " del pedido #" + devolucion.pedidoId(),
-                        soporteId, devolucion.pedidoId(), devolucionId));
-            }
+    private DatosReembolso prepararCierre(Connection conexion, long devolucionId, RecepcionDevolucion datos)
+            throws SQLException {
+        Devolucion devolucion = bloquear(conexion, devolucionId);
+        devolucion.estado().validarTransicion(EstadoDevolucion.CERRADA);
+        Map<Long, Boolean> reintegros = validarRecepcion(devolucion, datos);
 
-            BigDecimal importe = devolucion.lineas().stream()
-                    .map(DetalleDevolucion::subtotalReembolso)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-            PagoReembolsable pago = pagoDAO.bloquearPagoAprobado(conexion, devolucion.pedidoId())
-                    .orElseThrow(() -> new IllegalStateException("El pedido no tiene un cobro aprobado que reembolsar"));
-            pagoDAO.acumularReembolso(conexion, pago.id(), importe);
-            devolucionDAO.cerrar(conexion, devolucionId, soporteId, importe);
+        BigDecimal importe = calcularImporteReembolso(devolucion);
+        PagoReembolsable pago = pagoDAO.bloquearPagoAprobado(conexion, devolucion.pedidoId())
+                .orElseThrow(() -> new IllegalStateException("El pedido no tiene un cobro aprobado que reembolsar"));
+        if (importe.compareTo(pago.disponible()) > 0) {
+            throw new IllegalStateException("El reembolso supera lo cobrado y aún no reembolsado");
+        }
+        return new DatosReembolso(devolucion, reintegros, importe, pago.referencia());
+    }
 
-            Devolucion cerrada = devolucionDAO.buscar(conexion, devolucionId);
-            avisar(conexion, cerrada, devolucion.estado(), EstadoDevolucion.CERRADA,
-                    "Cerramos tu devolución #" + devolucionId + "; reembolsamos S/ " + importe.toPlainString(), soporteId);
-            return cerrada;
-        });
+    private Devolucion confirmarCierre(
+            Connection conexion, long devolucionId, long soporteId, RecepcionDevolucion datos) throws SQLException {
+        Devolucion devolucion = bloquear(conexion, devolucionId);
+        devolucion.estado().validarTransicion(EstadoDevolucion.CERRADA);
+        Map<Long, Boolean> reintegros = validarRecepcion(devolucion, datos);
+
+        List<DetalleDevolucion> aptas = devolucion.lineas().stream()
+                .filter(linea -> reintegros.get(linea.id()))
+                .sorted(Comparator.comparingLong(DetalleDevolucion::productoId))
+                .toList();
+        for (DetalleDevolucion linea : devolucion.lineas()) {
+            devolucionDAO.marcarReintegro(conexion, linea.id(), reintegros.get(linea.id()));
+        }
+        for (DetalleDevolucion linea : aptas) {
+            inventarioDAO.sumarStock(conexion, linea.productoId(), linea.cantidad());
+            inventarioDAO.registrarMovimiento(conexion, new RegistroMovimiento(
+                    linea.productoId(), TipoMovimiento.DEVOLUCION, linea.cantidad(),
+                    "Devolución #" + devolucionId + " del pedido #" + devolucion.pedidoId(),
+                    soporteId, devolucion.pedidoId(), devolucionId));
+        }
+
+        BigDecimal importe = calcularImporteReembolso(devolucion);
+        PagoReembolsable pago = pagoDAO.bloquearPagoAprobado(conexion, devolucion.pedidoId())
+                .orElseThrow(() -> new IllegalStateException("El pedido no tiene un cobro aprobado que reembolsar"));
+        pagoDAO.acumularReembolso(conexion, pago.id(), importe);
+        devolucionDAO.cerrar(conexion, devolucionId, soporteId, importe);
+
+        Devolucion cerrada = devolucionDAO.buscar(conexion, devolucionId);
+        avisar(conexion, cerrada, devolucion.estado(), EstadoDevolucion.CERRADA,
+                "Cerramos tu devolución #" + devolucionId + "; reembolsamos S/ " + importe.toPlainString(), soporteId);
+        return cerrada;
+    }
+
+    private static BigDecimal calcularImporteReembolso(Devolucion devolucion) {
+        return devolucion.lineas().stream()
+                .map(DetalleDevolucion::subtotalReembolso)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     /** Cada línea de la devolución debe venir exactamente una vez (400 si no). */

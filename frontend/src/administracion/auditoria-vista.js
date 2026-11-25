@@ -8,6 +8,7 @@
 import { crearElemento as el } from "../utilidades/dom.js";
 import { etiquetarCeldas } from "../utilidades/tabla-apilable.js";
 import { crearControlesPaginacionKardex } from "../inventario/inventario-vista.js";
+import { guardarArchivo } from "../panel/utilidades-panel.js";
 
 export const TAMANO_PAGINA_AUDITORIA = 20;
 const COLUMNAS = ["Fecha", "Usuario", "Acción", "Entidad", "Detalle"];
@@ -265,12 +266,7 @@ export function crearPanelAuditoria(apiRequest) {
       const respuesta = await apiRequest(
         `/api/admin/auditoria/exportar.csv${consulta ? `?${consulta}` : ""}`,
       );
-      const url = URL.createObjectURL(await respuesta.blob());
-      const enlace = document.createElement("a");
-      enlace.href = url;
-      enlace.download = "auditoria.csv";
-      enlace.click();
-      URL.revokeObjectURL(url);
+      await guardarArchivo(respuesta, "auditoria.csv");
       mostrarEstado("Archivo auditoria.csv descargado.", "success");
     } catch (error) {
       mostrarEstado(`No se pudo descargar el CSV. ${error.message}`, "danger");

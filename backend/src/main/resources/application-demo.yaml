@@ -1,6 +1,0 @@
-# Escenario de demostración: añade db/demo (V2000 en adelante) a las migraciones de desarrollo.
-# NUNCA se activa en producción: crea cuentas con una contraseña conocida y datos ficticios.
-# Uso: ver la sección «Escenario de demostración» del README del repositorio.
-spring:
-  flyway:
-    locations: classpath:db/migration,classpath:db/dev,classpath:db/demo

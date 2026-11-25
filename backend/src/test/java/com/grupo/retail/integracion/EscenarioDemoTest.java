@@ -20,17 +20,18 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Escenario de demostración (perfil «demo», migraciones db/demo desde V2000).
+ * Escenario unificado de desarrollo y demostración (perfil «dev»: migraciones db/dev y db/demo).
  *
  * <p>Levanta su propia base PostgreSQL: no comparte la de {@link BaseIntegracionPostgres}, porque
  * las migraciones demo no deben aplicarse sobre la base de las demás pruebas (Flyway rechazaría las
  * migraciones aplicadas que ya no encuentra) ni sumar datos que alteren sus conteos. Solo corre con
- * el perfil {@code demo}; los perfiles normales nunca cargan estas migraciones.</p>
+ * el perfil {@code dev}; los perfiles normales nunca cargan estas migraciones.</p>
  */
 @SpringBootTest
-@ActiveProfiles("demo")
+@ActiveProfiles("dev")
 class EscenarioDemoTest {
 
     private static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:15-alpine")
@@ -182,10 +183,29 @@ class EscenarioDemoTest {
     @Test
     @DisplayName("Conteos exactos: inventario (2 agotados, 3 con stock bajo), pedidos (20) y atención")
     void conteosExactos() throws SQLException {
-        // Punto 5: productos activos
+        // Punto 5: productos activos, SKU V1001 y jerarquía Composite de Periféricos (heredado de DatosDevTest)
         assertEquals(2, numero("SELECT COUNT(*) FROM producto WHERE activo AND stock = 0"), "agotados");
         assertEquals(3, numero("SELECT COUNT(*) FROM producto WHERE activo AND stock BETWEEN 1 AND 5"), "stock bajo");
         assertEquals(32, numero("SELECT COUNT(*) FROM producto WHERE activo"), "el catálogo es el de V1001");
+        assertEquals(32, numero("SELECT COUNT(*) FROM producto WHERE sku BETWEEN 'PA-0001' AND 'PA-0032' AND length(sku) = 7"),
+                "deben cargarse los 32 SKU demo");
+        assertEquals(4, numero("SELECT COUNT(*) FROM categoria WHERE categoria_padre_id = (SELECT id_categoria FROM categoria WHERE nombre = 'Periféricos')"),
+                "Periféricos debe ser padre de 4 subcategorías");
+        assertEquals(0, numero("""
+                SELECT COUNT(*) FROM carrito c
+                JOIN usuario u ON u.id_usuario = c.usuario_id
+                JOIN carrito_detalle cd ON cd.carrito_id = c.id_carrito
+                JOIN producto p ON p.id = cd.producto_id
+                WHERE u.correo = 'carmen.vargas@correo.example' AND c.estado = 'ACTIVO' AND p.activo = FALSE
+                """), "el carrito demo no debe contener productos inactivos");
+        assertTrue(numero("""
+                SELECT COUNT(*) FROM carrito c
+                JOIN usuario u ON u.id_usuario = c.usuario_id
+                JOIN carrito_detalle cd ON cd.carrito_id = c.id_carrito
+                JOIN producto p ON p.id = cd.producto_id
+                WHERE u.correo = 'carmen.vargas@correo.example' AND c.estado = 'ACTIVO'
+                  AND p.activo = TRUE AND p.stock >= cd.cantidad
+                """) >= 1, "el carrito demo debe traer al menos un producto comprable");
         // Punto 6: pedidos
         assertEquals(20, numero("SELECT COUNT(*) FROM pedido"));
         assertEquals(Map.of("PENDIENTE", 4L, "EN_PREPARACION", 3L, "DESPACHADO", 2L, "ENTREGADO", 9L, "CANCELADO", 2L),
