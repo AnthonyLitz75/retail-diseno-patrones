@@ -62,22 +62,5 @@ test("4: actividadReciente separa usuario y rol de la fecha", () => {
 
 // ---------- 5. Barra en celular ----------
 
-test("5: por debajo de 576 px la barra muestra «PA» seguido del texto «Panel»", () => {
-  const i = css.indexOf("Tanda 3");
-  assert.notEqual(i, -1);
-  const t3 = css.slice(i);
-  assert.match(t3, /@media \(max-width: 575\.98px\)\s*\{[\s\S]*?\.panel-marca-etiqueta\s*\{[^}]*display:\s*inline-block/);
-});
-
 // ---------- 6. Pie del cajón ----------
 
-test("6: «Ir a la tienda» y «Cerrar sesión» del pie del cajón comparten el mismo estilo de contorno claro de 44 px", () => {
-  const t3 = css.slice(css.indexOf("Tanda 3"));
-  const r = t3.match(/\.panel-menu-pie \.panel-enlace-tienda,\s*\.panel-menu-pie \.panel-boton-salir\s*\{([^}]*)\}/)?.[1];
-  assert.ok(r, "una sola regla para los dos");
-  assert.match(r, /min-height:\s*44px/);
-  assert.match(r, /background:\s*transparent/);
-  assert.match(r, /border:\s*1px solid rgba\(255, 255, 255, 0\.35\)/);
-  assert.match(r, /color:\s*#ffffff/i);
-  assert.doesNotMatch(css.slice(css.indexOf("Tanda 2"), css.indexOf("Tanda 3")), /\.panel-menu-pie \.panel-boton-salir\s*\{[^}]*background:\s*#fff/i);
-});

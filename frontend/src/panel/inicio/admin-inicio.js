@@ -12,8 +12,12 @@
 import { html, seguro } from "../../utilidades/seguridad.js";
 import { REPORTES_CSV, solicitarCsv } from "../../administracion/administracion.js";
 import { SIN_VALOR, renderizarCargando, renderizarErrorBloque, renderizarKpi } from "./piezas-inicio.js";
-import { actividadReciente, estadosPedidos, filasAtencion, indicadoresAdmin, TAMANO_ACTIVIDAD } from "./admin-logica.js";
+import {
+  actividadReciente, estadosPedidos, fechaDeHoy, filasAtencion, indicadoresAdmin, resumenAtencion, resumenPedidos, TAMANO_ACTIVIDAD,
+} from "./admin-logica.js";
 import { guardarArchivo } from "../utilidades-panel.js";
+import { icono } from "../iconos.js";
+import { claseRol } from "../roles-visual.js";
 
 const NO_CARGADO = "No se pudo cargar";
 const FUENTE = Object.freeze({ RESUMEN: "resumen", GESTION: "gestion", AUDITORIA: "auditoria" });
@@ -22,18 +26,62 @@ const REPORTE_INICIO = "ventas";
 
 // ---------- Marcado (puro) ----------
 
-/** Indicadores ya calculados (indicadoresAdmin) o null si el resumen falló. */
+/** Cuadro de icono (decorativo) de un color: azul, verde, cielo, gris, rojo, ámbar o alerta. */
+const cuadroIcono = (nombre, tono, extra = "") =>
+  `<span class="panel-icono-cuadro${extra} panel-icono-${tono}" aria-hidden="true">${icono(nombre)}</span>`;
+
+/** Icono y color de cada indicador, por etiqueta (el resumen caído no los lleva). */
+const ICONO_INDICADOR = Object.freeze({
+  "Ventas netas": ["reportes", "azul"],
+  "Pedidos vendidos": ["pedidos", "verde"],
+  "Reclamos escalados": ["incidencias", "gris"],
+  "Valor del inventario": ["inventario", "cielo"],
+});
+
+/**
+ * Indicadores ya calculados (indicadoresAdmin) o null si el resumen falló. Cada tarjeta lleva un
+ * cuadro de icono; «Reclamos escalados» con alerta pasa a estado de alerta (ámbar), con su detalle
+ * y, aparte, el enlace «Atender» a Incidencias.
+ */
 export function renderizarIndicadoresAdmin(indicadores) {
   if (!indicadores) return ETIQUETAS_INDICADORES.map((e) => renderizarKpi(e, SIN_VALOR, NO_CARGADO)).join("");
-  return indicadores.map(({ etiqueta, valor, detalle }) => renderizarKpi(etiqueta, valor, detalle)).join("");
+  return indicadores.map(({ etiqueta, valor, detalle, alerta, enlace }) => {
+    const [nombreIcono, tono] = ICONO_INDICADOR[etiqueta] ?? ["inicio", "gris"];
+    if (alerta) {
+      return html`<article class="panel-kpi panel-kpi-alerta">
+  ${seguro(cuadroIcono("incidencias", "alerta"))}
+  <div class="panel-kpi-cuerpo">
+    <p class="panel-kpi-etiqueta">${etiqueta}</p>
+    <p class="panel-kpi-valor">${valor}</p>
+    <p class="panel-kpi-detalle">${detalle}</p>
+    <a class="panel-kpi-enlace" href="${enlace}">Atender</a>
+  </div>
+</article>`;
+    }
+    return html`<article class="panel-kpi panel-kpi-icono">
+  ${seguro(cuadroIcono(nombreIcono, tono))}
+  <div class="panel-kpi-cuerpo">
+    <p class="panel-kpi-etiqueta">${etiqueta}</p>
+    <p class="panel-kpi-valor">${valor}</p>
+    <p class="panel-kpi-detalle">${detalle}</p>
+  </div>
+</article>`;
+  }).join("");
 }
 
-/** «Requiere tu atención» a partir de filasAtencion: filas, luego fallos; o «Nada pendiente». */
+/** Icono de cada fila de «Requiere tu atención» (el tono llega con la fila). */
+const ICONO_ATENCION = Object.freeze({ escalados: "incidencias", stock: "inventario", preparacion: "pedidos" });
+
+/**
+ * «Requiere tu atención» a partir de filasAtencion: filas (por gravedad, cada una con su icono de
+ * 40 px; solo la primera lleva el botón relleno), luego fallos; o «Nada pendiente».
+ */
 export function renderizarAtencion({ filas, fallos }) {
   if (!filas.length && !fallos.length) return '<p class="panel-vacio">Nada pendiente por ahora.</p>';
-  const items = filas.map((f) => html`<li class="panel-atencion">
+  const items = filas.map((f, i) => html`<li class="panel-atencion">
+  ${seguro(cuadroIcono(ICONO_ATENCION[f.clave] ?? "pedidos", f.tono ?? "azul", " panel-icono-atencion"))}
   <div class="panel-atencion-texto"><p class="panel-atencion-titulo">${f.texto}</p><p class="panel-atencion-detalle">${f.detalle}</p></div>
-  <a class="panel-boton panel-boton-secundario" href="${seguro(f.ruta)}">${f.enlace}</a>
+  <a class="panel-boton ${i === 0 ? "panel-boton-principal" : "panel-boton-secundario"}" href="${seguro(f.ruta)}">${f.enlace}</a>
 </li>`);
   const errores = fallos.map((f) => html`<li class="panel-atencion panel-atencion-fallo">
   <p class="mb-0">${f.texto}</p>
@@ -42,57 +90,99 @@ export function renderizarAtencion({ filas, fallos }) {
   return html`<ul class="panel-lista-atencion">${seguro([...items, ...errores].join(""))}</ul>`;
 }
 
-/** Barras de estadosPedidos con texto y número; la barra visual va oculta a lectores. */
+/**
+ * «Pedidos por estado»: barra segmentada (decorativa, aria-hidden) y una casilla por estado con
+ * su cuadrado de color, nombre y número. Solo estados con pedidos.
+ */
 export function renderizarPedidosPorEstado({ total, barras }) {
   if (total === 0 || !barras.length) return '<p class="panel-vacio">Aún no hay pedidos.</p>';
-  return barras.map((b) => html`<div class="panel-estado-fila">
-  <p class="panel-estado-nombre">${b.nombre}</p>
-  <div class="panel-barra" aria-hidden="true"><div class="panel-barra-relleno panel-estado-${b.color}" style="width: ${b.porcentaje}%"></div></div>
-  <p class="panel-estado-numero">${b.cantidad}</p>
-</div>`).join("");
+  const segmentos = barras.map((b) => html`<span class="panel-segmento panel-estado-${b.color}" style="flex-grow: ${b.cantidad}"></span>`).join("");
+  const casillas = barras.map((b) => html`<li class="panel-estado-casilla"><span class="panel-estado-cuadro panel-estado-${b.color}" aria-hidden="true"></span><span class="panel-estado-nombre">${b.nombre}</span><span class="panel-estado-numero">${b.cantidad}</span></li>`).join("");
+  return html`<div class="panel-segmentos" aria-hidden="true">${seguro(segmentos)}</div>
+<ul class="panel-estado-casillas">${seguro(casillas)}</ul>`;
 }
 
-/** Actividad reciente (actividadReciente) o su texto de vacío. */
+/**
+ * Actividad reciente (actividadReciente) o su texto de vacío. Cada registro: círculo con las
+ * iniciales (color por rol), título, «{usuario} · {rol}» y la fecha en su propia línea.
+ */
 export function renderizarActividad(items) {
   if (!items.length) return '<p class="panel-vacio">Aún no hay actividad registrada.</p>';
-  const filas = items.map((i) => html`<li class="panel-actividad"><p class="panel-actividad-titulo">${i.titulo}</p>${i.fecha ? seguro(html`<p class="panel-actividad-detalle panel-actividad-actor" title="${i.actor}">${i.actor}</p>
-  <p class="panel-actividad-detalle panel-actividad-fecha">${i.fecha}</p>`) : seguro(html`<p class="panel-actividad-detalle">${i.detalle}</p>`)}</li>`);
+  const filas = items.map((i) => {
+    const lineas = i.fecha
+      ? html`<p class="panel-actividad-detalle panel-actividad-actor" title="${i.actor}">${i.actor}</p>
+    <p class="panel-actividad-detalle panel-actividad-fecha">${i.fecha}</p>`
+      : html`<p class="panel-actividad-detalle">${i.detalle}</p>`;
+    return html`<li class="panel-actividad"><span class="panel-avatar-rol ${claseRol(i.rol)}" aria-hidden="true">${i.iniciales ?? "?"}</span>
+  <div class="panel-actividad-cuerpo">
+    <p class="panel-actividad-titulo">${i.titulo}</p>
+    ${seguro(lineas)}
+  </div></li>`;
+  });
   return html`<ul class="panel-lista-actividad">${seguro(filas.join(""))}</ul>`;
 }
 
-/** Estructura completa del Inicio con los bloques en estado «Cargando…». */
-export function renderizarInicioAdmin() {
+/** Atajos en 2 × 2 (columna derecha): ruta, texto, icono y color. */
+const ATAJOS = Object.freeze([
+  { ruta: "#/productos?nuevo=1", texto: "Nuevo producto", icono: "productos", tono: "azul" },
+  { ruta: "#/categorias?alta=1", texto: "Nueva categoría", icono: "categorias", tono: "verde" },
+  { ruta: "#/reportes", texto: "Ver reportes", icono: "reportes", tono: "cielo" },
+  { ruta: "#/auditoria", texto: "Auditoría", icono: "auditoria", tono: "ambar" },
+]);
+
+function renderizarAtajos() {
+  return ATAJOS.map((a) => `<a class="panel-atajo" href="${a.ruta}">${cuadroIcono(a.icono, a.tono)}<span>${a.texto}</span></a>`).join("");
+}
+
+/**
+ * Estructura completa del Inicio con los bloques en estado «Cargando…».
+ * @param {{ hoy?: Date }} [opciones] hoy: la fecha del encabezado (para probar)
+ */
+export function renderizarInicioAdmin({ hoy = new Date() } = {}) {
   const cargando = seguro(renderizarCargando());
   return html`<div class="panel-inicio">
   <header class="panel-encabezado panel-encabezado-acciones">
     <div>
+      <p class="panel-fecha">${fechaDeHoy(hoy)}</p>
       <h1 class="panel-titulo">Inicio</h1>
       <p class="panel-apoyo">Resumen de la tienda y lo que necesita tu atención.</p>
     </div>
     <div class="panel-acciones-encabezado">
-      <button type="button" id="inicio-descargar-csv" class="panel-boton panel-boton-secundario">Descargar reporte (CSV)</button>
-      <a class="panel-boton panel-boton-principal" href="#/cuentas?alta=1">Crear cuenta del personal</a>
+      <button type="button" id="inicio-descargar-csv" class="panel-boton panel-boton-secundario">${seguro(icono("descarga"))}<span>Descargar reporte (CSV)</span></button>
+      <a class="panel-boton panel-boton-principal" href="#/cuentas?alta=1">${seguro(icono("mas"))}<span>Crear cuenta del personal</span></a>
     </div>
   </header>
   <section id="inicio-indicadores" class="panel-kpis" aria-label="Indicadores" aria-busy="true">${cargando}</section>
-  <div class="panel-inicio-rejilla">
+  <div class="panel-inicio-rejilla panel-inicio-rejilla-admin">
     <div class="panel-inicio-lateral">
       <section class="panel-tarjeta" aria-labelledby="inicio-titulo-atencion">
-        <h2 id="inicio-titulo-atencion" class="panel-subtitulo">Requiere tu atención</h2>
+        <div class="panel-bloque-cabecera">
+          <h2 id="inicio-titulo-atencion" class="panel-subtitulo">Requiere tu atención</h2>
+          <span id="inicio-atencion-resumen" class="panel-resumen-cabecera"></span>
+        </div>
         <div id="inicio-atencion" aria-busy="true">${cargando}</div>
       </section>
       <section class="panel-tarjeta" aria-labelledby="inicio-titulo-estados">
-        <h2 id="inicio-titulo-estados" class="panel-subtitulo">Pedidos por estado</h2>
+        <div class="panel-bloque-cabecera">
+          <h2 id="inicio-titulo-estados" class="panel-subtitulo">Pedidos por estado</h2>
+          <span id="inicio-estados-resumen" class="panel-resumen-cabecera"></span>
+        </div>
         <div id="inicio-estados" aria-busy="true">${cargando}</div>
       </section>
     </div>
-    <section class="panel-tarjeta" aria-labelledby="inicio-titulo-actividad">
-      <div class="panel-bloque-cabecera">
-        <h2 id="inicio-titulo-actividad" class="panel-subtitulo">Actividad reciente</h2>
-        <a class="panel-enlace" href="#/auditoria">Ver toda la auditoría</a>
-      </div>
-      <div id="inicio-actividad" aria-busy="true">${cargando}</div>
-    </section>
+    <div class="panel-inicio-lateral">
+      <section class="panel-tarjeta" aria-labelledby="inicio-titulo-atajos">
+        <h2 id="inicio-titulo-atajos" class="panel-subtitulo">Atajos</h2>
+        <div class="panel-atajos">${seguro(renderizarAtajos())}</div>
+      </section>
+      <section class="panel-tarjeta" aria-labelledby="inicio-titulo-actividad">
+        <div class="panel-bloque-cabecera">
+          <h2 id="inicio-titulo-actividad" class="panel-subtitulo">Actividad reciente</h2>
+          <a class="panel-enlace" href="#/auditoria">Ver toda la auditoría</a>
+        </div>
+        <div id="inicio-actividad" aria-busy="true">${cargando}</div>
+      </section>
+    </div>
   </div>
 </div>`;
 }
@@ -111,6 +201,8 @@ export function montar(contenedor, { servicios }) {
   const zonaIndicadores = buscar("inicio-indicadores");
   const zonaAtencion = buscar("inicio-atencion");
   const zonaEstados = buscar("inicio-estados");
+  const resumenAtencionEl = buscar("inicio-atencion-resumen");
+  const resumenEstadosEl = buscar("inicio-estados-resumen");
   const zonaActividad = buscar("inicio-actividad");
   const botonCsv = buscar("inicio-descargar-csv");
 
@@ -121,7 +213,9 @@ export function montar(contenedor, { servicios }) {
   const ocupado = (zona, valor) => (valor ? zona.setAttribute("aria-busy", "true") : zona.removeAttribute("aria-busy"));
 
   function pintarAtencion() {
-    zonaAtencion.innerHTML = renderizarAtencion(filasAtencion({ resumen, productos }));
+    const atencion = filasAtencion({ resumen, productos });
+    zonaAtencion.innerHTML = renderizarAtencion(atencion);
+    resumenAtencionEl.textContent = resumenAtencion(atencion.filas);
     ocupado(zonaAtencion, false);
   }
 
@@ -132,14 +226,19 @@ export function montar(contenedor, { servicios }) {
       const respuesta = await apiRequest("/api/admin/reportes/resumen");
       resumen = await respuesta.json();
       zonaIndicadores.innerHTML = renderizarIndicadoresAdmin(indicadoresAdmin(resumen));
-      zonaEstados.innerHTML = renderizarPedidosPorEstado(estadosPedidos(resumen.pedidosPorEstado));
+      const estados = estadosPedidos(resumen.pedidosPorEstado);
+      zonaEstados.innerHTML = renderizarPedidosPorEstado(estados);
+      resumenEstadosEl.textContent = estados.total > 0 ? resumenPedidos(estados.total) : "";
     } catch {
       resumen = null;
       zonaIndicadores.innerHTML = renderizarIndicadoresAdmin(null);
       zonaEstados.innerHTML = renderizarErrorBloque(FUENTE.RESUMEN);
+      resumenEstadosEl.textContent = "";
     } finally {
       ocupado(zonaIndicadores, false);
       ocupado(zonaEstados, false);
+      // Contadores «Pedidos» e «Incidencias» del menú (null si la fuente falló).
+      servicios.actualizarContadores?.({ resumen });
     }
   }
 

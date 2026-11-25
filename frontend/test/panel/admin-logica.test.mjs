@@ -24,12 +24,12 @@ const resumen = {
 
 // ---------- Indicadores ----------
 
-test("indicadores: importes con la utilidad de formato y detalles de la spec", () => {
+test("indicadores: importes con la utilidad de formato, detalles de la spec, clave y alerta de escalados", () => {
   assert.deepEqual(indicadoresAdmin(resumen), [
-    { etiqueta: "Ventas netas", valor: formatoPrecio(1625), detalle: "Sin pedidos cancelados" },
-    { etiqueta: "Pedidos vendidos", valor: "12", detalle: "No incluye cancelados" },
-    { etiqueta: "Reclamos escalados", valor: "2", detalle: "Esperan al administrador" },
-    { etiqueta: "Valor del inventario", valor: formatoPrecio(9876.5), detalle: "410 unidades · 32 productos" },
+    { clave: "ventas", etiqueta: "Ventas netas", valor: formatoPrecio(1625), detalle: "Sin pedidos cancelados" },
+    { clave: "vendidos", etiqueta: "Pedidos vendidos", valor: "12", detalle: "No incluye cancelados" },
+    { clave: "escalados", etiqueta: "Reclamos escalados", valor: "2", detalle: "Esperan al administrador", alerta: true, enlace: "#/incidencias" },
+    { clave: "inventario", etiqueta: "Valor del inventario", valor: formatoPrecio(9876.5), detalle: "410 unidades · 32 productos" },
   ]);
   assert.equal(indicadoresAdmin({ ...resumen, escalados: 0 })[2].detalle, "Ninguno abierto");
 });
@@ -43,13 +43,13 @@ const productos = [
   { id: 4, stock: 1, activo: false },
 ];
 
-test("atención: filas en orden stock bajo, escalados y pedidos en preparación", () => {
+test("atención: filas por gravedad (escalados, stock bajo, pedidos en preparación) con su clave y tono", () => {
   const { filas, fallos } = filasAtencion({ resumen, productos });
   assert.deepEqual(fallos, []);
   assert.deepEqual(filas, [
-    { texto: "2 productos con stock bajo", detalle: "Revisa el inventario antes de que se agoten", enlace: "Ver inventario", ruta: "#/inventario" },
-    { texto: "2 reclamos escalados", detalle: "Soporte pidió tu intervención", enlace: "Ver incidencias", ruta: "#/incidencias" },
-    { texto: "2 pedidos en preparación", detalle: "Almacén los está atendiendo", enlace: "Ver pedidos", ruta: "#/pedidos" },
+    { clave: "escalados", tono: "rojo", texto: "2 reclamos escalados", detalle: "Soporte pidió tu intervención", enlace: "Ver incidencias", ruta: "#/incidencias" },
+    { clave: "stock", tono: "ambar", texto: "2 productos con stock bajo", detalle: "Revisa el inventario antes de que se agoten", enlace: "Ver inventario", ruta: "#/inventario" },
+    { clave: "preparacion", tono: "azul", texto: "2 pedidos en preparación", detalle: "Almacén los está atendiendo", enlace: "Ver pedidos", ruta: "#/pedidos" },
   ]);
 });
 

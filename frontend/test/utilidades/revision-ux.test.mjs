@@ -80,7 +80,9 @@ test("etiquetarCeldas tolera más celdas que etiquetas", () => {
 
 test("la tabla de cuentas es apilable y se etiqueta al renderizar", () => {
   const plantilla = leer("../../src/layout/plantillas/administracion.html");
-  assert.match(plantilla, /class="[^"]*tabla-apilable[^"]*"[\s\S]*id="tabla-cuentas-admin"/);
+  // Rediseño de «Cuentas y roles»: en celular cada cuenta es una tarjeta propia del panel
+  // (panel.css), así que la tabla ya no usa la clase genérica .tabla-apilable.
+  assert.match(plantilla, /<table class="[^"]*cuentas-tabla[^"]*">[\s\S]*id="tabla-cuentas-admin"/);
 
   const panel = leer("../../src/administracion/panel-administracion.js");
   assert.ok(panel.includes("etiquetarCeldas(fila, ETIQUETAS_COLUMNAS_CUENTAS)"));

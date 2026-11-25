@@ -66,6 +66,7 @@ class Nodo {
     this.firstElementChild.hidden = true;
   }
   get innerHTML() { return this._html; }
+  addEventListener() {}
   append(...hijos) {
     for (const h of hijos) {
       h.parent?.children.splice(h.parent.children.indexOf(h), 1);

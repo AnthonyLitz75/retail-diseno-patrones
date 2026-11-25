@@ -1,66 +1,84 @@
 <div class="card-body">
   <h2 id="titulo-administracion" class="h4">Administración</h2>
   <section id="admin-seccion-cuentas" aria-labelledby="titulo-cuentas-admin" class="mt-3">
-    <h3 id="titulo-cuentas-admin" class="h5">Cuentas y personal</h3>
-    <form id="form-personal-admin" class="row g-2 align-items-end">
-      <div class="col-12 col-md-3">
-        <label class="form-label" for="personal-nombre">Nombre</label>
-        <input id="personal-nombre" class="form-control" maxlength="120" required>
+    <div class="cuentas-rejilla">
+      <div class="cuentas-lista cuentas-tarjeta">
+        <div class="cuentas-cabecera-lista">
+          <h3 id="titulo-cuentas-admin" class="panel-subtitulo">Cuentas y personal</h3>
+          <p id="estado-cuentas-admin" class="small text-secondary mb-0" role="status" aria-live="polite"></p>
+        </div>
+        <div class="cuentas-herramientas">
+          <div id="filtro-rol-cuentas" class="cuentas-filtros" role="group" aria-label="Filtrar por rol">
+            <button type="button" class="cuentas-filtro" data-rol="" aria-pressed="true">Todos</button>
+            <button type="button" class="cuentas-filtro" data-rol="ADMIN" aria-pressed="false">Administrador</button>
+            <button type="button" class="cuentas-filtro" data-rol="VENDEDOR" aria-pressed="false">Vendedor</button>
+            <button type="button" class="cuentas-filtro" data-rol="ALMACEN" aria-pressed="false">Almacén</button>
+            <button type="button" class="cuentas-filtro" data-rol="SOPORTE" aria-pressed="false">Soporte</button>
+            <button type="button" class="cuentas-filtro" data-rol="CLIENTE" aria-pressed="false">Cliente</button>
+          </div>
+          <div class="cuentas-busqueda">
+            <label class="visually-hidden" for="buscar-cuentas-admin">Buscar cuenta por nombre o correo</label>
+            <input id="buscar-cuentas-admin" class="form-control" type="search" placeholder="Buscar por nombre o correo" autocomplete="off">
+          </div>
+          <button id="recargar-cuentas-admin" class="panel-boton panel-boton-secundario" type="button">Actualizar cuentas</button>
+        </div>
+        <div class="table-responsive">
+          <table class="cuentas-tabla">
+            <thead>
+              <tr>
+                <th scope="col">Cuenta</th>
+                <th scope="col">Rol</th>
+                <th scope="col">Estado</th>
+                <th scope="col">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-cuentas-admin"></tbody>
+          </table>
+        </div>
       </div>
-      <div class="col-12 col-md-3">
-        <label class="form-label" for="personal-correo">Correo</label>
-        <input id="personal-correo" class="form-control" type="email" maxlength="180" required>
-      </div>
-      <div class="col-12 col-md-3">
-        <label class="form-label" for="personal-clave">Contraseña temporal</label>
-        <input id="personal-clave" class="form-control" type="password" minlength="8" maxlength="72" autocomplete="new-password" placeholder="Con mayúscula y número" aria-describedby="ayuda-personal-clave" required>
-        <span id="ayuda-personal-clave" class="visually-hidden">8 a 72 caracteres, con al menos una mayúscula y un número.</span>
-      </div>
-      <div class="col-6 col-md-2">
-        <label class="form-label" for="personal-rol">Rol inicial</label>
-        <select id="personal-rol" class="form-select" required>
-          <option value="">Selecciona</option>
-          <option value="CLIENTE">CLIENTE</option>
-          <option value="ADMIN">ADMIN</option>
-          <option value="VENDEDOR">VENDEDOR</option>
-          <option value="ALMACEN">ALMACEN</option>
-          <option value="SOPORTE">SOPORTE</option>
-        </select>
-      </div>
-      <div class="col-6 col-md-1 d-grid">
-        <button class="btn btn-primary" type="submit">Crear</button>
-      </div>
-    </form>
-    <p id="estado-alta-personal" role="status" aria-live="polite"></p>
-    <div class="d-flex flex-wrap justify-content-between align-items-center mt-3 gap-2">
-      <p id="estado-cuentas-admin" class="small text-secondary mb-0" role="status" aria-live="polite"></p>
-      <div class="d-flex align-items-center gap-2">
-        <label class="form-label form-label-sm mb-0 text-nowrap small text-secondary" for="filtro-rol-cuentas">Filtrar por rol:</label>
-        <select id="filtro-rol-cuentas" class="form-select form-select-sm" style="width: auto;">
-          <option value="">Todos los roles</option>
-          <option value="CLIENTE">CLIENTE</option>
-          <option value="ADMIN">ADMIN</option>
-          <option value="VENDEDOR">VENDEDOR</option>
-          <option value="ALMACEN">ALMACEN</option>
-          <option value="SOPORTE">SOPORTE</option>
-        </select>
-        <button id="recargar-cuentas-admin" class="btn btn-outline-primary btn-sm" type="button">Actualizar cuentas</button>
-      </div>
-    </div>
-    <div class="table-responsive mt-2">
-      <table class="table table-sm align-middle tabla-apilable">
-        <thead>
-          <tr>
-            <th scope="col">Nombre</th>
-            <th scope="col">Correo</th>
-            <th scope="col">Rol</th>
-            <th scope="col">Alta</th>
-            <th scope="col">Estado</th>
-            <th scope="col">Acciones</th>
-          </tr>
-        </thead>
-        <tbody id="tabla-cuentas-admin"></tbody>
-      </table>
+      <aside class="cuentas-lateral" aria-label="Alta de cuentas y permisos por rol">
+        <div class="cuentas-tarjeta">
+          <h3 class="panel-subtitulo">Nueva cuenta del personal</h3>
+          <form id="form-personal-admin" class="cuentas-formulario">
+            <div>
+              <label class="form-label" for="personal-nombre">Nombre</label>
+              <input id="personal-nombre" class="form-control" maxlength="120" required>
+            </div>
+            <div>
+              <label class="form-label" for="personal-correo">Correo</label>
+              <input id="personal-correo" class="form-control" type="email" maxlength="180" required>
+            </div>
+            <div>
+              <label class="form-label" for="personal-clave">Contraseña temporal</label>
+              <input id="personal-clave" class="form-control" type="password" minlength="8" maxlength="72" autocomplete="new-password" placeholder="Con mayúscula y número" aria-describedby="ayuda-personal-clave" required>
+              <p id="ayuda-personal-clave" class="form-text">8 a 72 caracteres, con al menos una mayúscula y un número.</p>
+            </div>
+            <div>
+              <label class="form-label" for="personal-rol">Rol inicial</label>
+              <select id="personal-rol" class="form-select" required>
+                <option value="">Selecciona un rol</option>
+                <option value="ADMIN">Administrador</option>
+                <option value="VENDEDOR">Vendedor</option>
+                <option value="ALMACEN">Almacén</option>
+                <option value="SOPORTE">Soporte</option>
+                <option value="CLIENTE">Cliente</option>
+              </select>
+            </div>
+            <button class="panel-boton panel-boton-principal w-100" type="submit">Crear cuenta</button>
+          </form>
+          <p id="estado-alta-personal" role="status" aria-live="polite"></p>
+        </div>
+        <div class="cuentas-tarjeta">
+          <h3 class="panel-subtitulo">Qué puede hacer cada rol</h3>
+          <dl class="cuentas-roles">
+            <div><dt>Administrador</dt> <dd>Todo el panel: cuentas, categorías, reportes, incidencias y auditoría.</dd></div>
+            <div><dt>Vendedor</dt> <dd>Productos, consultas de clientes y pedidos pendientes.</dd></div>
+            <div><dt>Almacén</dt> <dd>Pedidos por atender, despachos e inventario.</dd></div>
+            <div><dt>Soporte</dt> <dd>Reclamos, devoluciones y consulta de pedidos.</dd></div>
+            <div><dt>Cliente</dt> <dd>Solo la tienda: compras y su atención.</dd></div>
+          </dl>
+        </div>
+      </aside>
     </div>
   </section>
   <section id="admin-seccion-categorias" aria-labelledby="titulo-categorias-admin" class="mt-3">

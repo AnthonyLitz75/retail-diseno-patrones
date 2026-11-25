@@ -7,11 +7,20 @@
 import { ROL } from "../utilidades/constantes.js";
 import { html, seguro } from "../utilidades/seguridad.js";
 import { icono } from "./iconos.js";
+import { renderizarLogoSvg } from "../layout/componentes/logo.js";
 import { MENU_POR_ROL } from "./menu-por-rol.js";
 
 /** Nombre visible de cada rol del personal (único lugar donde se define). */
 export const ETIQUETA_ROL = Object.freeze({
   [ROL.ADMIN]: "Administrador",
+  [ROL.VENDEDOR]: "Vendedor",
+  [ROL.ALMACEN]: "Almacén",
+  [ROL.SOPORTE]: "Soporte",
+});
+
+/** Rol abreviado que acompaña al avatar en celular (< 992 px). */
+export const ETIQUETA_ROL_CORTA = Object.freeze({
+  [ROL.ADMIN]: "Admin",
   [ROL.VENDEDOR]: "Vendedor",
   [ROL.ALMACEN]: "Almacén",
   [ROL.SOPORTE]: "Soporte",
@@ -24,6 +33,11 @@ export const ID_BOTON_CERRAR_SESION = "panel-cerrar-sesion";
 
 /** Botón del cajón del menú (visible solo por debajo de 992 px, ver panel.css y cajon-menu.js). */
 export const ID_BOTON_MENU = "panel-boton-menu";
+
+/** @param {unknown} rol */
+export function etiquetaRolCorta(rol) {
+  return typeof rol === "string" && Object.hasOwn(ETIQUETA_ROL_CORTA, rol) ? ETIQUETA_ROL_CORTA[rol] : "";
+}
 
 /** @param {unknown} rol */
 export function etiquetaRol(rol) {
@@ -43,24 +57,32 @@ export function iniciales(nombre) {
 }
 
 /**
- * Barra superior: marca, «Panel del personal», «Ir a la tienda», chip y «Cerrar sesión».
+ * Barra superior oscura: marca (isotipo real de la tienda, «PÍXEL ANDINO» y «Panel del personal»,
+ * todo un enlace a #/inicio), «Ir a la tienda», chip (avatar, nombre y rol) y «Cerrar sesión».
+ * En celular la etiqueta se reduce a «Panel» y el chip a avatar y rol corto (CSS).
  * @param {{ nombre?: string, rol?: string }} usuario
  */
 export function renderizarBarraSuperior({ nombre = "", rol = "" } = {}) {
   return html`<header class="panel-cabecera">
   <button type="button" id="${ID_BOTON_MENU}" class="panel-boton-menu" aria-label="Abrir menú" aria-expanded="false" aria-controls="panel-menu"><span class="panel-boton-menu-barras" aria-hidden="true"></span></button>
-  <div class="panel-marca">
-    <span class="panel-marca-logo" aria-hidden="true">PA</span>
-    <span class="panel-marca-nombre">Píxel Andino</span>
-    <span class="panel-marca-etiqueta">Panel<span class="panel-marca-etiqueta-resto"> del personal</span></span>
-  </div>
+  <a class="panel-marca" href="#/inicio" aria-label="Píxel Andino, inicio del panel">
+    ${seguro(renderizarLogoSvg({ prefijo: "panel", width: 40, height: 40, className: "panel-marca-logo" }))}
+    <span class="panel-marca-texto">
+      <span class="panel-marca-nombre">PÍXEL <span class="panel-marca-nombre-acento">ANDINO</span></span>
+      <span class="panel-marca-etiqueta">Panel<span class="panel-marca-etiqueta-resto"> del personal</span></span>
+    </span>
+  </a>
   <div class="panel-cabecera-acciones">
-    <a class="panel-enlace-tienda" href="/">Ir a la tienda</a>
+    <a class="panel-enlace-tienda" href="/">
+      ${seguro(icono("tienda"))}
+      <span>Ir a la tienda</span>
+    </a>
     <div class="panel-chip-usuario">
       <span class="panel-avatar" aria-hidden="true">${iniciales(nombre)}</span>
       <span class="panel-chip-texto">
         <span class="panel-chip-nombre">${nombre}</span>
-        <span class="panel-insignia panel-insignia-azul panel-chip-rol">${etiquetaRol(rol)}</span>
+        <span class="panel-chip-rol">${etiquetaRol(rol)}</span>
+        <span class="panel-chip-rol-corto" aria-hidden="true">${etiquetaRolCorta(rol)}</span>
       </span>
     </div>
     <button type="button" id="${ID_BOTON_CERRAR_SESION}" class="panel-boton-salir" data-cerrar-sesion>${seguro(icono("cerrar-sesion"))}<span>Cerrar sesión</span></button>

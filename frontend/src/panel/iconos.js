@@ -5,7 +5,7 @@
  * de la entrada o del botón da el nombre accesible.
  */
 
-/** Trazados interiores de cada ícono, por nombre (los del menú y «cerrar-sesion»). */
+/** Trazados interiores de cada ícono, por nombre (los del menú, «tienda» y «cerrar-sesion»). */
 export const ICONOS = Object.freeze({
   inicio: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h5v-6h4v6h5V9.5"/>',
   pedidos: '<path d="M3 7.5 12 3l9 4.5v9L12 21l-9-4.5z"/><path d="m3 7.5 9 4.5 9-4.5"/><path d="M12 12v9"/>',
@@ -20,6 +20,9 @@ export const ICONOS = Object.freeze({
   reclamos: '<path d="M4 4h16v12H8l-4 4z"/><path d="M12 7.5v4"/><path d="M12 14h.01"/>',
   devoluciones: '<path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/>',
   "consulta-pedido": '<circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/>',
+  descarga: '<path d="M12 4v11"/><path d="m7 11 5 5 5-5"/><path d="M5 20h14"/>',
+  mas: '<path d="M12 5v14"/><path d="M5 12h14"/>',
+  tienda: '<path d="M3 9.5 4.7 4h14.6L21 9.5"/><path d="M3 9.5a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0"/><path d="M5 12.5V20h14v-7.5"/><path d="M10 20v-4.5h4V20"/>',
   "cerrar-sesion": '<path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="M10 17l-5-5 5-5"/><path d="M5 12h11"/>',
 });
 

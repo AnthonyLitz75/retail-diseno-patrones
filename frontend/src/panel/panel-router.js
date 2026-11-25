@@ -21,6 +21,7 @@ const PARAMETROS_POR_RUTA = Object.freeze({
   "#/consulta-pedido": Object.freeze(["pedido"]),
   "#/productos": Object.freeze(["nuevo"]),
   "#/cuentas": Object.freeze(["alta"]),
+  "#/categorias": Object.freeze(["alta"]),
 });
 
 const MOTIVO = Object.freeze({ DESCONOCIDA: "desconocida", SIN_ACCESO: "sin-acceso" });

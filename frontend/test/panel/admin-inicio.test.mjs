@@ -28,8 +28,9 @@ test("encabezado: <h1> Inicio, apoyo, «Descargar reporte (CSV)» y «Crear cuen
   const html = renderizarInicioAdmin();
   assert.match(html, /<h1[^>]*class="panel-titulo"[^>]*>Inicio<\/h1>/);
   assert.match(html, /Resumen de la tienda y lo que necesita tu atención\./);
-  assert.match(html, /<button [^>]*type="button"[^>]*id="inicio-descargar-csv"[^>]*>Descargar reporte \(CSV\)<\/button>/);
-  assert.match(html, /<a [^>]*class="panel-boton panel-boton-principal"[^>]*href="#\/cuentas\?alta=1"[^>]*>Crear cuenta del personal<\/a>/);
+  // Los botones llevan icono (svg) antes del texto.
+  assert.match(html, /<button [^>]*type="button"[^>]*id="inicio-descargar-csv"[^>]*>[\s\S]*?<span>Descargar reporte \(CSV\)<\/span><\/button>/);
+  assert.match(html, /<a [^>]*class="panel-boton panel-boton-principal"[^>]*href="#\/cuentas\?alta=1"[^>]*>[\s\S]*?<span>Crear cuenta del personal<\/span><\/a>/);
 });
 
 test("bloques: requiere tu atención, pedidos por estado y actividad reciente", () => {
@@ -69,7 +70,7 @@ test("indicadores con datos y con el resumen caído («—» y «No se pudo carg
     { etiqueta: "Reclamos escalados", valor: "0", detalle: "Ninguno abierto" },
     { etiqueta: "Valor del inventario", valor: "S/ 9.00", detalle: "1 unidades · 1 productos" },
   ]);
-  assert.equal(contar(con, /class="panel-kpi"/g), 4);
+  assert.equal(contar(con, /<article class="panel-kpi( panel-kpi-icono| panel-kpi-alerta)"/g), 4);
   assert.match(visible(con), /Ventas netas[\s\S]*?>S\/ 1,625\.00</);
   const sin = renderizarIndicadoresAdmin(null);
   assert.equal(contar(sin, />—</g), 4);
@@ -86,7 +87,8 @@ const fila = (texto, ruta) => ({ texto, detalle: "d", enlace: `Ver ${texto}`, ru
 test("atención: filas con texto, detalle y enlace de acción", () => {
   const html = renderizarAtencion({ filas: [fila("2 reclamos escalados", "#/incidencias")], fallos: [] });
   assert.match(html, /2 reclamos escalados/);
-  assert.match(html, /<a [^>]*class="panel-boton panel-boton-secundario"[^>]*href="#\/incidencias"[^>]*>Ver 2 reclamos escalados<\/a>/);
+  // La primera fila visible lleva el botón relleno primario; las demás, de contorno.
+  assert.match(html, /<a [^>]*class="panel-boton panel-boton-principal"[^>]*href="#\/incidencias"[^>]*>Ver 2 reclamos escalados<\/a>/);
   assert.doesNotMatch(html, /Nada pendiente/);
 });
 
@@ -107,7 +109,7 @@ test("atención: las líneas de fallo van después de las filas", () => {
 
 // ---------- Pedidos por estado ----------
 
-test("pedidos por estado: una barra por estado con texto y número; parte visual oculta a lectores", () => {
+test("pedidos por estado: una casilla por estado con texto y número; la barra segmentada va oculta a lectores", () => {
   const html = renderizarPedidosPorEstado({
     total: 4,
     barras: [
@@ -117,8 +119,9 @@ test("pedidos por estado: una barra por estado con texto y número; parte visual
   });
   assert.match(html, />Pendiente</);
   assert.match(html, /panel-estado-numero">1</);
-  assert.match(html, /<div class="panel-barra" aria-hidden="true"><div class="panel-barra-relleno panel-estado-entregado" style="width: 75%"><\/div><\/div>/);
-  assert.equal(contar(html, /aria-hidden="true"/g), 2);
+  assert.match(html, /<span class="panel-segmento panel-estado-entregado" style="flex-grow: 3"><\/span>/);
+  // La barra segmentada y los cuadrados de color son decorativos (aria-hidden).
+  assert.equal(contar(html, /aria-hidden="true"/g), 3);
 });
 
 test("pedidos por estado sin pedidos: «Aún no hay pedidos.»", () => {

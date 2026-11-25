@@ -41,7 +41,7 @@ test("iniciales: primera letra del primer y del último nombre, en mayúsculas",
 test("hay un ícono por entrada del menú y uno para cerrar sesión (spec 11)", () => {
   const esperados = [
     "inicio", "pedidos", "productos", "inventario", "categorias", "cuentas", "reportes",
-    "auditoria", "incidencias", "consultas", "reclamos", "devoluciones", "consulta-pedido", "cerrar-sesion",
+    "auditoria", "incidencias", "consultas", "reclamos", "devoluciones", "consulta-pedido", "tienda", "descarga", "mas", "cerrar-sesion",
   ];
   assert.deepEqual(Object.keys(ICONOS).sort(), [...esperados].sort());
   for (const nombre of esperados) {
@@ -61,16 +61,16 @@ test("hay un ícono por entrada del menú y uno para cerrar sesión (spec 11)", 
 test("la barra superior tiene marca, enlace a la tienda, chip del usuario y cerrar sesión", () => {
   const barra = renderizarBarraSuperior({ nombre: "Ana López", rol: "ADMIN" });
   assert.match(barra, /^<header/);
-  assert.match(barra, />PA</);
+  assert.match(barra, /PÍXEL <span class="panel-marca-nombre-acento">ANDINO/, "marca en texto, sin el cuadro «PA»");
   assert.match(barra, /Píxel Andino/);
   assert.match(barra.replace(/<[^>]+>/g, ""), /Panel del personal/, "el texto completo sigue ahí (en celular solo se ve «Panel»)");
-  assert.match(barra, /<a [^>]*href="\/"[^>]*>[^<]*Ir a la tienda/);
+  assert.match(barra, /<a [^>]*href="\/"[^>]*>[\s\S]*?Ir a la tienda/);
   assert.match(barra, />AL</);
   assert.match(barra, />Ana López</);
   assert.match(barra, />Administrador</);
   assert.match(barra, /<button [^>]*type="button"[^>]*id="panel-cerrar-sesion"/);
   assert.match(barra, /Cerrar sesión/);
-  assert.equal(contar(barra, /<svg/g), 1, "solo el ícono de cerrar sesión");
+  assert.equal(contar(barra, /<svg/g), 3, "isotipo, ícono de la tienda e ícono de cerrar sesión");
 });
 
 test("la barra superior no trae nada de la tienda", () => {

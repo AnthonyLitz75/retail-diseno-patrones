@@ -6,7 +6,8 @@
  * tiene su <h1>, se lleva el módulo a su contenedor y activa su sección con mostrarSeccion(),
  * que el propio módulo expone. La barra de pestañas interna y, salvo en Reportes, los
  * indicadores internos se ocultan desde panel.css.
- * Con #/cuentas?alta=1 lleva el foco al primer campo del alta y reescribe el hash a #/cuentas.
+ * Con #/cuentas?alta=1 (o #/categorias?alta=1) lleva el foco al primer campo del alta y reescribe
+ * el hash a la ruta sin el parámetro.
  *
  * Carga diferida: los módulos de administración se piden con import() una sola vez (se guarda
  * la promesa) y se monta una sola instancia. Si mientras llega el usuario cambió de ruta, se
@@ -16,6 +17,7 @@
 import { html, seguro } from "../../utilidades/seguridad.js";
 import { renderizarVistaAdministracion } from "../../layout/vistas-personal.js";
 import { renderizarCargando } from "../inicio/piezas-inicio.js";
+import { icono } from "../iconos.js";
 
 export const RUTA_CUENTAS = "#/cuentas";
 
@@ -33,8 +35,16 @@ const SECCION_POR_RUTA = Object.freeze({
   "#/incidencias": "incidencias",
 });
 
-/** Primer campo del formulario de alta de personal (plantillas/administracion.html). */
-const SELECTOR_PRIMER_CAMPO_ALTA = "#form-personal-admin #personal-nombre";
+/** Primer campo de cada alta (plantillas/administracion.html): cuentas y categorías. */
+const SELECTOR_ALTA_POR_RUTA = Object.freeze({
+  "#/cuentas": "#form-personal-admin #personal-nombre",
+  "#/categorias": "#form-categoria-admin #nombre-categoria-admin",
+});
+
+/** Campo al que lleva el foco `?alta=1` en esa ruta; null si la ruta no tiene alta. */
+export function selectorAltaDeRuta(ruta) {
+  return SELECTOR_ALTA_POR_RUTA[ruta] ?? null;
+}
 
 /** Sección del módulo que activa la ruta; null si no es una ruta de administración. */
 export function seccionDeRuta(ruta) {
@@ -44,6 +54,22 @@ export function seccionDeRuta(ruta) {
 /** ¿La ruta pide abrir el alta de cuentas? */
 export function pideAlta(parametros) {
   return parametros?.alta === "1";
+}
+
+/**
+ * Encabezado de #/cuentas: el <h1> y «Nueva cuenta» (primario, con «+»), que lleva el foco al
+ * primer campo del alta (#personal-nombre).
+ */
+export function renderizarEncabezadoCuentas(titulo) {
+  return html`<header class="panel-encabezado panel-encabezado-acciones">
+  <div>
+    <h1 class="panel-titulo">${titulo}</h1>
+    <p class="panel-apoyo">Crea cuentas del personal y cambia su rol. Cada cambio queda en la auditoría.</p>
+  </div>
+  <div class="panel-acciones-encabezado">
+    <button type="button" id="cuentas-nueva" class="panel-boton panel-boton-principal">${seguro(icono("mas"))}<span>Nueva cuenta</span></button>
+  </div>
+</header>`;
 }
 
 /**
@@ -68,7 +94,7 @@ export function crearPantallaAdministracion({ cargarModulos = cargarModulosAdmin
   /** Promesa única de la instancia (import + montaje), compartida por las cuatro rutas. */
   let promesaInstancia = null;
 
-  function obtenerInstancia({ apiRequest, mostrarToast, cambiosProductos }) {
+  function obtenerInstancia({ apiRequest, mostrarToast, cambiosProductos, estado }) {
     promesaInstancia ??= cargarModulos().then(({ crearPanelAdministracion, crearPanelIncidencias }) => {
       const plantilla = documento.createElement("div");
       plantilla.innerHTML = renderizarVistaAdministracion();
@@ -76,7 +102,10 @@ export function crearPantallaAdministracion({ cargarModulos = cargarModulosAdmin
       // Mismo mecanismo que la tienda: la vista se muestra quitando el atributo hidden.
       vista.hidden = false;
       // En la tienda, cambiar categorías recargaba el catálogo; en el panel se avisa del cambio.
-      const administracion = crearPanelAdministracion(apiRequest, async () => cambiosProductos?.avisar("categorias"));
+      const administracion = crearPanelAdministracion(apiRequest, async () => cambiosProductos?.avisar("categorias"), {
+        // «(tú)» y «Desactivar» deshabilitado en la propia cuenta.
+        obtenerUsuarioActual: () => estado?.usuarioSesion ?? null,
+      });
       administracion.element.hidden = false;
       const incidencias = crearPanelIncidencias(apiRequest, mostrarToast);
       incidencias.element.hidden = false;
@@ -94,8 +123,15 @@ export function crearPantallaAdministracion({ cargarModulos = cargarModulosAdmin
   function montar(contenedor, { entrada, servicios, estaVisible = () => true }) {
     const { ruta } = entrada;
     const seccion = seccionDeRuta(ruta);
-    contenedor.innerHTML = html`<h1 class="panel-titulo">${TITULO_POR_RUTA[ruta]}</h1>
+    const encabezado = ruta === RUTA_CUENTAS
+      ? renderizarEncabezadoCuentas(TITULO_POR_RUTA[ruta])
+      : html`<h1 class="panel-titulo">${TITULO_POR_RUTA[ruta]}</h1>`;
+    contenedor.innerHTML = html`${seguro(encabezado)}
 <div data-cargando>${seguro(renderizarCargando())}</div>`;
+    // «Nueva cuenta» lleva el foco al primer campo del alta (la vista se mueve a este contenedor).
+    contenedor.addEventListener("click", (evento) => {
+      if (evento.target.closest?.("#cuentas-nueva")) contenedor.querySelector(selectorAltaDeRuta(RUTA_CUENTAS))?.focus();
+    });
 
     return {
       async alMostrar(parametros) {
@@ -107,10 +143,11 @@ export function crearPantallaAdministracion({ cargarModulos = cargarModulosAdmin
         contenedor.querySelector("[data-cargando]")?.remove();
         contenedor.append(vista); // mueve la única instancia a la ruta visible (ids sin duplicar)
         administracion.mostrarSeccion(seccion);
-        if (ruta === RUTA_CUENTAS && pideAlta(parametros)) {
-          contenedor.querySelector(SELECTOR_PRIMER_CAMPO_ALTA)?.focus();
+        const selectorAlta = selectorAltaDeRuta(ruta);
+        if (selectorAlta && pideAlta(parametros)) {
+          contenedor.querySelector(selectorAlta)?.focus();
           // Reemplaza el hash para que recargar no vuelva a pedir el alta.
-          servicios.reemplazarRuta?.(RUTA_CUENTAS);
+          servicios.reemplazarRuta?.(ruta);
         }
         // El módulo no recarga por sección: Incidencias tiene su propio cargar(); las demás
         // secciones se recargan juntas con cargar() del panel de administración.

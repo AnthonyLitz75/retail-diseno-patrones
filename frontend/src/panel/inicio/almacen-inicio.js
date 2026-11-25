@@ -216,6 +216,8 @@ export function montar(contenedor, { servicios }) {
       zonaCola.innerHTML = renderizarErrorBloque("pedidos");
     } finally {
       ocupado(zonaCola, false);
+      // Contador «Pedidos por atender» del menú (null si la fuente falló).
+      servicios.actualizarContadores?.({ pedidos });
     }
   }
 

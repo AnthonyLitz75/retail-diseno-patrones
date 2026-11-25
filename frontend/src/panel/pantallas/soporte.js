@@ -39,6 +39,12 @@ export function pedidoDeConsulta(parametros) {
 }
 
 const RUTA_CONSULTA = "#/consulta-pedido";
+
+/**
+ * «Ver pedido #n» de las bandejas: en el panel la tarjeta de contexto está oculta, así que se abre
+ * la consulta de pedido (con entrada de historial, para que «Atrás» vuelva a la bandeja).
+ */
+export const alVerPedidoDelPanel = (navegar) => (pedidoId) => navegar(`${RUTA_CONSULTA}?pedido=${pedidoId}`);
 const PREFIJO_CONSULTA = "consulta";
 
 /** Valor del campo al mostrar la consulta: el pedido válido de la URL o vacío. */
@@ -56,14 +62,17 @@ ${seguro(renderizarBusquedaPedido(PREFIJO_CONSULTA))}`;
 /** Portal único, creado la primera vez que una de las tres rutas se muestra. */
 let compartido = null;
 
-function obtenerPortal({ apiRequest, estado, mostrarToast }) {
+function obtenerPortal(servicios) {
+  const { apiRequest, estado, mostrarToast } = servicios;
   if (!compartido) {
     const plantilla = document.createElement("div");
     plantilla.innerHTML = renderizarVistaSoporte();
     const vista = plantilla.firstElementChild;
     // Mismo mecanismo que la tienda: la vista se muestra quitando el atributo hidden.
     vista.hidden = false;
-    const portal = configurarPortalSoporte({ apiRequest, obtenerEstado: () => estado, contenedor: vista, mostrarToast });
+    const portal = configurarPortalSoporte({
+      apiRequest, obtenerEstado: () => estado, contenedor: vista, mostrarToast, alVerPedido: alVerPedidoDelPanel(servicios.navegar),
+    });
     compartido = { vista, portal };
   }
   return compartido;

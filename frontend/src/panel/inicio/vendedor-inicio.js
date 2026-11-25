@@ -212,6 +212,8 @@ export function montar(contenedor, { servicios }) {
       zonaConsultas.innerHTML = renderizarErrorBloque(FUENTE.PREGUNTAS);
     } finally {
       ocupado(zonaConsultas, false);
+      // Contador «Consultas de clientes» del menú (null si la fuente falló).
+      servicios.actualizarContadores?.({ preguntas });
     }
   }
 

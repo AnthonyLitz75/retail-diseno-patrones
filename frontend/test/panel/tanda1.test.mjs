@@ -186,8 +186,8 @@ test("F6: los contenedores con desplazamiento del panel son position: relative",
 test("F8: textos con número de los Inicios en singular con 1 y en plural con 0 y 2", async () => {
   const { filasAtencion, indicadoresAdmin } = await import("../../src/panel/inicio/admin-logica.js");
   const fila = (resumen, productos) => filasAtencion({ resumen, productos }).filas.map((f) => f.texto);
-  assert.deepEqual(fila({ escalados: 1, pedidosPorEstado: { EN_PREPARACION: 1 } }, [{ stock: 1, activo: true }]), ["1 producto con stock bajo", "1 reclamo escalado", "1 pedido en preparación"]);
-  assert.deepEqual(fila({ escalados: 2, pedidosPorEstado: { EN_PREPARACION: 2 } }, [{ stock: 1, activo: true }, { stock: 2, activo: true }]), ["2 productos con stock bajo", "2 reclamos escalados", "2 pedidos en preparación"]);
+  assert.deepEqual(fila({ escalados: 1, pedidosPorEstado: { EN_PREPARACION: 1 } }, [{ stock: 1, activo: true }]), ["1 reclamo escalado", "1 producto con stock bajo", "1 pedido en preparación"]);
+  assert.deepEqual(fila({ escalados: 2, pedidosPorEstado: { EN_PREPARACION: 2 } }, [{ stock: 1, activo: true }, { stock: 2, activo: true }]), ["2 reclamos escalados", "2 productos con stock bajo", "2 pedidos en preparación"]);
   const nota = (u, p) => indicadoresAdmin({ unidadesEnStock: u, productosActivos: p }).at(3).detalle;
   assert.equal(nota(1, 1), "1 unidad · 1 producto");
   assert.equal(nota(529, 32), "529 unidades · 32 productos");

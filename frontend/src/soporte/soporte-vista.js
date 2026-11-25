@@ -81,7 +81,11 @@ function tarjetaBandeja(titulo, select, bandeja) {
   return { seccion, actualizar, estado, lista };
 }
 
-export function configurarPortalSoporte({ apiRequest, obtenerEstado, contenedor, mostrarToast }) {
+/**
+ * `alVerPedido(pedidoId)` (opcional) sustituye a la tarjeta de contexto cuando se pulsa «Ver pedido #n»;
+ * el panel del personal la usa para abrir la consulta de pedido. Sin ella, se muestra el contexto.
+ */
+export function configurarPortalSoporte({ apiRequest, obtenerEstado, contenedor, mostrarToast, alVerPedido }) {
   if (!contenedor) return { cargar: async () => {} };
 
   const panelContexto = el("section", "card shadow-sm mb-4 border-primary");
@@ -158,7 +162,7 @@ export function configurarPortalSoporte({ apiRequest, obtenerEstado, contenedor,
 
   function botonContexto(pedidoId) {
     const b = boton(`Ver pedido #${pedidoId}`, "btn btn-link btn-sm px-0");
-    b.addEventListener("click", () => void mostrarContexto(pedidoId));
+    b.addEventListener("click", () => (alVerPedido ? alVerPedido(pedidoId) : void mostrarContexto(pedidoId)));
     return b;
   }
 

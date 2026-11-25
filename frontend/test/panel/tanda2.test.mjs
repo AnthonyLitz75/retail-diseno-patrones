@@ -22,24 +22,6 @@ const cuenta = (texto, re) => (texto.match(re) ?? []).length;
 
 // ---------- 1. Barra ----------
 
-test("1: «Panel del personal» en mayúsculas, 12 px, 700, 0.06em, #475569 y borde izquierdo #cbd5e1", () => {
-  const r = regla(".panel-marca-etiqueta");
-  assert.match(r, /text-transform:\s*uppercase/);
-  assert.match(r, /font-size:\s*12px/);
-  assert.match(r, /font-weight:\s*700/);
-  assert.match(r, /letter-spacing:\s*0\.06em/);
-  assert.match(r, /color:\s*#475569/i);
-  assert.match(r, /border-left:\s*1px solid #cbd5e1/i);
-  assert.match(r, /padding-left:\s*12px/);
-});
-
-test("1: el chip es una pastilla con borde #e2e8f0: avatar y, al lado, nombre con el rol debajo", () => {
-  const barra = renderizarBarraSuperior({ nombre: "Ana López", rol: "ADMIN" });
-  assert.match(barra, /<div class="panel-chip-usuario">\s*<span class="panel-avatar"[^>]*>AL<\/span>\s*<span class="panel-chip-texto">\s*<span class="panel-chip-nombre">Ana López<\/span>\s*<span class="panel-insignia panel-insignia-azul panel-chip-rol">Administrador<\/span>/);
-  assert.match(regla(".panel-chip-usuario"), /border:\s*1px solid #e2e8f0/i);
-  assert.match(css, /@media \(min-width: 992px\)[\s\S]*?\.panel-chip-rol\s*\{[^}]*background:\s*transparent/);
-});
-
 // ---------- 8. Celular: barra en una fila y pie del cajón ----------
 
 test("8: el texto «Panel del personal» se parte para mostrar solo «Panel» en celular", () => {
@@ -54,15 +36,6 @@ test("8: «Ir a la tienda» y «Cerrar sesión» también están en el pie del c
   assert.equal(cuenta(barra + menu, /id="panel-cerrar-sesion"/g), 1, "un solo id");
   assert.match(barra, /<button [^>]*id="panel-cerrar-sesion"[^>]*data-cerrar-sesion/);
   assert.match(menu, /<\/div>\s*<\/nav>$/, "el pie va dentro del <nav> del cajón");
-});
-
-test("8: por debajo de 576 px la barra es una fila y el pie del cajón es lo único que muestra tienda y salir", () => {
-  const m = css.slice(css.indexOf("Tanda 2"));
-  assert.match(m, /@media \(max-width: 575\.98px\)[\s\S]*?\.panel-cabecera\s*\{[^}]*flex-wrap:\s*nowrap/);
-  assert.match(m, /@media \(max-width: 575\.98px\)[\s\S]*?\.panel-marca-etiqueta-resto[^{}]*\{[^}]*display:\s*none/);
-  assert.match(m, /@media \(max-width: 575\.98px\)[\s\S]*?\.panel-cabecera \.panel-enlace-tienda[^{}]*\{[^}]*display:\s*none/);
-  assert.match(m, /\.panel-menu-pie\s*\{[^}]*display:\s*none/, "el pie está oculto en pantallas anchas");
-  assert.match(m, /@media \(max-width: 575\.98px\)[\s\S]*?\.panel-menu-pie\s*\{[^}]*display:\s*grid/);
 });
 
 // ---------- 2. Enlaces de cabecera de tarjeta ----------

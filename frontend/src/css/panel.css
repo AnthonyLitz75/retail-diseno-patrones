@@ -8,8 +8,28 @@
   --panel-texto-secundario: #475569;
   --panel-menu-texto: #cbd5e1;
   --panel-menu-etiqueta: #94a3b8;
-  --panel-menu-activo-fondo: rgba(13, 110, 253, 0.32);
-  --panel-cabecera-fondo: #ffffff;
+  --panel-menu-activo-fondo: rgba(56, 189, 248, 0.16);
+  --panel-marco-borde: rgba(148, 163, 184, 0.16);
+  --panel-area-fondo: #f3f5f9;
+  --panel-acento-cielo: #38bdf8;
+  --panel-contador-ambar: #fbbf24;
+  --panel-contador-rojo: #dc2626;
+
+  /* Tonos de iconos, avatares por rol e insignias de estado de cuenta (texto / fondo ≥ 4.5:1). */
+  --panel-tono-azul-fondo: #e7f0ff;
+  --panel-tono-azul-texto: #0a58ca;
+  --panel-tono-verde-fondo: #e6f6ec;
+  --panel-tono-verde-texto: #157f3b; /* ajuste mínimo de #15803d (4,48:1) para llegar a 4,5:1 sobre #e6f6ec */
+  --panel-tono-cielo-fondo: #e0f2fe;
+  --panel-tono-cielo-texto: #0369a1;
+  --panel-tono-gris-fondo: #f1f5f9;
+  --panel-tono-gris-texto: #475569;
+
+  /* Tarjeta de alerta (reclamos escalados). */
+  --panel-alerta-fondo: #fffbeb;
+  --panel-alerta-borde: #fcd34d;
+  --panel-alerta-texto: #78350f;
+  --panel-alerta-icono-fondo: #fde68a;
   --panel-fila-encabezado: #eef2f7;
   --panel-borde-fila: #e2e8f0;
 
@@ -49,17 +69,17 @@ body.panel-pagina {
   outline-offset: 2px;
 }
 
-/* ---------- Barra superior ---------- */
+/* ---------- Marco: barra superior (oscura, unida al menú lateral) ---------- */
 
 .panel-cabecera {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  min-height: 56px;
-  padding: 12px 28px;
-  background: var(--panel-cabecera-fondo);
-  border-bottom: 1px solid var(--retail-border);
+  min-height: 68px;
+  padding: 12px 24px;
+  background: var(--retail-navy);
+  border-bottom: 1px solid var(--panel-marco-borde);
 }
 
 .panel-marca,
@@ -71,76 +91,126 @@ body.panel-pagina {
   min-width: 0;
 }
 
-.panel-marca-logo {
-  display: inline-grid;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  border-radius: var(--panel-radio-control);
-  background: var(--retail-blue);
+/* Isotipo real de la tienda (renderizarLogoSvg) y dos líneas de texto; todo es un enlace. */
+.panel-marca {
   color: #ffffff;
-  font-weight: 700;
+  text-decoration: none;
+}
+
+.panel-marca-logo {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+}
+
+.panel-marca-texto {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  line-height: 1.1;
 }
 
 .panel-marca-nombre {
-  font-weight: 700;
-  color: var(--retail-navy);
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.panel-marca-nombre-acento {
+  color: var(--panel-acento-cielo);
 }
 
 .panel-marca-etiqueta {
-  color: var(--panel-texto-secundario);
+  color: var(--panel-menu-etiqueta);
+  font-size: 11px;
   font-weight: 600;
-}
-
-.panel-enlace-tienda,
-.panel-boton-salir {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: var(--panel-alto-pulsable);
-  min-width: var(--panel-alto-pulsable);
-  padding: 0 12px;
-  border-radius: var(--panel-radio-control);
-  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .panel-enlace-tienda {
-  color: var(--retail-blue-dark);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: var(--panel-radio-control);
+  color: #cbd5e1;
+  font-size: 14px;
+  font-weight: 600;
   text-decoration: none;
 }
 
 .panel-enlace-tienda:hover {
-  text-decoration: underline;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .panel-boton-salir {
-  border: 1px solid var(--retail-border);
-  background: #ffffff;
-  color: var(--retail-navy);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid rgba(203, 213, 225, 0.35);
+  border-radius: var(--panel-radio-control);
+  background: transparent;
+  color: #e2e8f0;
+  font-size: 14px;
+  font-weight: 600;
 }
 
 .panel-boton-salir:hover {
-  background: var(--retail-bg-page);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* Chip del usuario: pastilla translúcida con avatar, nombre y rol debajo. */
+.panel-chip-usuario {
+  padding: 4px 18px 4px 4px;
+  background: rgba(148, 163, 184, 0.12);
+  border-radius: var(--panel-radio-pastilla);
 }
 
 .panel-avatar {
   display: inline-grid;
   place-items: center;
+  flex: 0 0 auto;
   width: 36px;
   height: 36px;
   border-radius: var(--panel-radio-pastilla);
   background: var(--retail-blue);
   color: #ffffff;
-  font-weight: 700;
   font-size: 13px;
+  font-weight: 700;
+}
+
+.panel-chip-texto {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.25;
 }
 
 .panel-chip-nombre {
-  font-weight: 600;
-  color: var(--retail-navy);
   overflow: hidden;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.panel-chip-rol {
+  color: var(--panel-menu-etiqueta);
+  font-size: 12px;
+}
+
+/* Rol corto: solo en celular (ver más abajo). */
+.panel-chip-rol-corto {
+  display: none;
 }
 
 /* ---------- Insignias ---------- */
@@ -162,9 +232,11 @@ body.panel-pagina {
 
 /* ---------- Cuerpo: menú lateral y área de trabajo ---------- */
 
+/* El cuerpo es del color del marco: tras la esquina redondeada del área asoma el marco oscuro. */
 .panel-cuerpo {
   display: flex;
-  min-height: calc(100vh - 56px);
+  min-height: calc(100vh - 68px);
+  background: var(--retail-navy);
 }
 
 .panel-menu {
@@ -183,7 +255,7 @@ body.panel-pagina {
   padding: 0 12px;
   font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--panel-menu-etiqueta);
 }
@@ -202,8 +274,9 @@ body.panel-pagina {
   padding: 0 12px;
   border-radius: var(--panel-radio-control);
   color: var(--panel-menu-texto);
+  font-size: 14px;
+  font-weight: 500;
   text-decoration: none;
-  font-weight: 600;
 }
 
 .panel-menu-enlace:hover {
@@ -213,6 +286,7 @@ body.panel-pagina {
 
 .panel-menu-enlace[aria-current="page"] {
   color: #ffffff;
+  font-weight: 600;
   background: var(--panel-menu-activo-fondo);
 }
 
@@ -220,10 +294,41 @@ body.panel-pagina {
   flex: 0 0 18px;
 }
 
+.panel-menu-enlace[aria-current="page"] svg {
+  color: var(--panel-acento-cielo);
+}
+
+/* Contadores del menú y de los accesos rápidos (contadores-menu.js). */
+.panel-contador {
+  margin-left: auto;
+  padding: 2px 8px;
+  border-radius: var(--panel-radio-pastilla);
+  background: var(--panel-contador-ambar);
+  color: var(--retail-navy);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.panel-contador-rojo {
+  background: var(--panel-contador-rojo);
+  color: #ffffff;
+}
+
+.panel-chip .panel-contador {
+  margin-left: 8px;
+}
+
+/* Pie del cajón («Ir a la tienda» y «Cerrar sesión»): solo por debajo de 576 px. */
+.panel-menu-pie {
+  display: none;
+}
+
 .panel-area {
   flex: 1 1 auto;
   min-width: 0;
-  padding: 32px 36px;
+  padding: 32px 36px 40px;
+  background: var(--panel-area-fondo);
 }
 
 .panel-area:focus {
@@ -256,10 +361,10 @@ body.panel-pagina {
   width: var(--panel-alto-pulsable);
   height: var(--panel-alto-pulsable);
   padding: 0;
-  border: 1px solid var(--retail-border);
+  border: 1px solid rgba(203, 213, 225, 0.3);
   border-radius: var(--panel-radio-control);
-  background: #ffffff;
-  color: var(--retail-navy);
+  background: transparent;
+  color: #e2e8f0;
 }
 
 /* Tres barras dibujadas con sombras (decorativas, aria-hidden). */
@@ -287,26 +392,56 @@ body.panel-pagina {
 .panel-boton-menu-barras::before { top: -6px; }
 .panel-boton-menu-barras::after { top: 6px; }
 
-/* Foco visible también sobre el menú oscuro (contraste ≥ 3:1 con el navy). */
+/* Foco visible también sobre el marco oscuro (contraste ≥ 3:1 con el marino). */
 .panel-pagina .panel-menu :focus-visible {
   outline-color: #ffffff;
 }
 
-/* Celular (< 992 px): el menú es un cajón fijo que se abre con el botón; el chip se reduce a
-   iniciales + insignia de rol. */
+.panel-pagina .panel-cabecera :focus-visible {
+  outline-color: #ffffff;
+}
+
+/* Escritorio (≥ 992 px): el contenido es una hoja clara dentro del marco oscuro. El menú sube
+   1 px para cubrir el borde de la barra: no hay línea entre la barra y el menú. */
+@media (min-width: 992px) {
+  .panel-menu {
+    position: relative;
+    margin-top: -1px;
+    padding-top: 21px;
+  }
+
+  .panel-area {
+    border-top-left-radius: 20px;
+  }
+}
+
+/* Tablet y celular (< 992 px): el menú es un cajón fijo que se abre con el botón; el chip se
+   reduce a avatar y rol corto (el nombre y el rol largo quedan solo para lectores). */
 @media (max-width: 991.98px) {
   .panel-boton-menu {
     display: inline-flex;
   }
 
   .panel-cabecera {
-    padding: 12px 16px;
     flex-wrap: wrap;
+    padding: 10px 16px;
   }
 
-  .panel-marca-etiqueta,
-  .panel-chip-nombre {
-    display: none;
+  .panel-chip-nombre,
+  .panel-chip-rol {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .panel-chip-rol-corto {
+    display: inline;
+    color: #e2e8f0;
+    font-size: 12px;
+    font-weight: 600;
   }
 
   .panel-menu {
@@ -330,12 +465,80 @@ body.panel-pagina {
 
   .panel-area {
     padding: 16px 14px;
+    border-radius: 20px 20px 0 0;
   }
 }
 
 @media (max-width: 991.98px) and (prefers-reduced-motion: reduce) {
   .panel-menu {
     transition: none;
+  }
+}
+
+/* Celular (< 576 px): barra en una sola fila (menú, isotipo, nombre con «Panel» debajo, avatar
+   y rol corto). «Ir a la tienda» y «Cerrar sesión» pasan al pie del cajón. */
+@media (max-width: 575.98px) {
+  .panel-cabecera {
+    flex-wrap: nowrap;
+    gap: 10px;
+    padding: 10px 12px;
+  }
+
+  .panel-marca {
+    flex: 1 1 auto;
+    gap: 8px;
+  }
+
+  .panel-marca-logo {
+    width: 34px;
+    height: 34px;
+  }
+
+  .panel-marca-nombre {
+    font-size: 13px;
+  }
+
+  .panel-marca-etiqueta {
+    font-size: 10px;
+  }
+
+  .panel-marca-etiqueta-resto {
+    display: none;
+  }
+
+  .panel-cabecera .panel-enlace-tienda,
+  .panel-cabecera .panel-boton-salir {
+    display: none;
+  }
+
+  .panel-menu {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .panel-menu-pie {
+    display: grid;
+    gap: 8px;
+    margin-top: auto;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.14);
+  }
+
+  /* Los dos con el mismo contorno claro sobre el fondo oscuro, 44 px, sin relleno. */
+  .panel-menu-pie .panel-enlace-tienda,
+  .panel-menu-pie .panel-boton-salir {
+    justify-content: center;
+    width: 100%;
+    min-height: 44px;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    color: #ffffff;
+    text-decoration: none;
+  }
+
+  .panel-menu-pie .panel-enlace-tienda:hover,
+  .panel-menu-pie .panel-boton-salir:hover {
+    background: rgba(255, 255, 255, 0.08);
   }
 }
 
@@ -417,8 +620,8 @@ body.panel-pagina {
 }
 
 .panel-kpi-valor {
-  font-size: 30px;
-  font-weight: 700;
+  font-size: 28px;
+  font-weight: 800;
   color: var(--retail-navy);
 }
 
@@ -880,18 +1083,6 @@ section[data-ruta="#/consulta-pedido"] > .panel-busqueda {
 .panel-estado-cancelado { background: var(--panel-estado-cancelado); }
 .panel-estado-otro { background: var(--panel-estado-otro); }
 
-.panel-estado-fila {
-  display: grid;
-  grid-template-columns: minmax(110px, 30%) minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 10px;
-}
-
-.panel-estado-fila p {
-  margin: 0;
-}
-
 .panel-estado-nombre {
   font-weight: 600;
 }
@@ -960,12 +1151,6 @@ section[data-ruta="#/consulta-pedido"] > .panel-busqueda {
    de pestañas interna del módulo se oculta (administracion.js no cambia). */
 .panel-pagina #vista-administracion .pestanas-secciones {
   display: none;
-}
-
-@media (max-width: 991.98px) {
-  .panel-estado-fila {
-    grid-template-columns: minmax(90px, 35%) minmax(0, 1fr) auto;
-  }
 }
 
 /* Ajuste a de T09: los indicadores internos del módulo de Administración solo se ven en Reportes. */
@@ -1078,6 +1263,18 @@ section[data-ruta="#/consulta-pedido"] > .panel-busqueda {
   .panel-inicio .panel-consulta .panel-boton {
     min-height: 48px;
   }
+
+  /* Fila de «Requiere tu atención»: icono y texto arriba, botón debajo a todo el ancho. */
+  .panel-atencion:not(.panel-atencion-fallo) {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .panel-inicio .panel-atencion .panel-boton {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
 }
 
 /* ---------- Tanda 1 (arreglos del informe de pruebas manuales) ---------- */
@@ -1113,47 +1310,6 @@ section[data-ruta="#/consulta-pedido"] > .panel-busqueda {
 }
 
 /* ---------- Tanda 2 (fidelidad visual con los bocetos) ---------- */
-
-/* 1. Barra: «Panel del personal» como etiqueta en mayúsculas con filete a la izquierda. */
-.panel-marca-etiqueta {
-  padding-left: 12px;
-  border-left: 1px solid #cbd5e1;
-  color: #475569;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-/* 1. Chip del usuario: pastilla con borde; avatar y, al lado, nombre con el rol debajo. */
-.panel-chip-usuario {
-  padding: 4px 16px 4px 4px;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: var(--panel-radio-pastilla);
-}
-
-.panel-chip-texto {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  line-height: 1.25;
-}
-
-@media (min-width: 992px) {
-  .panel-chip-rol {
-    padding: 0;
-    background: transparent;
-    color: var(--retail-blue-dark);
-    font-size: 12px;
-    font-weight: 600;
-  }
-}
-
-/* Pie del cajón («Ir a la tienda» y «Cerrar sesión»): solo por debajo de 576 px. */
-.panel-menu-pie {
-  display: none;
-}
 
 /* 2. Enlaces de cabecera de tarjeta: sin subrayado; subrayado con el ratón y el foco. */
 .panel-enlace {
@@ -1264,56 +1420,6 @@ section[data-ruta="#/consulta-pedido"] > .panel-busqueda {
 
 /* Celular (< 576 px). */
 @media (max-width: 575.98px) {
-  /* 8. Barra en una sola fila: menú, «PA» y «Panel» a la izquierda; avatar e insignia a la derecha. */
-  .panel-cabecera {
-    flex-wrap: nowrap;
-    gap: 8px;
-    padding: 10px 12px;
-  }
-
-  .panel-marca {
-    flex: 1 1 auto;
-    gap: 8px;
-  }
-
-  .panel-marca-nombre,
-  .panel-marca-etiqueta-resto {
-    display: none;
-  }
-
-  .panel-marca-etiqueta {
-    padding-left: 8px;
-  }
-
-  .panel-cabecera .panel-enlace-tienda,
-  .panel-cabecera .panel-boton-salir {
-    display: none;
-  }
-
-  .panel-menu {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .panel-menu-pie {
-    display: grid;
-    gap: 8px;
-    margin-top: auto;
-    padding-top: 16px;
-    border-top: 1px solid rgba(255, 255, 255, 0.14);
-  }
-
-  .panel-menu-pie .panel-enlace-tienda {
-    justify-content: center;
-    border: 1px solid rgba(255, 255, 255, 0.35);
-    color: #ffffff;
-  }
-
-  .panel-menu-pie .panel-boton-salir {
-    justify-content: center;
-    width: 100%;
-  }
-
   .panel-formulario-fila {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -1452,27 +1558,632 @@ section[data-ruta="#/consulta-pedido"] > .panel-busqueda {
     font-size: clamp(16px, 4.6vw, 24px);
     overflow-wrap: normal;
   }
+}
 
-  /* 5. «PA» seguido de «Panel» (la regla de < 992 px oculta toda la etiqueta). */
-  .panel-marca-etiqueta {
-    display: inline-block;
+/* ---------- Tanda 4 (Inicio del administrador y Cuentas y roles) ---------- */
+
+/* A1. Fecha de hoy sobre el <h1> del Inicio. */
+.panel-fecha {
+  margin: 0 0 4px;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.panel-boton svg {
+  flex: 0 0 auto;
+  margin-right: 8px;
+}
+
+/* A2. Cuadro de icono: 34 px, radio 10 px, un tono por significado. */
+.panel-icono-cuadro {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+}
+
+.panel-icono-azul { background: var(--panel-tono-azul-fondo); color: var(--panel-tono-azul-texto); }
+.panel-icono-verde { background: var(--panel-tono-verde-fondo); color: var(--panel-tono-verde-texto); }
+.panel-icono-cielo { background: var(--panel-tono-cielo-fondo); color: var(--panel-tono-cielo-texto); }
+.panel-icono-gris { background: var(--panel-tono-gris-fondo); color: var(--panel-tono-gris-texto); }
+.panel-icono-rojo { background: var(--panel-insignia-rojo-fondo); color: var(--panel-insignia-rojo-texto); }
+.panel-icono-ambar { background: var(--panel-insignia-ambar-fondo); color: var(--panel-insignia-ambar-texto); }
+.panel-icono-alerta { background: var(--panel-alerta-icono-fondo); color: var(--panel-alerta-texto); }
+
+/* Indicadores con el icono arriba a la derecha (así el importe usa todo el ancho de la tarjeta);
+   con reclamos escalados, tarjeta de alerta ámbar. */
+.panel-kpi-icono,
+.panel-kpi-alerta {
+  position: relative;
+}
+
+.panel-kpi-icono > .panel-icono-cuadro,
+.panel-kpi-alerta > .panel-icono-cuadro {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+}
+
+.panel-kpi-icono .panel-kpi-etiqueta,
+.panel-kpi-alerta .panel-kpi-etiqueta {
+  padding-right: 44px;
+}
+
+.panel-kpi-cuerpo {
+  min-width: 0;
+}
+
+.panel-kpi-alerta {
+  background: var(--panel-alerta-fondo);
+  border-color: var(--panel-alerta-borde);
+}
+
+.panel-kpi-alerta .panel-kpi-etiqueta,
+.panel-kpi-alerta .panel-kpi-valor,
+.panel-kpi-alerta .panel-kpi-detalle {
+  color: var(--panel-alerta-texto);
+}
+
+.panel-kpi-enlace {
+  display: inline-block;
+  margin-top: 2px;
+  color: var(--panel-alerta-texto);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.panel-kpi-enlace:hover,
+.panel-kpi-enlace:focus-visible {
+  text-decoration: underline;
+}
+
+/* A3. «Requiere tu atención»: resumen en la cabecera e icono de 40 px por fila. */
+.panel-resumen-cabecera {
+  color: #475569;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.panel-icono-atencion {
+  width: 40px;
+  height: 40px;
+}
+
+.panel-atencion-texto {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* A4. «Pedidos por estado»: barra segmentada y una casilla por estado. */
+.panel-segmentos {
+  display: flex;
+  gap: 3px;
+  height: 14px;
+  margin-bottom: 16px;
+}
+
+.panel-segmento {
+  flex-basis: 0;
+  min-width: 6px;
+  border-radius: 999px;
+}
+
+.panel-estado-casillas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.panel-estado-casilla {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    "cuadro nombre"
+    "numero numero";
+  align-items: center;
+  gap: 4px 8px;
+  padding: 12px 14px;
+  background: #f8fafc;
+  border-radius: 12px;
+}
+
+.panel-estado-cuadro {
+  grid-area: cuadro;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+
+.panel-estado-nombre {
+  grid-area: nombre;
+  font-size: 13px;
+}
+
+.panel-estado-numero {
+  grid-area: numero;
+  color: var(--retail-navy);
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+/* A5. Columna derecha del Inicio (mínimo 320 px): atajos y actividad. */
+@media (min-width: 1200px) {
+  .panel-inicio-rejilla-admin {
+    grid-template-columns: minmax(0, 1fr) minmax(380px, 36%);
+  }
+}
+
+.panel-atajos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.panel-atajo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 8px 12px;
+  background: #ffffff;
+  border: 1px solid var(--retail-border);
+  border-radius: 12px;
+  color: var(--retail-navy);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.panel-atajo:hover {
+  background: #f8fafc;
+}
+
+/* Círculo con las iniciales, coloreado por rol (actividad y cuentas). */
+.panel-avatar-rol {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.panel-rol-admin { background: var(--panel-tono-azul-fondo); color: var(--panel-tono-azul-texto); }
+.panel-rol-vendedor { background: var(--panel-tono-verde-fondo); color: var(--panel-tono-verde-texto); }
+.panel-rol-almacen { background: var(--panel-tono-cielo-fondo); color: var(--panel-tono-cielo-texto); }
+.panel-rol-soporte { background: var(--panel-insignia-ambar-fondo); color: var(--panel-insignia-ambar-texto); }
+.panel-rol-cliente { background: var(--panel-tono-gris-fondo); color: var(--panel-tono-gris-texto); }
+
+.panel-actividad {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.panel-actividad .panel-avatar-rol {
+  width: 32px;
+  height: 32px;
+}
+
+.panel-actividad-cuerpo {
+  min-width: 0;
+}
+
+/* La cabecera de «Actividad reciente» (título y enlace) cabe en una línea. */
+.panel-bloque-cabecera .panel-subtitulo,
+.panel-bloque-cabecera .panel-enlace {
+  white-space: nowrap;
+}
+
+/* Cuentas y roles: lista a la izquierda y alta + permisos en una columna de 340 px. */
+.cuentas-rejilla {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 24px;
+}
+
+@media (min-width: 992px) {
+  .cuentas-rejilla {
+    grid-template-columns: minmax(0, 1fr) 340px;
+  }
+}
+
+.cuentas-tarjeta {
+  padding: 20px;
+  background: #ffffff;
+  border: 1px solid var(--retail-border);
+  border-radius: var(--panel-radio-tarjeta);
+}
+
+.cuentas-lateral {
+  display: grid;
+  gap: 24px;
+}
+
+.cuentas-cabecera-lista {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.cuentas-cabecera-lista h3 {
+  margin: 0;
+}
+
+.cuentas-herramientas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+/* Filtro por rol: grupo de botones (aria-pressed) dentro de un contenedor gris. */
+.cuentas-filtros {
+  display: inline-flex;
+  gap: 4px;
+  max-width: 100%;
+  padding: 4px;
+  background: #e9edf3;
+  border-radius: 12px;
+}
+
+.cuentas-filtro {
+  min-height: 40px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--panel-texto-secundario);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.cuentas-filtro:hover {
+  color: var(--retail-ink);
+}
+
+.cuentas-filtro[aria-pressed="true"] {
+  background: #ffffff;
+  color: var(--retail-ink);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.18);
+}
+
+.cuentas-busqueda {
+  flex: 1 1 200px;
+  min-width: 180px;
+}
+
+.cuentas-busqueda .form-control {
+  min-height: var(--panel-alto-pulsable);
+}
+
+.cuentas-tabla {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.cuentas-tabla thead th {
+  padding: 10px 12px;
+  background: var(--panel-fila-encabezado);
+  color: var(--panel-texto-secundario);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.cuentas-tabla tbody th,
+.cuentas-tabla tbody td {
+  padding: 12px 10px;
+  border-bottom: 1px solid var(--panel-borde-fila);
+  vertical-align: top;
+}
+
+.cuentas-tabla tbody th {
+  font-weight: 400;
+  text-align: left;
+}
+
+.cuentas-tabla select {
+  min-width: 150px;
+  min-height: 40px;
+}
+
+.cuenta-identidad {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.cuenta-identidad .panel-avatar-rol {
+  width: 36px;
+  height: 36px;
+}
+
+.cuenta-datos {
+  min-width: 0;
+}
+
+.cuenta-nombre {
+  color: var(--retail-navy);
+  font-weight: 700;
+}
+
+.cuenta-tu {
+  margin-left: 6px;
+  color: var(--panel-texto-secundario);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.cuenta-correo,
+.cuenta-alta {
+  display: block;
+  overflow-wrap: anywhere;
+  color: var(--panel-texto-secundario);
+  font-size: 13px;
+}
+
+/* Rol cambiado y sin guardar: fila ámbar, selector con borde ámbar y «Antes: …» + «Guardar». */
+.cuenta-modificada {
+  background: #fffbeb;
+}
+
+.cuenta-rol-cambiado {
+  border-color: #d97706;
+}
+
+.cuenta-cambio:empty {
+  display: none;
+}
+
+.cuenta-cambio {
+  margin-top: 8px;
+}
+
+.cuenta-antes {
+  margin: 0 0 6px;
+  color: var(--panel-texto-secundario);
+  font-size: 12px;
+}
+
+.cuenta-guardar {
+  min-height: 40px;
+  padding: 0 16px;
+  background: var(--retail-blue-dark);
+  border: 1px solid var(--retail-blue-dark);
+  border-radius: var(--panel-radio-control);
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.cuenta-guardar:hover:not(:disabled) {
+  background: #084298;
+}
+
+.cuenta-estado {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--panel-radio-pastilla);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.cuenta-estado-punto {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.cuenta-estado-activa { background: var(--panel-tono-verde-fondo); color: var(--panel-tono-verde-texto); }
+.cuenta-estado-inactiva { background: var(--panel-tono-gris-fondo); color: var(--panel-tono-gris-texto); }
+
+.cuenta-desactivar {
+  min-height: 40px;
+  padding: 0 14px;
+  background: #ffffff;
+  border: 1px solid #fca5a5;
+  border-radius: var(--panel-radio-control);
+  color: #b91c1c;
+  font-weight: 600;
+}
+
+.cuenta-desactivar:hover:not(:disabled) {
+  background: #fef2f2;
+}
+
+.cuenta-desactivar:disabled {
+  border-color: #e2e8f0;
+  color: #64748b;
+  cursor: not-allowed;
+}
+
+.cuentas-vacio {
+  padding: 24px;
+  color: var(--panel-texto-secundario);
+  text-align: center;
+}
+
+.cuentas-formulario {
+  display: grid;
+  gap: 14px;
+}
+
+.cuentas-formulario .form-label {
+  margin-bottom: 4px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.cuentas-formulario .form-control,
+.cuentas-formulario .form-select {
+  min-height: var(--panel-alto-pulsable);
+}
+
+.cuentas-formulario .form-text {
+  margin: 6px 0 0;
+}
+
+.cuentas-roles {
+  display: grid;
+  gap: 12px;
+  margin: 12px 0 0;
+}
+
+.cuentas-roles dt {
+  color: var(--retail-navy);
+  font-weight: 700;
+}
+
+.cuentas-roles dd {
+  margin: 0;
+  color: var(--panel-texto-secundario);
+  font-size: 13px;
+}
+
+/* Celular (< 576 px): atajos de 48 px y cuentas como tarjetas. */
+@media (max-width: 575.98px) {
+  .panel-atajo {
+    min-height: 48px;
   }
 
-  /* 6. Pie del cajón: los dos con contorno claro sobre el fondo oscuro, 44 px, sin relleno. */
-  .panel-menu-pie .panel-enlace-tienda,
-  .panel-menu-pie .panel-boton-salir {
-    justify-content: center;
-    width: 100%;
+  .panel-kpi > .panel-icono-cuadro {
+    display: none;
+  }
+
+  .panel-kpi .panel-kpi-etiqueta {
+    padding-right: 0;
+  }
+
+  #recargar-cuentas-admin {
+    min-height: 48px;
+  }
+
+  .cuentas-tarjeta {
+    padding: 16px;
+  }
+
+  .cuentas-rejilla {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cuentas-herramientas {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .cuentas-filtros {
+    overflow-x: auto;
+  }
+
+  .cuentas-filtro {
+    flex: 0 0 auto;
     min-height: 44px;
-    background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.35);
-    color: #ffffff;
-    text-decoration: none;
   }
 
-  .panel-menu-pie .panel-enlace-tienda:hover,
-  .panel-menu-pie .panel-boton-salir:hover {
-    background: rgba(255, 255, 255, 0.08);
-    text-decoration: none;
+  .cuentas-busqueda {
+    flex: 0 0 auto;
+  }
+
+  .cuentas-tabla,
+  #tabla-cuentas-admin {
+    display: block;
+  }
+
+  .cuentas-tabla thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  #tabla-cuentas-admin tr {
+    display: grid;
+    gap: 12px;
+    margin-bottom: 12px;
+    padding: 14px;
+    background: #ffffff;
+    border: 1px solid var(--retail-border);
+    border-radius: 12px;
+  }
+
+  #tabla-cuentas-admin tr.cuenta-modificada {
+    background: #fffbeb;
+  }
+
+  #tabla-cuentas-admin th,
+  #tabla-cuentas-admin td {
+    display: block;
+    padding: 0;
+    border: 0;
+  }
+
+  #tabla-cuentas-admin select {
+    width: 100%;
+    min-height: 48px;
+  }
+
+  #tabla-cuentas-admin .cuenta-desactivar,
+  #tabla-cuentas-admin .cuenta-guardar {
+    width: 100%;
+    min-height: 48px;
+  }
+}
+
+/* «Cuentas y roles» se arma con sus propias tarjetas: el módulo de Administración no añade otra
+   tarjeta ni su título «Administración» (el <h1> de la pantalla ya lo dice). */
+.panel-pagina section[data-ruta="#/cuentas"] #seccion-administracion {
+  background: transparent;
+  border: 0;
+  box-shadow: none !important; /* Bootstrap fija .shadow-sm con !important */
+}
+
+.panel-pagina section[data-ruta="#/cuentas"] #seccion-administracion > .card-body {
+  padding: 0;
+}
+
+.panel-pagina section[data-ruta="#/cuentas"] #titulo-administracion {
+  display: none;
+}
+
+/* ---------- Retoques v5 ---------- */
+
+/* «Actualizar cuentas»: botón secundario del panel de 44 px. */
+#recargar-cuentas-admin {
+  min-height: 44px;
+}
+
+/* Alta de cuenta: «Crear cuenta» a todo el ancho con el alto de los botones del panel. */
+.cuentas-formulario .panel-boton {
+  width: 100%;
+}
+
+/* Atajos desde 992 px: icono de 28 px y menos relleno para que los nombres quepan en una línea. */
+@media (min-width: 992px) {
+  .panel-atajo {
+    padding: 8px 10px;
+  }
+
+  .panel-atajo .panel-icono-cuadro {
+    width: 28px;
+    height: 28px;
   }
 }

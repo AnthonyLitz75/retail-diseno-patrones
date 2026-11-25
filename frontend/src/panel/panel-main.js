@@ -34,10 +34,11 @@ import { ROLES_CATALOGO } from "../utilidades/constantes.js";
 import { crearAvisoCambios } from "./cambios-productos.js";
 import { planificarArranquePanel } from "./acceso.js";
 import { cerrarSesionPanel } from "./cerrar-sesion.js";
-import { crearPanelRouter } from "./panel-router.js";
+import { crearPanelRouter, resolverRuta } from "./panel-router.js";
 import { rutaDeVista } from "./menu-por-rol.js";
 import { ID_BOTON_MENU, renderizarBarraSuperior, renderizarMenuLateral } from "./panel-layout.js";
 import { crearCajonMenu } from "./cajon-menu.js";
+import { crearContadores } from "./contadores-menu.js";
 import { seguro, html } from "../utilidades/seguridad.js";
 
 const raiz = document.querySelector("#panel-app");
@@ -137,6 +138,15 @@ async function arrancar() {
   estadoPanel.usuarioSesion = usuario;
   pintarMarco(usuario);
   configurarServiciosGlobales();
+  // Contadores del menú: los Inicios avisan al recibir sus datos; si el panel arranca en otra
+  // ruta, se piden UNA vez en segundo plano (sin toast si fallan).
+  const contadores = crearContadores({
+    rol: usuario.rol,
+    menu: document.getElementById("panel-menu"),
+    documento: document,
+    apiRequest,
+  });
+  if (resolverRuta(window.location.hash, usuario.rol).ruta !== "#/inicio") void contadores.cargarEnSegundoPlano();
   await crearPanelRouter({
     rol: usuario.rol,
     ventana: window,
@@ -164,6 +174,7 @@ async function arrancar() {
       },
       modalesProducto: configurarModalesProducto(usuario.rol),
       cambiosProductos,
+      actualizarContadores: contadores.actualizarContadores,
     },
   }).iniciar();
 }

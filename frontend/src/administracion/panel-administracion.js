@@ -35,6 +35,7 @@ function mostrarEstado(elemento, texto, tipo = "secondary") {
  * Crea y configura el panel de administración integrando sus tres submódulos.
  * @param {Function} apiRequest
  * @param {Function} alCambiarCategorias
+ * @param {{ obtenerUsuarioActual?: () => ({ idUsuario?: number } | null) }} [opciones] cuenta de la sesión (panel)
  * @returns {{
  *   element: HTMLElement,
  *   agregarSeccion: (seccion: Object) => void,
@@ -42,7 +43,7 @@ function mostrarEstado(elemento, texto, tipo = "secondary") {
  *   cargar: () => Promise<void>
  * }}
  */
-export function crearPanelAdministracion(apiRequest, alCambiarCategorias) {
+export function crearPanelAdministracion(apiRequest, alCambiarCategorias, { obtenerUsuarioActual } = {}) {
   const seccion = document.createElement("section");
   seccion.id = "seccion-administracion";
   seccion.className = "card shadow-sm mb-4";
@@ -56,6 +57,7 @@ export function crearPanelAdministracion(apiRequest, alCambiarCategorias) {
     seccion,
     apiRequest,
     mostrarEstado,
+    obtenerUsuarioActual,
   });
 
   const moduloCategorias = inicializarAdminCategorias({

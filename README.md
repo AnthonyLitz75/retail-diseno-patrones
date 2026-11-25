@@ -175,6 +175,40 @@ La aplicación se abrirá en `http://localhost:5173`. Vite redirige las peticion
 
 Las contraseñas de estas cuentas están en `backend/src/main/resources/db/dev/V1000__datos_prueba.sql`.
 
+### Escenario de demostración (perfil `demo`)
+
+Para mostrar el panel con datos creíbles hay un perfil aparte, `demo`, que añade a las migraciones de `dev` las de `backend/src/main/resources/db/demo` (de `V2000` en adelante). Carga un equipo con nombres reales (administradora, vendedor, almacén y dos agentes de soporte), 6 clientes, 20 pedidos de los últimos 14 días en todos los estados, 6 reclamos, 4 devoluciones, 5 consultas de clientes, el kardex que corresponde a cada venta y la auditoría coherente con todo ello. Todas las fechas son relativas al momento de levantar la base (`NOW() - INTERVAL ...`), así que el escenario siempre se ve reciente. El resumen de cuentas y casos, para escribir el guion, está en `specs/panel-personal/escenario-demo.md`.
+
+> **El perfil `demo` nunca debe activarse en producción.** Crea cuentas con una contraseña conocida (la de `V1000`) y datos ficticios. Solo es para esta base local de demostración.
+
+**1. Crear la base exclusiva** (un contenedor PostgreSQL que solo escucha en `127.0.0.1:55433`):
+
+```bash
+docker run -d --name pixel-andino-demo \
+  -e POSTGRES_PASSWORD=demo_local -e POSTGRES_DB=retail_demo \
+  -p 127.0.0.1:55433:5432 postgres:15-alpine
+```
+
+**2. Levantar el backend apuntando a ella** (en `backend/`):
+
+```bash
+export DB_URL="jdbc:postgresql://127.0.0.1:55433/retail_demo"
+export DB_USER="postgres"
+export DB_PASSWORD="demo_local"
+./mvnw spring-boot:run -Dspring-boot.run.profiles=demo
+```
+
+En PowerShell: `$env:DB_URL = "jdbc:postgresql://127.0.0.1:55433/retail_demo"; $env:DB_USER = "postgres"; $env:DB_PASSWORD = "demo_local"; .\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=demo"`. Flyway aplica `V1`–`V4`, `V1000`–`V1003` y `V2000`–`V2004` la primera vez. Después levanta el frontend como siempre (`npm run dev`).
+
+**3. Reiniciarla desde cero.** Las migraciones ya aplicadas no se editan y las fechas se calculan al aplicarlas; para que el escenario vuelva a verse reciente hay que borrar el contenedor y crearlo otra vez:
+
+```bash
+docker rm -f pixel-andino-demo
+# y repetir el paso 1; al levantar el backend se vuelve a cargar todo
+```
+
+La prueba de integración `EscenarioDemoTest` levanta su propio contenedor con el perfil `demo` y comprueba la coherencia del escenario (stock contra kardex, totales, estados, conteos y fechas). Forma parte de `./mvnw verify`.
+
 ## Panel del personal
 
 **Cómo se entra:**

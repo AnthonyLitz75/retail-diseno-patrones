@@ -181,6 +181,8 @@ export function montar(contenedor, { servicios }) {
       zonaReclamos.innerHTML = renderizarErrorBloque(FUENTE.RECLAMOS);
     } finally {
       ocupado(zonaReclamos, false);
+      // Contador «Reclamos» del menú (null si la fuente falló).
+      servicios.actualizarContadores?.({ reclamos });
     }
   }
 
@@ -195,6 +197,8 @@ export function montar(contenedor, { servicios }) {
       zonaDevoluciones.innerHTML = renderizarErrorBloque(FUENTE.DEVOLUCIONES);
     } finally {
       ocupado(zonaDevoluciones, false);
+      // Contador «Devoluciones» del menú (null si la fuente falló).
+      servicios.actualizarContadores?.({ devoluciones });
     }
   }
 
