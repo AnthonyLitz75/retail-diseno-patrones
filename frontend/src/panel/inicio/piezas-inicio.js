@@ -5,6 +5,7 @@
  */
 
 import { html } from "../../utilidades/seguridad.js";
+import { icono } from "../iconos.js";
 
 export const SIN_VALOR = "—";
 
@@ -28,3 +29,7 @@ export function renderizarKpi(etiqueta, valor, detalle) {
   <p class="panel-kpi-detalle">${detalle}</p>
 </article>`;
 }
+
+/** Cuadro de icono (decorativo) de un tono: azul, verde, cielo, gris, rojo, ámbar, alerta o urgente. */
+export const cuadroIcono = (nombre, tono, extra = "") =>
+  `<span class="panel-icono-cuadro${extra} panel-icono-${tono}" aria-hidden="true">${icono(nombre)}</span>`;

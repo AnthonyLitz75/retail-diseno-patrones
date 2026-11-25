@@ -8,9 +8,8 @@
 import { indicadoresDestacados } from "../../administracion/administracion.js";
 import { describirActor } from "../../administracion/auditoria-vista.js";
 import { contarPestanas } from "../../catalogo/gestion/panel-productos.js";
-import { formatearFechaHora, plural } from "../utilidades-panel.js";
+import { formatearFechaHora, iniciales, plural } from "../utilidades-panel.js";
 import { etiquetaRolLegible } from "../roles-visual.js";
-import { iniciales } from "../panel-layout.js";
 
 export const TAMANO_ACTIVIDAD = 5;
 

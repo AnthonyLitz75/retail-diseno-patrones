@@ -53,17 +53,67 @@ export function devolucionesParaInicio(devoluciones) {
   return comoLista(devoluciones).filter((d) => ESTADOS_DEVOLUCION_INICIO.includes(d?.estado)).sort(compararAntiguedad);
 }
 
-export function indicadoresReclamos(reclamos) {
+export const UMBRAL_AMBAR_H = 24;
+export const UMBRAL_ROJO_H = 48;
+const UMBRAL_DIAS_H = 72;
+
+/**
+ * Cuánto lleva esperando un caso, a partir de creadoEn. Menos de 1 h: «hace {n} min»; menos de
+ * 72 h: «hace {n} h»; desde 72 h: «hace {n} días». Nivel: normal hasta 24 h, ámbar desde 24 h y
+ * rojo desde 48 h. Sin fecha válida: «—» y nivel normal.
+ * @param {string|Date|null} creadoEn
+ * @param {Date} [ahora]
+ * @returns {{ texto: string, nivel: "normal"|"ambar"|"rojo", horas: number|null }}
+ */
+export function esperaDe(creadoEn, ahora = new Date()) {
+  const inicio = creadoEn == null ? Number.NaN : new Date(creadoEn).getTime();
+  if (Number.isNaN(inicio)) return { texto: "—", nivel: "normal", horas: null };
+  const minutos = Math.max(0, Math.floor((ahora.getTime() - inicio) / 60000));
+  const horas = minutos / 60;
+  let texto;
+  if (minutos < 60) texto = `hace ${Math.max(1, minutos)} min`;
+  else if (horas < UMBRAL_DIAS_H) texto = `hace ${Math.floor(horas)} h`;
+  else texto = `hace ${Math.floor(horas / 24)} días`;
+  const nivel = horas >= UMBRAL_ROJO_H ? "rojo" : horas >= UMBRAL_AMBAR_H ? "ambar" : "normal";
+  return { texto, nivel, horas };
+}
+
+/** Tu cola: los ABIERTO y los EN_ATENCION asignados a ti, del más antiguo al más reciente. */
+export function colaReclamos(reclamos, usuarioId) {
+  return comoLista(reclamos)
+    .filter((r) => r?.estado === "ABIERTO" || (r?.estado === "EN_ATENCION" && r.soporteId === usuarioId))
+    .sort(compararAntiguedad);
+}
+
+/** En manos de otros: EN_ATENCION de otros agentes y ESCALADO, del más antiguo al más reciente. */
+export function reclamosEnManosDeOtros(reclamos, usuarioId) {
+  return comoLista(reclamos)
+    .filter((r) => (r?.estado === "EN_ATENCION" && r.soporteId !== usuarioId) || r?.estado === "ESCALADO")
+    .sort(compararAntiguedad);
+}
+
+/**
+ * Indicadores de reclamos. `masDe48h` cuenta los ABIERTO que llevan estrictamente más de 48 h;
+ * `propios` y `deOtros` reparten los EN_ATENCION según el agente de la sesión.
+ */
+export function indicadoresReclamos(reclamos, usuarioId, ahora = new Date()) {
+  const enAtencion = comoLista(reclamos).filter((r) => r?.estado === "EN_ATENCION");
+  const propios = enAtencion.filter((r) => r.soporteId === usuarioId).length;
   return {
     abiertos: contarEstado(reclamos, "ABIERTO"),
-    enAtencion: contarEstado(reclamos, "EN_ATENCION"),
+    enAtencion: enAtencion.length,
     escalados: contarEstado(reclamos, "ESCALADO"),
+    propios,
+    deOtros: enAtencion.length - propios,
+    masDe48h: comoLista(reclamos).filter((r) => r?.estado === "ABIERTO" && (esperaDe(r.creadoEn, ahora).horas ?? 0) > UMBRAL_ROJO_H).length,
   };
 }
 
-/** «Devoluciones por atender» solo cuenta SOLICITADA. */
+/** Devoluciones por atender: SOLICITADA (por evaluar) más APROBADA (por recibir). */
 export function indicadoresDevoluciones(devoluciones) {
-  return { porAtender: contarEstado(devoluciones, "SOLICITADA") };
+  const porEvaluar = contarEstado(devoluciones, "SOLICITADA");
+  const porRecibir = contarEstado(devoluciones, "APROBADA");
+  return { porEvaluar, porRecibir, porAtender: porEvaluar + porRecibir };
 }
 
 const insigniaNeutra = (estado) => ({ texto: String(estado ?? "").replaceAll("_", " "), variante: "neutro" });
@@ -86,15 +136,15 @@ export function insigniaDevolucion(estado) {
 export function accionReclamoInicio(reclamo, usuarioId) {
   const acciones = accionesReclamo(reclamo, usuarioId);
   if (acciones.includes("tomar")) return { tipo: "tomar", texto: "Atender" };
-  if (acciones.includes("responder")) return { tipo: "enlace", texto: "Responder", ruta: RUTA_RECLAMOS };
-  return { tipo: "enlace", texto: "Ver detalle", ruta: RUTA_RECLAMOS };
+  if (acciones.includes("responder")) return { tipo: "enlace", texto: "Responder", ruta: `${RUTA_RECLAMOS}?id=${reclamo.id}` };
+  return { tipo: "enlace", texto: "Ver detalle", ruta: `${RUTA_RECLAMOS}?id=${reclamo.id}` };
 }
 
 /** Acción del Inicio para una devolución (P2): nunca hace PUT, solo lleva a #/devoluciones. */
 export function accionDevolucionInicio(devolucion) {
   const accion = accionDevolucion(devolucion);
   const texto = accion === "decidir" ? "Evaluar" : accion === "recibir" ? "Registrar recepción" : "Ver detalle";
-  return { texto, ruta: RUTA_DEVOLUCIONES };
+  return { texto, ruta: `${RUTA_DEVOLUCIONES}?id=${devolucion.id}` };
 }
 
 /** P9: el nombre del producto con una sola línea; si no, «{n} productos». */
@@ -117,3 +167,4 @@ export function validarNumeroPedido(valor) {
 export function rutaConsultaPedido(numero) {
   return `#/consulta-pedido?pedido=${numero}`;
 }
+

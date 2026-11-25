@@ -91,9 +91,9 @@ test("4b: en el panel, «Ver pedido #3» navega (con historial) a #/consulta-ped
   alVerPedido(3);
   alVerPedido(5);
   assert.deepEqual(navegadas, ["#/consulta-pedido?pedido=3", "#/consulta-pedido?pedido=5"]);
-  // El portal compartido de las tres rutas recibe esa opción.
-  const fuente = readFileSync(new URL("../../src/panel/pantallas/soporte.js", import.meta.url), "utf8");
-  assert.match(fuente, /configurarPortalSoporte\(\{[^}]*alVerPedido: alVerPedidoDelPanel\(servicios\.navegar\)/);
+  // Desde la v6 las bandejas del panel ya no usan el portal: el detalle enlaza a la consulta del pedido.
+  const vista = readFileSync(new URL("../../src/panel/pantallas/bandeja-vista.js", import.meta.url), "utf8");
+  assert.match(vista, /href="\$\{seguro\(`#\/consulta-pedido\?pedido=\$\{pedidoId\}`\)\}">Ver el pedido #/);
   // «navegar» del panel asigna location.hash, que crea entrada en el historial.
   const main = readFileSync(new URL("../../src/panel/panel-main.js", import.meta.url), "utf8");
   assert.match(main, /navegar: \(ruta\) => \{\s*window\.location\.hash = ruta;/);

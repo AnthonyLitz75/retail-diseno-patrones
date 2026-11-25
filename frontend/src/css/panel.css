@@ -2187,3 +2187,1051 @@ section[data-ruta="#/consulta-pedido"] > .panel-busqueda {
     height: 28px;
   }
 }
+
+/* ---------- Soporte v6: Inicio y Consulta de pedido ---------- */
+
+/* Espera: etiqueta con icono de reloj; normal hasta 24 h, ámbar desde 24 h y rojo desde 48 h. */
+.panel-espera {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--panel-radio-pastilla);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.panel-espera svg {
+  width: 14px;
+  height: 14px;
+}
+
+.panel-espera-normal { background: #f1f5f9; color: #475569; }
+.panel-espera-ambar { background: #fef3c7; color: #92400e; }
+.panel-espera-rojo { background: #fee2e2; color: #b91c1c; }
+
+/* Indicador urgente: «Reclamos abiertos» con alguno de más de 48 h. */
+.panel-kpi-urgente {
+  position: relative;
+  background: #fff7ed;
+  border-color: #fdba74;
+}
+
+.panel-kpi-urgente > .panel-icono-cuadro {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+}
+
+.panel-kpi-urgente .panel-kpi-etiqueta {
+  padding-right: 44px;
+}
+
+.panel-kpi-urgente .panel-kpi-etiqueta,
+.panel-kpi-urgente .panel-kpi-valor,
+.panel-kpi-urgente .panel-kpi-detalle {
+  color: #7c2d12;
+}
+
+.panel-icono-urgente { background: #fed7aa; color: #7c2d12; }
+
+/* Tu cola de reclamos */
+.panel-reclamos-ayuda {
+  margin: -8px 0 12px;
+  font-size: 13px;
+}
+
+.panel-reclamos-cliente,
+.panel-reclamos-motivo {
+  display: block;
+}
+
+.panel-reclamos-cliente {
+  font-weight: 700;
+  color: var(--retail-navy);
+}
+
+.panel-reclamos-motivo {
+  color: var(--panel-texto-secundario);
+}
+
+.panel-reclamos-cliente + .panel-reclamos-motivo {
+  font-size: 13px;
+}
+
+/* En manos de otros */
+.panel-otros {
+  margin-top: 16px;
+  padding: 14px 16px;
+  background: #f8fafc;
+  border: 1px solid var(--retail-border);
+  border-radius: 12px;
+}
+
+.panel-otros-cabecera {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--retail-navy);
+}
+
+.panel-otros-lista,
+.panel-devolucion-lista {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.panel-otros-fila {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--panel-borde-fila);
+}
+
+.panel-otros-fila:first-child {
+  border-top: 0;
+}
+
+.panel-otros-texto p,
+.panel-devolucion-texto p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.panel-otros-titulo {
+  font-weight: 600;
+  color: var(--retail-navy);
+}
+
+.panel-otros-detalle {
+  font-size: 13px;
+  color: var(--panel-texto-secundario);
+}
+
+.panel-otros-fila .panel-enlace {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--panel-alto-pulsable);
+}
+
+/* Devoluciones por atender */
+.panel-devolucion-fila {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid var(--panel-borde-fila);
+}
+
+.panel-devolucion-fila:first-child {
+  border-top: 0;
+}
+
+.panel-devolucion-fila .panel-boton {
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.panel-vacio-ok {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--panel-texto-secundario);
+}
+
+.panel-vacio-ok p {
+  margin: 0;
+}
+
+/* Consulta de pedido: las tarjetas apiladas con 24 px entre sí. */
+.panel-consulta-pedido {
+  display: grid;
+  gap: 24px;
+}
+
+/* Consulta de pedido: ficha */
+.panel-ficha {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.panel-ficha-pedido {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--panel-texto-secundario);
+}
+
+.panel-ficha-cliente {
+  margin: 2px 0 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--retail-navy);
+}
+
+.panel-ficha-correo {
+  margin: 0;
+  color: var(--panel-texto-secundario);
+}
+
+.panel-ficha-insignias {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Consulta de pedido: seguimiento (línea de tiempo de 4 pasos) */
+.panel-seguimiento {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.panel-paso {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0 8px;
+  text-align: center;
+}
+
+.panel-paso::before {
+  content: "";
+  position: absolute;
+  top: 19px;
+  right: 50%;
+  width: 100%;
+  height: 2px;
+  background: #cbd5e1;
+}
+
+.panel-paso:first-child::before {
+  display: none;
+}
+
+.panel-paso-hecho::before {
+  background: #0a58ca;
+}
+
+.panel-paso-cancelado::before {
+  background: #94a3b8;
+}
+
+.panel-paso-circulo {
+  position: relative;
+  z-index: 1;
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+
+.panel-paso-hecho .panel-paso-circulo { background: #0a58ca; color: #ffffff; }
+.panel-paso-pendiente .panel-paso-circulo { background: #cbd5e1; color: #334155; }
+.panel-paso-cancelado .panel-paso-circulo { background: #64748b; color: #ffffff; }
+
+.panel-paso-etiqueta,
+.panel-paso-fecha,
+.panel-paso-detalle {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.panel-paso-etiqueta {
+  margin-top: 8px;
+  font-weight: 700;
+  color: var(--retail-navy);
+}
+
+.panel-paso-fecha,
+.panel-paso-detalle {
+  font-size: 12px;
+  color: var(--panel-texto-secundario);
+}
+
+.panel-paso-pendiente .panel-paso-etiqueta {
+  color: var(--panel-texto-secundario);
+}
+
+/* Consulta de pedido: productos, pago y atenciones */
+.panel-consulta-columnas {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 24px;
+}
+
+.panel-consulta-lateral {
+  display: grid;
+  align-content: start;
+  gap: 24px;
+}
+
+.panel-tabla tfoot th,
+.panel-tabla tfoot td {
+  padding: 12px 16px;
+  border-top: 1px solid var(--panel-borde-fila);
+  font-weight: 700;
+  color: var(--retail-navy);
+}
+
+.panel-pago-resumen {
+  margin: 0;
+  font-weight: 600;
+  color: var(--retail-navy);
+}
+
+.panel-pago-nota,
+.panel-pago-detalle {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--panel-texto-secundario);
+}
+
+.panel-atenciones {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.panel-atencion-pedido {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--panel-borde-fila);
+}
+
+.panel-atencion-pedido:first-child {
+  border-top: 0;
+}
+
+.panel-atencion-pedido p {
+  margin: 0;
+}
+
+.panel-atencion-pedido .panel-enlace {
+  grid-column: 1 / -1;
+}
+
+@media (min-width: 992px) {
+  .panel-consulta-columnas {
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 991.98px) {
+  .panel-devolucion-fila {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .panel-devolucion-fila .panel-espera,
+  .panel-devolucion-fila .panel-insignia {
+    justify-self: start;
+  }
+
+  .panel-devolucion-fila .panel-boton {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Celular (< 576 px): la cola como tarjetas y el seguimiento en vertical. */
+@media (max-width: 575.98px) {
+  .panel-reclamos-cola tr {
+    display: grid;
+  }
+
+  .panel-reclamos-cola thead {
+    display: none;
+  }
+
+  .panel-inicio .panel-reclamos-cola tbody tr {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "principal estado"
+      "detalle detalle"
+      "espera espera"
+      "accion accion";
+  }
+
+  .panel-inicio .panel-reclamos-cola tbody td:nth-child(2) { grid-area: detalle; }
+  .panel-inicio .panel-reclamos-cola tbody td:nth-child(3) { grid-area: espera; justify-self: start; }
+  .panel-inicio .panel-reclamos-cola tbody td:nth-child(4) { grid-area: estado; justify-self: end; margin-top: 0; }
+  .panel-inicio .panel-reclamos-cola tbody td:nth-child(5) { grid-area: accion; margin-top: 6px; }
+
+  .panel-reclamos-cola .panel-boton {
+    display: flex;
+    width: 100%;
+    min-height: 48px;
+  }
+
+  .panel-otros-fila {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .panel-otros-fila .panel-enlace {
+    grid-column: 1 / -1;
+  }
+
+  .panel-devolucion-fila .panel-boton {
+    min-height: 48px;
+  }
+
+  /* Productos del pedido: caben en el ancho del celular, sin desplazamiento horizontal. */
+  .panel-pagina .panel-tabla-productos {
+    min-width: 0;
+  }
+
+  .panel-pagina .panel-tabla-productos th,
+  .panel-pagina .panel-tabla-productos td {
+    padding: 10px 6px;
+    font-size: 13px;
+  }
+
+  .panel-pagina .panel-tabla-productos thead th {
+    font-size: 11px;
+  }
+
+  .panel-seguimiento {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .panel-paso {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr);
+    grid-template-areas:
+      "circulo etiqueta"
+      "circulo fecha"
+      "circulo detalle";
+    column-gap: 12px;
+    padding: 0;
+    text-align: left;
+  }
+
+  .panel-paso::before {
+    top: -16px;
+    right: auto;
+    left: 19px;
+    width: 2px;
+    height: 16px;
+  }
+
+  .panel-paso-circulo { grid-area: circulo; }
+  .panel-paso-etiqueta { grid-area: etiqueta; margin-top: 0; }
+  .panel-paso-fecha { grid-area: fecha; }
+  .panel-paso-detalle { grid-area: detalle; }
+}
+
+/* ---------- Bandejas de Reclamos y Devoluciones (v6, tanda 2) ---------- */
+
+.panel-bandeja {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+}
+
+.panel-bandeja-lista-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  gap: 12px;
+  min-width: 0;
+}
+
+.panel-bandeja-detalle {
+  min-width: 0;
+}
+
+/* Pestañas por estado con su contador: contenedor gris y la activa en blanco con sombra suave. */
+.panel-pestanas {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  overflow-x: auto;
+  background: #e9edf3;
+  border-radius: 12px;
+}
+
+.panel-pestana {
+  flex: 1 1 auto;
+  min-height: 40px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--panel-texto-secundario);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.panel-pestana[aria-selected="true"] {
+  background: #ffffff;
+  color: var(--retail-navy);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.18);
+}
+
+.panel-pestana-total {
+  margin-left: 2px;
+  font-weight: 700;
+}
+
+.panel-bandeja-buscar .form-control {
+  min-height: var(--panel-alto-pulsable);
+}
+
+.panel-bandeja-lista {
+  display: grid;
+  gap: 8px;
+}
+
+/* Fila de la lista: botón; la elegida con fondo azul muy claro y una barra azul interior. */
+.panel-bandeja-fila {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  min-height: var(--panel-alto-pulsable);
+  padding: 12px 14px;
+  background: #ffffff;
+  border: 1px solid var(--retail-border);
+  border-radius: 12px;
+  color: var(--retail-navy);
+  text-align: left;
+}
+
+.panel-bandeja-fila[aria-current="true"] {
+  background: #f5f9ff;
+  border-color: #dbe7ff;
+  box-shadow: inset 3px 0 0 #0a58ca;
+}
+
+.panel-bandeja-fila-cabecera {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.panel-bandeja-fila-titulo {
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.panel-bandeja-fila-texto,
+.panel-bandeja-fila-quien {
+  font-size: 13px;
+  color: var(--panel-texto-secundario);
+  overflow-wrap: anywhere;
+}
+
+.panel-bandeja-fila-quien {
+  font-weight: 600;
+}
+
+/* Detalle */
+.panel-detalle {
+  display: grid;
+  gap: 20px;
+  padding: 24px;
+  background: #ffffff;
+  border: 1px solid var(--retail-border);
+  border-radius: var(--panel-radio-tarjeta);
+}
+
+.panel-detalle-cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.panel-detalle-kicker {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--panel-texto-secundario);
+}
+
+.panel-detalle-titulo {
+  margin: 2px 0 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--retail-navy);
+  overflow-wrap: anywhere;
+}
+
+.panel-casillas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.panel-casilla {
+  min-width: 0;
+  padding: 12px 14px;
+  background: #f8fafc;
+  border: 1px solid var(--retail-border);
+  border-radius: 12px;
+}
+
+.panel-casilla dt {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--panel-texto-secundario);
+}
+
+.panel-casilla dd {
+  margin: 2px 0 0;
+  font-weight: 700;
+  color: var(--retail-navy);
+  overflow-wrap: anywhere;
+}
+
+.panel-casilla small {
+  display: block;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--panel-texto-secundario);
+}
+
+/* Conversación: burbuja blanca para el cliente y azul claro para Soporte. */
+.panel-conversacion {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.panel-mensaje {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  gap: 10px;
+}
+
+.panel-mensaje .panel-avatar-rol {
+  width: 32px;
+  height: 32px;
+}
+
+.panel-burbuja {
+  padding: 12px 14px;
+  border: 1px solid var(--retail-border);
+  border-radius: 4px 14px 14px 14px;
+}
+
+.panel-mensaje-cliente .panel-burbuja {
+  background: #ffffff;
+}
+
+.panel-mensaje-soporte .panel-burbuja,
+.panel-mensaje-escalado .panel-burbuja {
+  background: #f5f9ff;
+  border-color: #dbe7ff;
+}
+
+.panel-mensaje-autor {
+  margin: 0 0 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--retail-navy);
+}
+
+.panel-mensaje-autor time {
+  margin-left: 6px;
+  font-weight: 400;
+  color: var(--panel-texto-secundario);
+}
+
+.panel-mensaje-texto {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Acciones y avisos */
+.panel-aviso-naranja {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  background: #fff7ed;
+  border: 1px solid #fdba74;
+  border-radius: 12px;
+  color: #7c2d12;
+}
+
+.panel-aviso-naranja p {
+  margin: 0;
+  font-weight: 600;
+}
+
+.panel-nota-gris {
+  margin: 0;
+  padding: 12px 14px;
+  background: #f1f5f9;
+  border-radius: 12px;
+  color: var(--panel-texto-secundario);
+}
+
+.panel-formulario-detalle {
+  display: grid;
+  gap: 12px;
+}
+
+.panel-formulario-detalle .form-label {
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+.panel-escalar {
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+  background: #f8fafc;
+  border: 1px solid var(--retail-border);
+  border-radius: 12px;
+}
+
+.panel-escalar[hidden] {
+  display: none;
+}
+
+.panel-acciones-detalle {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.panel-boton-rechazar {
+  background: #ffffff;
+  border-color: #fca5a5;
+  color: #b91c1c;
+}
+
+.panel-boton-rechazar:hover:not(:disabled) {
+  background: #fef2f2;
+}
+
+.panel-detalle-enlace {
+  margin: 0;
+}
+
+.panel-detalle-subtitulo {
+  margin: 0 0 6px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--retail-navy);
+}
+
+.panel-detalle-motivo {
+  margin: 0;
+  padding: 12px 14px;
+  background: #f8fafc;
+  border-radius: 12px;
+  overflow-wrap: anywhere;
+}
+
+/* Devolución: progreso, líneas y recepción */
+.panel-progreso {
+  display: flex;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.panel-progreso-paso {
+  display: flex;
+  flex: 1 1 0;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding-top: 10px;
+  border-top: 4px solid #cbd5e1;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--panel-texto-secundario);
+}
+
+.panel-progreso-paso-hecho {
+  border-top-color: #0a58ca;
+  color: var(--retail-navy);
+}
+
+.panel-progreso-paso-rechazado {
+  border-top-color: #64748b;
+  color: #475569;
+}
+
+.panel-progreso-marca svg {
+  width: 16px;
+  height: 16px;
+}
+
+.panel-lineas {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.panel-linea {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--retail-border);
+  border-radius: 12px;
+}
+
+.panel-linea-nombre {
+  margin: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.panel-linea-resultado {
+  font-weight: 400;
+  color: var(--panel-texto-secundario);
+}
+
+.panel-linea-importe {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.panel-linea-recepcion {
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px;
+  border: 1px solid var(--retail-border);
+  border-radius: 12px;
+}
+
+.panel-apta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 20px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.panel-apta legend {
+  float: none;
+  width: auto;
+  margin: 0 8px 0 0;
+  padding: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.panel-opcion {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--panel-alto-pulsable);
+}
+
+.panel-opcion input {
+  width: 20px;
+  height: 20px;
+}
+
+.panel-reembolso-aviso {
+  margin: 0;
+  font-weight: 600;
+  color: var(--retail-navy);
+}
+
+/* Desde 992 px: dos paneles. */
+@media (min-width: 992px) {
+  .panel-bandeja {
+    grid-template-columns: minmax(360px, 440px) minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .panel-bandeja-volver {
+    display: none;
+  }
+}
+
+/* Celular y tableta: o la lista o el detalle (con ?id= se ve el detalle). */
+@media (max-width: 991.98px) {
+  .panel-bandeja-detalle {
+    display: none;
+  }
+
+  .panel-bandeja-con-detalle .panel-bandeja-lista-panel {
+    display: none;
+  }
+
+  .panel-bandeja-con-detalle .panel-bandeja-detalle {
+    display: block;
+  }
+
+  .panel-bandeja-volver {
+    margin-bottom: 12px;
+  }
+
+  .panel-pestanas {
+    overflow-x: auto;
+  }
+
+  .panel-pestana {
+    border-radius: 999px;
+  }
+
+  .panel-detalle {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .panel-bandeja .panel-boton {
+    min-height: 48px;
+  }
+
+  .panel-bandeja-volver {
+    width: 100%;
+    min-height: 48px;
+  }
+
+  .panel-pestana {
+    min-height: 48px;
+  }
+
+  .panel-acciones-detalle .panel-boton {
+    flex: 1 1 100%;
+  }
+
+  .panel-progreso-paso {
+    font-size: 12px;
+  }
+}
+
+/* ---------- Soporte v7: últimos retoques ---------- */
+
+/* Círculo del agente en la conversación: iniciales (o icono de chat) en azul. */
+.panel-avatar-agente {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #e7f0ff;
+  color: #0a58ca;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.panel-avatar-agente svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Casillas: la de Cliente más ancha; el correo solo se parte después de la @ (<wbr>). */
+.panel-casilla small {
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+@media (min-width: 992px) {
+  .panel-casillas {
+    grid-template-columns: 2fr 1fr 1fr;
+  }
+}
+
+/* Devolución aprobada: un recuadro por línea (producto arriba, opciones debajo). */
+.panel-linea-cabecera {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.panel-ayuda-recepcion {
+  margin: 0;
+  text-align: right;
+  font-size: 12px;
+  color: #64748b;
+}
+
+/* Respuesta del reclamo: casilla a la izquierda y botones a la derecha, en una sola fila. */
+.panel-acciones-fila {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.panel-acciones-fila .form-check {
+  margin: 0;
+}
+
+/* Una región de error vacía no deja hueco entre filas del formulario. */
+.panel-formulario-detalle .panel-errores-formulario:empty {
+  margin-top: -12px;
+  margin-bottom: 0;
+}
+
+.panel-otros-motivo {
+  font-size: 13px;
+  color: var(--panel-texto-secundario);
+}
+
+@media (max-width: 575.98px) {
+  .panel-acciones-fila {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+/* Soporte v8: la fila de la respuesta hace wrap. Casilla a la izquierda y botones a la derecha
+   cuando caben; si no, los botones bajan a una segunda fila alineados a la derecha. El texto de
+   un botón o de la casilla nunca se parte. */
+.panel-acciones-fila .panel-acciones-detalle {
+  margin-left: auto;
+  justify-content: flex-end;
+}
+
+.panel-acciones-fila .form-check-label,
+.panel-acciones-detalle .panel-boton {
+  white-space: nowrap;
+}
+
+/* Casilla «Solicitada»: fecha y hora en una línea y debajo cuánto hace. */
+.panel-casilla-fecha {
+  display: block;
+  white-space: nowrap;
+}
+
+.panel-casilla-espera {
+  font-size: 12px;
+  color: #64748b;
+}
+
+@media (max-width: 575.98px) {
+  .panel-acciones-fila .panel-acciones-detalle {
+    margin-left: 0;
+  }
+}

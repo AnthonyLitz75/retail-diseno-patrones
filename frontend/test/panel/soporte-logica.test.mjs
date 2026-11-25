@@ -52,14 +52,14 @@ test("devoluciones: solo SOLICITADA y APROBADA, de la más antigua a la más rec
 test("indicadores de reclamos: abiertos, en atención y escalados", () => {
   assert.deepEqual(indicadoresReclamos([
     reclamo(1, "ABIERTO"), reclamo(2, "ABIERTO"), reclamo(3, "EN_ATENCION"), reclamo(4, "ESCALADO"), reclamo(5, "RESUELTO"),
-  ]), { abiertos: 2, enAtencion: 1, escalados: 1 });
-  assert.deepEqual(indicadoresReclamos([]), { abiertos: 0, enAtencion: 0, escalados: 0 });
+  ], 7), { abiertos: 2, enAtencion: 1, escalados: 1, propios: 0, deOtros: 1, masDe48h: 0 });
+  assert.deepEqual(indicadoresReclamos([], 7), { abiertos: 0, enAtencion: 0, escalados: 0, propios: 0, deOtros: 0, masDe48h: 0 });
 });
 
-test("devoluciones por atender: solo cuenta SOLICITADA", () => {
+test("devoluciones por atender: SOLICITADA (por evaluar) más APROBADA (por recibir)", () => {
   assert.deepEqual(indicadoresDevoluciones([
     devolucion(1, "SOLICITADA"), devolucion(2, "APROBADA"), devolucion(3, "SOLICITADA"),
-  ]), { porAtender: 2 });
+  ]), { porEvaluar: 2, porRecibir: 1, porAtender: 3 });
 });
 
 // ---------- Insignias (spec 16) ----------
@@ -89,24 +89,24 @@ test("reclamo ABIERTO: «Atender» (la única acción con un clic)", () => {
   assert.deepEqual(accionReclamoInicio(reclamo(1, "ABIERTO"), 7), { tipo: "tomar", texto: "Atender" });
 });
 
-test("reclamo EN_ATENCION propio: «Responder» → #/reclamos; de otro agente: «Ver detalle»", () => {
+test("reclamo EN_ATENCION propio: «Responder» → #/reclamos?id=; de otro agente: «Ver detalle»", () => {
   assert.deepEqual(accionReclamoInicio(reclamo(1, "EN_ATENCION", null, { soporteId: 7 }), 7),
-    { tipo: "enlace", texto: "Responder", ruta: "#/reclamos" });
+    { tipo: "enlace", texto: "Responder", ruta: "#/reclamos?id=1" });
   assert.deepEqual(accionReclamoInicio(reclamo(1, "EN_ATENCION", null, { soporteId: 8 }), 7),
-    { tipo: "enlace", texto: "Ver detalle", ruta: "#/reclamos" });
+    { tipo: "enlace", texto: "Ver detalle", ruta: "#/reclamos?id=1" });
 });
 
-test("reclamo ESCALADO (o RESUELTO): «Ver detalle» → #/reclamos", () => {
+test("reclamo ESCALADO (o RESUELTO): «Ver detalle» → #/reclamos?id=", () => {
   for (const estado of ["ESCALADO", "RESUELTO"]) {
-    assert.deepEqual(accionReclamoInicio(reclamo(1, estado), 7), { tipo: "enlace", texto: "Ver detalle", ruta: "#/reclamos" });
+    assert.deepEqual(accionReclamoInicio(reclamo(1, estado), 7), { tipo: "enlace", texto: "Ver detalle", ruta: "#/reclamos?id=1" });
   }
 });
 
-test("devoluciones: ninguna hace PUT; Evaluar, Registrar recepción o Ver detalle → #/devoluciones", () => {
-  assert.deepEqual(accionDevolucionInicio(devolucion(1, "SOLICITADA")), { texto: "Evaluar", ruta: "#/devoluciones" });
-  assert.deepEqual(accionDevolucionInicio(devolucion(1, "APROBADA")), { texto: "Registrar recepción", ruta: "#/devoluciones" });
+test("devoluciones: ninguna hace PUT; Evaluar, Registrar recepción o Ver detalle → #/devoluciones?id=", () => {
+  assert.deepEqual(accionDevolucionInicio(devolucion(1, "SOLICITADA")), { texto: "Evaluar", ruta: "#/devoluciones?id=1" });
+  assert.deepEqual(accionDevolucionInicio(devolucion(1, "APROBADA")), { texto: "Registrar recepción", ruta: "#/devoluciones?id=1" });
   for (const estado of ["RECHAZADA", "CERRADA"]) {
-    assert.deepEqual(accionDevolucionInicio(devolucion(1, estado)), { texto: "Ver detalle", ruta: "#/devoluciones" });
+    assert.deepEqual(accionDevolucionInicio(devolucion(1, estado)), { texto: "Ver detalle", ruta: "#/devoluciones?id=1" });
   }
 });
 

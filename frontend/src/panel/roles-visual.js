@@ -6,7 +6,7 @@
  */
 
 import { html } from "../utilidades/seguridad.js";
-import { iniciales } from "./panel-layout.js";
+import { iniciales } from "./utilidades-panel.js";
 
 /** Orden en que se listan los roles (filtros, selector de alta, lista de permisos). */
 export const ORDEN_ROLES = Object.freeze(["ADMIN", "VENDEDOR", "ALMACEN", "SOPORTE", "CLIENTE"]);

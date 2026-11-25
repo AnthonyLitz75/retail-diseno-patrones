@@ -7,6 +7,7 @@
 import { ROL } from "../utilidades/constantes.js";
 import { html, seguro } from "../utilidades/seguridad.js";
 import { icono } from "./iconos.js";
+import { iniciales } from "./utilidades-panel.js";
 import { renderizarLogoSvg } from "../layout/componentes/logo.js";
 import { MENU_POR_ROL } from "./menu-por-rol.js";
 
@@ -26,9 +27,6 @@ export const ETIQUETA_ROL_CORTA = Object.freeze({
   [ROL.SOPORTE]: "Soporte",
 });
 
-/** Texto que se muestra cuando no hay nombre del que sacar iniciales. */
-const SIN_INICIALES = "?";
-
 export const ID_BOTON_CERRAR_SESION = "panel-cerrar-sesion";
 
 /** Botón del cajón del menú (visible solo por debajo de 992 px, ver panel.css y cajon-menu.js). */
@@ -42,18 +40,6 @@ export function etiquetaRolCorta(rol) {
 /** @param {unknown} rol */
 export function etiquetaRol(rol) {
   return typeof rol === "string" && Object.hasOwn(ETIQUETA_ROL, rol) ? ETIQUETA_ROL[rol] : "";
-}
-
-/**
- * Iniciales del chip: primera letra del primer y del último nombre, en mayúsculas.
- * @param {unknown} nombre
- */
-export function iniciales(nombre) {
-  if (typeof nombre !== "string") return SIN_INICIALES;
-  const partes = nombre.trim().split(/\s+/).filter(Boolean);
-  if (partes.length === 0) return SIN_INICIALES;
-  const primera = (texto) => Array.from(texto)[0].toLocaleUpperCase("es");
-  return partes.length === 1 ? primera(partes[0]) : primera(partes[0]) + primera(partes.at(-1));
 }
 
 /**

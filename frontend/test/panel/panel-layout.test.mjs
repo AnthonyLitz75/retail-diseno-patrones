@@ -5,11 +5,11 @@ import assert from "node:assert/strict";
 import {
   ETIQUETA_ROL,
   etiquetaRol,
-  iniciales,
   renderizarBarraSuperior,
   renderizarMenuLateral,
 } from "../../src/panel/panel-layout.js";
 import { ICONOS, icono } from "../../src/panel/iconos.js";
+import { iniciales } from "../../src/panel/utilidades-panel.js";
 import { entradasDeRol } from "../../src/panel/menu-por-rol.js";
 
 const PERSONAL = ["ADMIN", "VENDEDOR", "ALMACEN", "SOPORTE"];
@@ -28,8 +28,8 @@ test("los nombres de rol se definen en un solo lugar, para los cuatro roles", ()
   assert.equal(etiquetaRol(null), "");
 });
 
-test("iniciales: primera letra del primer y del último nombre, en mayúsculas", () => {
-  assert.equal(iniciales("Ana María López"), "AL");
+test("iniciales: primera letra de las dos primeras palabras, en mayúsculas", () => {
+  assert.equal(iniciales("Ana María López"), "AM");
   assert.equal(iniciales("  carlos   ruiz "), "CR");
   assert.equal(iniciales("ángel"), "Á");
   assert.equal(iniciales("Ñusta Quispe"), "ÑQ");
@@ -42,6 +42,7 @@ test("hay un ícono por entrada del menú y uno para cerrar sesión (spec 11)", 
   const esperados = [
     "inicio", "pedidos", "productos", "inventario", "categorias", "cuentas", "reportes",
     "auditoria", "incidencias", "consultas", "reclamos", "devoluciones", "consulta-pedido", "tienda", "descarga", "mas", "cerrar-sesion",
+    "reloj", "verificacion", "pagado", "preparacion", "despacho", "entrega", "cancelar",
   ];
   assert.deepEqual(Object.keys(ICONOS).sort(), [...esperados].sort());
   for (const nombre of esperados) {

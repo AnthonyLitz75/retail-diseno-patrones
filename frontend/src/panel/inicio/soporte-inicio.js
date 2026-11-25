@@ -1,31 +1,37 @@
 /**
  * @file soporte-inicio.js
- * Panel del personal (spec 16 y decisiones P2, P7, P8, P9 y de T08): Inicio de Soporte.
+ * Panel del personal (spec 16 y decisiones P2, P7, P8, P9 y de T08; rediseño v6): Inicio de Soporte.
  * - Dos fuentes que cargan y fallan por separado: GET /api/soporte/reclamos y
  *   GET /api/soporte/devoluciones (sin filtro). «Reintentar» recarga solo su fuente.
- * - «Atender» es la única acción con un clic (PUT …/tomar). El resto de acciones navega a la
- *   bandeja: la decisión y la recepción de devoluciones tienen sus propios formularios.
+ * - «Tu cola de reclamos» (ABIERTO y tus EN_ATENCION) con la espera de cada caso; debajo,
+ *   «En manos de otros». «Atender» es la única acción con un clic (PUT …/tomar); el resto navega.
  * - «Buscar pedido» valida el número y abre #/consulta-pedido?pedido={n}.
  * Las funciones renderizar* son puras (texto escapado); montar() las pinta y cablea eventos.
  */
 
 import { html, seguro } from "../../utilidades/seguridad.js";
 import { tomarReclamo } from "../../atencion/atencion.js";
-import { SIN_VALOR, renderizarCargando, renderizarErrorBloque, renderizarKpi } from "./piezas-inicio.js";
+import { icono } from "../iconos.js";
+import { plural } from "../utilidades-panel.js";
+import { fechaDeHoy } from "./admin-logica.js";
+import { SIN_VALOR, cuadroIcono, renderizarCargando, renderizarErrorBloque, renderizarKpi } from "./piezas-inicio.js";
 import {
   accionDevolucionInicio,
   accionReclamoInicio,
+  colaReclamos,
   devolucionesParaInicio,
+  esperaDe,
   indicadoresDevoluciones,
   indicadoresReclamos,
   insigniaDevolucion,
   insigniaReclamo,
   productoDevolucion,
-  reclamosParaInicio,
+  reclamosEnManosDeOtros,
   resumirMotivo,
   MAX_FILAS_SOPORTE,
 } from "./soporte-logica.js";
 import { conectarBusquedaPedido, renderizarBusquedaPedido } from "./busqueda-pedido.js";
+import { crearContextosPedido } from "../pantallas/contextos-pedido.js";
 
 const NO_CARGADO = "No se pudo cargar";
 const FUENTE = Object.freeze({ RECLAMOS: "reclamos", DEVOLUCIONES: "devoluciones" });
@@ -36,85 +42,157 @@ const ENCABEZADO_ACCION = '<th scope="col"><span class="visually-hidden">Acción
 
 // ---------- Marcado (puro) ----------
 
+function tarjetaKpi(etiqueta, valor, detalle, nombreIcono, tono, urgente = false) {
+  return html`<article class="panel-kpi ${urgente ? "panel-kpi-urgente" : "panel-kpi-icono"}">
+  ${seguro(cuadroIcono(nombreIcono, tono))}
+  <div class="panel-kpi-cuerpo">
+    <p class="panel-kpi-etiqueta">${etiqueta}</p>
+    <p class="panel-kpi-valor">${valor}</p>
+    <p class="panel-kpi-detalle">${detalle}</p>
+  </div>
+</article>`;
+}
+
 /**
- * @param {{ reclamos: { abiertos, enAtencion, escalados }|null, devoluciones: { porAtender }|null }} datos
+ * @param {{ reclamos: ReturnType<typeof indicadoresReclamos>|null, devoluciones: ReturnType<typeof indicadoresDevoluciones>|null }} datos
  */
 export function renderizarIndicadoresSoporte({ reclamos = null, devoluciones = null } = {}) {
-  return [
-    reclamos ? renderizarKpi("Reclamos abiertos", reclamos.abiertos, "Esperan primera respuesta")
-      : renderizarKpi("Reclamos abiertos", SIN_VALOR, NO_CARGADO),
-    reclamos ? renderizarKpi("En atención", reclamos.enAtencion, "En curso")
-      : renderizarKpi("En atención", SIN_VALOR, NO_CARGADO),
-    reclamos ? renderizarKpi("Escalados", reclamos.escalados, "Con el administrador")
-      : renderizarKpi("Escalados", SIN_VALOR, NO_CARGADO),
-    devoluciones ? renderizarKpi("Devoluciones por atender", devoluciones.porAtender, "Esperan decisión")
-      : renderizarKpi("Devoluciones por atender", SIN_VALOR, NO_CARGADO),
-  ].join("");
+  const tarjetas = [];
+  if (reclamos) {
+    const urgente = reclamos.masDe48h > 0;
+    tarjetas.push(
+      tarjetaKpi("Reclamos abiertos", reclamos.abiertos,
+        urgente ? `${plural(reclamos.masDe48h, "lleva", "llevan")} más de 48 h` : "Esperan primera respuesta",
+        "reclamos", urgente ? "urgente" : "rojo", urgente),
+      tarjetaKpi("En atención", reclamos.enAtencion,
+        `${plural(reclamos.propios, "tuyo", "tuyos")} · ${reclamos.deOtros} de otros`, "consultas", "azul"),
+      tarjetaKpi("Escalados", reclamos.escalados, "Con la administración", "incidencias", "ambar"),
+    );
+  } else {
+    tarjetas.push(
+      renderizarKpi("Reclamos abiertos", SIN_VALOR, NO_CARGADO),
+      renderizarKpi("En atención", SIN_VALOR, NO_CARGADO),
+      renderizarKpi("Escalados", SIN_VALOR, NO_CARGADO),
+    );
+  }
+  tarjetas.push(devoluciones
+    ? tarjetaKpi("Devoluciones por atender", devoluciones.porAtender,
+      `${devoluciones.porEvaluar} por evaluar · ${devoluciones.porRecibir} por recibir`, "devoluciones", "verde")
+    : renderizarKpi("Devoluciones por atender", SIN_VALOR, NO_CARGADO));
+  return tarjetas.join("");
 }
 
 function insignia({ texto, variante }) {
   return html`<span class="panel-insignia panel-insignia-${variante}">${texto}</span>`;
 }
 
-function tabla(columnas, filas) {
-  const encabezados = columnas.map((c) => html`<th scope="col">${c}</th>`).join("");
+/** Etiqueta de espera con icono de reloj; el color sube de normal a ámbar (24 h) y rojo (48 h). */
+export function etiquetaEspera(creadoEn, ahora) {
+  const espera = esperaDe(creadoEn, ahora);
+  return html`<span class="panel-espera panel-espera-${espera.nivel}">${seguro(icono("reloj"))}${espera.texto}</span>`;
+}
+
+function celdaClienteMotivo(reclamo, nombres) {
+  const motivo = html`<span class="panel-reclamos-motivo">${resumirMotivo(reclamo.motivo)}</span>`;
+  // El DTO de reclamo no trae el nombre del cliente: sale del contexto del pedido (nombres), la
+  // misma fuente que usa la bandeja de Reclamos. Mientras no llega, solo el motivo.
+  const nombre = nombres.get(reclamo.pedidoId);
+  return nombre ? html`<span class="panel-reclamos-cliente">${nombre}</span>${seguro(motivo)}` : motivo;
+}
+
+/**
+ * Tu cola: hasta 5 reclamos (ABIERTO y tus EN_ATENCION), del más antiguo al más reciente.
+ * Solo la primera fila lleva el botón primario.
+ * @param {Array<object>} reclamos
+ * @param {number} usuarioId agente en sesión
+ * @param {Date} [ahora]
+ * @param {Map<number, string>} [nombres] pedidoId → nombre del cliente
+ */
+export function renderizarColaReclamos(reclamos, usuarioId, ahora = new Date(), nombres = new Map()) {
+  const lista = colaReclamos(reclamos, usuarioId).slice(0, MAX_FILAS_SOPORTE);
+  if (!lista.length) return '<p class="panel-vacio">No tienes reclamos pendientes.</p>';
+  const filas = lista.map((r, i) => {
+    const accion = accionReclamoInicio(r, usuarioId);
+    const clase = `panel-boton ${i === 0 ? "panel-boton-principal" : "panel-boton-secundario"}`;
+    const control = accion.tipo === "tomar"
+      ? html`<button type="button" class="${clase}" data-tomar-reclamo="${r.id}">${accion.texto}</button>`
+      : html`<a class="${clase}" href="${seguro(accion.ruta)}">${accion.texto}</a>`;
+    return html`<tr>
+  <th scope="row">#${r.pedidoId}</th>
+  <td>${seguro(celdaClienteMotivo(r, nombres))}</td>
+  <td>${seguro(etiquetaEspera(r.creadoEn, ahora))}</td>
+  <td>${seguro(insignia(insigniaReclamo(r.estado)))}</td>
+  <td>${seguro(control)}</td>
+</tr>`;
+  });
+  const columnas = ["Pedido", "Cliente y motivo", "Espera", "Estado"].map((c) => html`<th scope="col">${c}</th>`).join("");
   return html`<div class="panel-tabla-contenedor">
-  <table class="panel-tabla">
-    <thead><tr>${seguro(encabezados)}${seguro(ENCABEZADO_ACCION)}</tr></thead>
+  <table class="panel-tabla panel-reclamos-cola">
+    <thead><tr>${seguro(columnas)}${seguro(ENCABEZADO_ACCION)}</tr></thead>
     <tbody>${seguro(filas.join(""))}</tbody>
   </table>
 </div>`;
 }
 
-function enlaceAccion(texto, ruta) {
-  return html`<a class="panel-boton panel-boton-secundario" href="${seguro(ruta)}">${texto}</a>`;
-}
-
-/**
- * Hasta 5 reclamos no resueltos, del más antiguo al más reciente.
- * @param {Array<object>} reclamos
- * @param {number} usuarioId agente en sesión (decide «Responder» o «Ver detalle»)
- */
-export function renderizarTablaReclamos(reclamos, usuarioId) {
-  const lista = reclamosParaInicio(reclamos).slice(0, MAX_FILAS_SOPORTE);
-  if (!lista.length) return '<p class="panel-vacio">No hay reclamos abiertos.</p>';
+/** Bloque «En manos de otros»; cadena vacía si no hay ninguno. */
+export function renderizarEnManosDeOtros(reclamos, usuarioId, nombres = new Map()) {
+  const lista = reclamosEnManosDeOtros(reclamos, usuarioId).slice(0, MAX_FILAS_SOPORTE);
+  if (!lista.length) return "";
   const filas = lista.map((r) => {
-    const accion = accionReclamoInicio(r, usuarioId);
-    const control = accion.tipo === "tomar"
-      ? html`<button type="button" class="panel-boton panel-boton-principal" data-tomar-reclamo="${r.id}">${accion.texto}</button>`
-      : enlaceAccion(accion.texto, accion.ruta);
-    return html`<tr>
-  <th scope="row">#${r.pedidoId}</th>
-  <td>${resumirMotivo(r.motivo)}</td>
-  <td>${seguro(insignia(insigniaReclamo(r.estado)))}</td>
-  <td>${seguro(control)}</td>
-</tr>`;
+    const quien = r.estado === "ESCALADO"
+      ? "Decide la administración"
+      : r.agenteNombre ? `Lo atiende ${r.agenteNombre}` : "Lo atiende otro agente";
+    const nombre = nombres.get(r.pedidoId);
+    return html`<li class="panel-otros-fila">
+    <div class="panel-otros-texto">
+      <p class="panel-otros-titulo">${nombre ? `#${r.pedidoId} · ${nombre}` : `#${r.pedidoId}`}</p>
+      <p class="panel-otros-motivo">${resumirMotivo(r.motivo)}</p>
+      <p class="panel-otros-detalle">${quien}</p>
+    </div>
+    ${seguro(insignia(insigniaReclamo(r.estado)))}
+    <a class="panel-enlace" href="${seguro(`#/reclamos?id=${r.id}`)}">Ver detalle</a>
+  </li>`;
   });
-  return tabla(["Pedido", "Motivo", "Estado"], filas);
+  return html`<section class="panel-otros" aria-labelledby="inicio-titulo-otros">
+  <h3 id="inicio-titulo-otros" class="panel-otros-cabecera">En manos de otros</h3>
+  <ul class="panel-otros-lista">${seguro(filas.join(""))}</ul>
+</section>`;
 }
 
 /** Hasta 5 devoluciones SOLICITADA o APROBADA; sus acciones solo navegan (P2). */
-export function renderizarTablaDevoluciones(devoluciones) {
+export function renderizarDevolucionesPorAtender(devoluciones, ahora = new Date(), nombres = new Map()) {
   const lista = devolucionesParaInicio(devoluciones).slice(0, MAX_FILAS_SOPORTE);
-  if (!lista.length) return '<p class="panel-vacio">No hay devoluciones por atender.</p>';
+  if (!lista.length) {
+    return html`<div class="panel-vacio-ok">${seguro(cuadroIcono("verificacion", "verde"))}<p>Todo al día: no hay devoluciones por atender.</p></div>`;
+  }
   const filas = lista.map((d) => {
     const accion = accionDevolucionInicio(d);
-    return html`<tr>
-  <th scope="row">#${d.pedidoId}</th>
-  <td>${productoDevolucion(d)}</td>
-  <td>${seguro(insignia(insigniaDevolucion(d.estado)))}</td>
-  <td>${seguro(enlaceAccion(accion.texto, accion.ruta))}</td>
-</tr>`;
+    const nombre = nombres.get(d.pedidoId);
+    const cliente = nombre ? ` · ${nombre}` : "";
+    return html`<li class="panel-devolucion-fila">
+    ${seguro(cuadroIcono("pedidos", "azul", " panel-icono-atencion"))}
+    <div class="panel-devolucion-texto">
+      <p class="panel-atencion-titulo">Pedido #${d.pedidoId}${cliente}</p>
+      <p class="panel-atencion-detalle">${productoDevolucion(d)}</p>
+    </div>
+    ${seguro(etiquetaEspera(d.creadoEn, ahora))}
+    ${seguro(insignia(insigniaDevolucion(d.estado)))}
+    <a class="panel-boton panel-boton-secundario" href="${seguro(accion.ruta)}">${accion.texto}</a>
+  </li>`;
   });
-  return tabla(["Pedido", "Producto", "Estado"], filas);
+  return html`<ul class="panel-devolucion-lista">${seguro(filas.join(""))}</ul>`;
 }
 
-/** Estructura completa del Inicio con los bloques en estado «Cargando…». */
-export function renderizarInicioSoporte() {
+/**
+ * Estructura completa del Inicio con los bloques en estado «Cargando…».
+ * @param {{ hoy?: Date }} [opciones] hoy: la fecha del encabezado (para probar)
+ */
+export function renderizarInicioSoporte({ hoy = new Date() } = {}) {
   const cargando = seguro(renderizarCargando());
   return html`<div class="panel-inicio">
   <header class="panel-encabezado panel-encabezado-acciones">
     <div>
+      <p class="panel-fecha">${fechaDeHoy(hoy)}</p>
       <h1 class="panel-titulo">Inicio</h1>
       <p class="panel-apoyo">Casos abiertos de clientes, ordenados por antigüedad.</p>
     </div>
@@ -124,14 +202,15 @@ export function renderizarInicioSoporte() {
   <div class="panel-inicio-columnas">
     <section class="panel-tarjeta" aria-labelledby="inicio-titulo-reclamos">
       <div class="panel-bloque-cabecera">
-        <h2 id="inicio-titulo-reclamos" class="panel-subtitulo">Reclamos</h2>
+        <h2 id="inicio-titulo-reclamos" class="panel-subtitulo">Tu cola de reclamos</h2>
         <a class="panel-enlace" href="#/reclamos">Ver todos</a>
       </div>
+      <p class="panel-apoyo panel-reclamos-ayuda">Lo más antiguo primero. Pasadas 24 h la espera se marca en ámbar y pasadas 48 h en rojo.</p>
       <div id="inicio-reclamos" aria-busy="true">${cargando}</div>
     </section>
     <section class="panel-tarjeta" aria-labelledby="inicio-titulo-devoluciones">
       <div class="panel-bloque-cabecera">
-        <h2 id="inicio-titulo-devoluciones" class="panel-subtitulo">Devoluciones</h2>
+        <h2 id="inicio-titulo-devoluciones" class="panel-subtitulo">Devoluciones por atender</h2>
         <a class="panel-enlace" href="#/devoluciones">Ver todas</a>
       </div>
       <div id="inicio-devoluciones" aria-busy="true">${cargando}</div>
@@ -159,12 +238,36 @@ export function montar(contenedor, { servicios }) {
   /** null = no cargado o con error. */
   let reclamos = null;
   let devoluciones = null;
+  // Nombres de los clientes: salen del contexto del pedido, igual que en las bandejas.
+  const contextos = crearContextosPedido(apiRequest);
+  const nombres = contextos.nombres;
+
+  function pintarReclamos() {
+    zonaReclamos.innerHTML = renderizarColaReclamos(reclamos, usuarioId(), new Date(), nombres)
+      + renderizarEnManosDeOtros(reclamos, usuarioId(), nombres);
+  }
+
+  function pintarDevoluciones() {
+    zonaDevoluciones.innerHTML = renderizarDevolucionesPorAtender(devoluciones, new Date(), nombres);
+  }
+
+  /** Pide los nombres de los pedidos que se ven y repinta las listas con ellos. */
+  async function cargarNombres() {
+    const ids = [
+      ...(reclamos ? colaReclamos(reclamos, usuarioId()).slice(0, MAX_FILAS_SOPORTE) : []),
+      ...(reclamos ? reclamosEnManosDeOtros(reclamos, usuarioId()).slice(0, MAX_FILAS_SOPORTE) : []),
+      ...(devoluciones ? devolucionesParaInicio(devoluciones).slice(0, MAX_FILAS_SOPORTE) : []),
+    ].map((e) => e.pedidoId);
+    await contextos.cargar(ids);
+    if (reclamos) pintarReclamos();
+    if (devoluciones) pintarDevoluciones();
+  }
 
   const ocupado = (zona, valor) => (valor ? zona.setAttribute("aria-busy", "true") : zona.removeAttribute("aria-busy"));
 
   function pintarIndicadores() {
     zonaIndicadores.innerHTML = renderizarIndicadoresSoporte({
-      reclamos: reclamos ? indicadoresReclamos(reclamos) : null,
+      reclamos: reclamos ? indicadoresReclamos(reclamos, usuarioId()) : null,
       devoluciones: devoluciones ? indicadoresDevoluciones(devoluciones) : null,
     });
     ocupado(zonaIndicadores, false);
@@ -175,7 +278,7 @@ export function montar(contenedor, { servicios }) {
     try {
       const respuesta = await apiRequest("/api/soporte/reclamos");
       reclamos = await respuesta.json();
-      zonaReclamos.innerHTML = renderizarTablaReclamos(reclamos, usuarioId());
+      pintarReclamos();
     } catch {
       reclamos = null;
       zonaReclamos.innerHTML = renderizarErrorBloque(FUENTE.RECLAMOS);
@@ -191,7 +294,7 @@ export function montar(contenedor, { servicios }) {
     try {
       const respuesta = await apiRequest("/api/soporte/devoluciones");
       devoluciones = await respuesta.json();
-      zonaDevoluciones.innerHTML = renderizarTablaDevoluciones(devoluciones);
+      pintarDevoluciones();
     } catch {
       devoluciones = null;
       zonaDevoluciones.innerHTML = renderizarErrorBloque(FUENTE.DEVOLUCIONES);
@@ -205,6 +308,7 @@ export function montar(contenedor, { servicios }) {
   async function recargar(fuente) {
     await (fuente === FUENTE.DEVOLUCIONES ? cargarDevoluciones() : cargarReclamos());
     pintarIndicadores();
+    await cargarNombres();
   }
 
   /** «Atender»: PUT …/tomar. Salga bien o mal se recarga (otro agente pudo tomarlo antes). */
@@ -236,6 +340,7 @@ export function montar(contenedor, { servicios }) {
       ocupado(zonaIndicadores, true);
       await Promise.all([cargarReclamos(), cargarDevoluciones()]);
       pintarIndicadores();
+      await cargarNombres();
     },
   };
 }

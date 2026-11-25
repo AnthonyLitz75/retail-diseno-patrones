@@ -77,7 +77,7 @@ test("cambio de rol sin guardar: solo si el elegido difiere del guardado", () =>
 test("fila: Cuenta (th scope=row) con iniciales por rol, nombre, «(tú)», correo y alta; rol con selector legible; estado; acciones", () => {
   const html = htmlFilaCuenta(cuentas[0], { idActual: 1 });
   assert.match(html, /^<tr>/);
-  assert.match(html, /<th scope="row">[\s\S]*<span class="panel-avatar-rol panel-rol-admin" aria-hidden="true">AP<\/span>/);
+  assert.match(html, /<th scope="row">[\s\S]*<span class="panel-avatar-rol panel-rol-admin" aria-hidden="true">AD<\/span>/);
   assert.match(html, /<span class="cuenta-nombre">Administrador de prueba<\/span>\s*<span class="cuenta-tu">\(tú\)<\/span>/);
   assert.match(html, /<span class="cuenta-correo">admin\.prueba@example\.com<\/span>/);
   assert.match(html.replaceAll("&#x2F;", "/"), /<span class="cuenta-alta">Alta \d{2}\/\d{2}\/\d{2}<\/span>/);

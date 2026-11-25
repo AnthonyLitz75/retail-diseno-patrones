@@ -9,7 +9,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { renderizarBarraSuperior, ID_BOTON_MENU } from "../../src/panel/panel-layout.js";
 import { renderizarTablaStockBajo } from "../../src/panel/inicio/vendedor-inicio.js";
-import { renderizarTablaReclamos, renderizarTablaDevoluciones } from "../../src/panel/inicio/soporte-inicio.js";
+import { renderizarColaReclamos } from "../../src/panel/inicio/soporte-inicio.js";
 import { renderizarInicioAlmacen } from "../../src/panel/inicio/almacen-inicio.js";
 import { renderizarInicioAdmin } from "../../src/panel/inicio/admin-inicio.js";
 import { renderizarInicioVendedor } from "../../src/panel/inicio/vendedor-inicio.js";
@@ -102,18 +102,15 @@ test("las tablas se desplazan dentro de su contenedor y la página no desborda",
 const TABLAS = {
   "Inicio del Vendedor · stock bajo": renderizarTablaStockBajo(
     [{ id: 1, nombre: "Mouse", stock: 0 }, { id: 2, nombre: "Webcam", stock: 3 }], 2),
-  "Inicio de Soporte · reclamos": renderizarTablaReclamos([
+  "Inicio de Soporte · reclamos": renderizarColaReclamos([
     { id: 1, pedidoId: 3, motivo: "Llegó dañado", estado: "ABIERTO" },
     { id: 2, pedidoId: 4, motivo: "No llegó", estado: "ESCALADO" },
   ], 7),
-  "Inicio de Soporte · devoluciones": renderizarTablaDevoluciones([
-    { id: 5, pedidoId: 9, estado: "SOLICITADA", lineas: [{ nombreProducto: "Teclado" }] },
-  ]),
 };
 
 for (const [nombre, html] of Object.entries(TABLAS)) {
   test(`${nombre}: dentro de un contenedor con desplazamiento y con <th scope> correcto`, () => {
-    assert.match(html, /<div class="panel-tabla-contenedor">\s*<table class="panel-tabla( panel-tabla-stock)?">/);
+    assert.match(html, /<div class="panel-tabla-contenedor">\s*<table class="panel-tabla( panel-tabla-stock| panel-reclamos-cola)?">/);
     const cabecera = html.slice(html.indexOf("<thead>"), html.indexOf("</thead>"));
     const cuerpo = html.slice(html.indexOf("<tbody>"), html.indexOf("</tbody>"));
     const thCabecera = cabecera.match(/<th\b[^>]*>/g) ?? [];

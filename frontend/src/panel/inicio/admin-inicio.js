@@ -11,7 +11,7 @@
 
 import { html, seguro } from "../../utilidades/seguridad.js";
 import { REPORTES_CSV, solicitarCsv } from "../../administracion/administracion.js";
-import { SIN_VALOR, renderizarCargando, renderizarErrorBloque, renderizarKpi } from "./piezas-inicio.js";
+import { SIN_VALOR, renderizarCargando, renderizarErrorBloque, renderizarKpi, cuadroIcono } from "./piezas-inicio.js";
 import {
   actividadReciente, estadosPedidos, fechaDeHoy, filasAtencion, indicadoresAdmin, resumenAtencion, resumenPedidos, TAMANO_ACTIVIDAD,
 } from "./admin-logica.js";
@@ -25,10 +25,6 @@ const ETIQUETAS_INDICADORES = Object.freeze(["Ventas netas", "Pedidos vendidos",
 const REPORTE_INICIO = "ventas";
 
 // ---------- Marcado (puro) ----------
-
-/** Cuadro de icono (decorativo) de un color: azul, verde, cielo, gris, rojo, ámbar o alerta. */
-const cuadroIcono = (nombre, tono, extra = "") =>
-  `<span class="panel-icono-cuadro${extra} panel-icono-${tono}" aria-hidden="true">${icono(nombre)}</span>`;
 
 /** Icono y color de cada indicador, por etiqueta (el resumen caído no los lleva). */
 const ICONO_INDICADOR = Object.freeze({

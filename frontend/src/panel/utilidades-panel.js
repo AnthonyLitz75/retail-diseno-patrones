@@ -45,3 +45,19 @@ export async function guardarArchivo(respuesta, nombre, { documento = document, 
   enlace.click();
   urls.revokeObjectURL(url);
 }
+
+/** Texto que se muestra cuando no hay nombre del que sacar iniciales. */
+const SIN_INICIALES = "?";
+
+/**
+ * Iniciales de un nombre: la primera letra de las dos primeras palabras, en mayúsculas («Andrea
+ * Flores Mendoza» → AF); con una sola palabra, su primera letra. Única función de iniciales del
+ * panel: la usan el chip de la barra, las conversaciones, la actividad y Cuentas y roles.
+ * @param {unknown} nombre
+ */
+export function iniciales(nombre) {
+  if (typeof nombre !== "string") return SIN_INICIALES;
+  const partes = nombre.trim().split(/\s+/).filter(Boolean);
+  if (partes.length === 0) return SIN_INICIALES;
+  return partes.slice(0, 2).map((p) => Array.from(p)[0].toLocaleUpperCase("es")).join("");
+}

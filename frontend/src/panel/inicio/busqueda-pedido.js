@@ -13,11 +13,14 @@ const idsDe = (prefijo) => ({
   error: `${prefijo}-error-busqueda`,
 });
 
-/** Marcado del formulario. `prefijo` da ids propios (inicio, consulta). */
-export function renderizarBusquedaPedido(prefijo) {
+/**
+ * Marcado del formulario. `prefijo` da ids propios (inicio, consulta); `etiqueta` es el texto
+ * del campo («Buscar pedido» en el Inicio, «Número de pedido» en la consulta).
+ */
+export function renderizarBusquedaPedido(prefijo, { etiqueta = "Buscar pedido" } = {}) {
   const ids = idsDe(prefijo);
   return `<form id="${ids.formulario}" class="panel-busqueda" novalidate>
-      <label for="${ids.campo}" class="form-label">Buscar pedido</label>
+      <label for="${ids.campo}" class="form-label">${etiqueta}</label>
       <div class="panel-busqueda-fila">
         <input id="${ids.campo}" class="form-control" type="text" inputmode="numeric" placeholder="Número, por ejemplo 3" autocomplete="off">
         <button class="panel-boton panel-boton-principal" type="submit">Buscar</button>

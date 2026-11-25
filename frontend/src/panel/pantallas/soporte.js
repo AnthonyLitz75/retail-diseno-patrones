@@ -1,16 +1,18 @@
 /**
  * @file soporte.js
- * Panel del personal (T08, decisiones P1 y P8): #/reclamos, #/devoluciones y
- * #/consulta-pedido comparten **un solo** portal de Soporte (configurarPortalSoporte) sobre el
- * HTML compartido (vistas-personal.js). El router monta un contenedor por ruta con su <h1>;
- * al mostrarse, la ruta se lleva el portal a su contenedor y oculta desde fuera (con
- * data-bandeja, ver panel.css) las tarjetas que no le tocan. soporte-vista.js no cambia.
+ * Panel del personal (T08, decisiones P1 y P8; rediseño v6): #/reclamos y #/devoluciones son
+ * bandejas de dos paneles (bandeja-montaje.js: pestañas por estado, buscador, lista y detalle; el
+ * elemento elegido va en ?id=) y #/consulta-pedido es la consulta de un pedido (consulta-vista.js).
+ * El router monta un contenedor por ruta con su <h1>. El portal antiguo de soporte-vista.js ya no
+ * se usa en el panel; de él se conservan las reglas (accionesReclamo, accionDevolucion) y las
+ * llamadas a la API de atencion.js.
  */
 
 import { html, seguro } from "../../utilidades/seguridad.js";
-import { renderizarVistaSoporte } from "../../layout/vistas-personal.js";
-import { configurarPortalSoporte } from "../../soporte/soporte-vista.js";
+import { montarBandeja } from "./bandeja-montaje.js";
+import { consultarContextoPedido } from "../../atencion/atencion.js";
 import { validarNumeroPedido } from "../inicio/soporte-logica.js";
+import { renderizarCargandoConsulta, renderizarConsultaPedido, renderizarErrorConsulta, renderizarEstadoVacioConsulta } from "./consulta-vista.js";
 import { conectarBusquedaPedido, renderizarBusquedaPedido } from "../inicio/busqueda-pedido.js";
 
 export const TITULO_POR_RUTA = Object.freeze({
@@ -23,9 +25,6 @@ const BANDEJA_POR_RUTA = Object.freeze({
   "#/reclamos": "reclamos",
   "#/devoluciones": "devoluciones",
 });
-
-/** Valor de data-ruta-soporte cuando no se muestra ninguna bandeja. */
-const SIN_BANDEJA = "consulta";
 
 /** Bandeja que muestra la ruta; null en la consulta de pedido (ninguna). */
 export function bandejaDeRuta(ruta) {
@@ -53,29 +52,15 @@ export function valorCampoConsulta(parametros) {
   return pedido ? String(pedido) : "";
 }
 
-/** Cabecera de #/consulta-pedido: <h1> y el formulario propio del panel (decisión 8 revisada). */
+/**
+ * Cabecera de #/consulta-pedido: <h1> a la izquierda y el formulario propio del panel («Número de
+ * pedido» y «Buscar») a la derecha.
+ */
 export function renderizarCabeceraConsulta() {
-  return html`<h1 class="panel-titulo">${TITULO_POR_RUTA[RUTA_CONSULTA]}</h1>
-${seguro(renderizarBusquedaPedido(PREFIJO_CONSULTA))}`;
-}
-
-/** Portal único, creado la primera vez que una de las tres rutas se muestra. */
-let compartido = null;
-
-function obtenerPortal(servicios) {
-  const { apiRequest, estado, mostrarToast } = servicios;
-  if (!compartido) {
-    const plantilla = document.createElement("div");
-    plantilla.innerHTML = renderizarVistaSoporte();
-    const vista = plantilla.firstElementChild;
-    // Mismo mecanismo que la tienda: la vista se muestra quitando el atributo hidden.
-    vista.hidden = false;
-    const portal = configurarPortalSoporte({
-      apiRequest, obtenerEstado: () => estado, contenedor: vista, mostrarToast, alVerPedido: alVerPedidoDelPanel(servicios.navegar),
-    });
-    compartido = { vista, portal };
-  }
-  return compartido;
+  return html`<header class="panel-encabezado panel-encabezado-acciones">
+  <h1 class="panel-titulo">${TITULO_POR_RUTA[RUTA_CONSULTA]}</h1>
+  ${seguro(renderizarBusquedaPedido(PREFIJO_CONSULTA, { etiqueta: "Número de pedido" }))}
+</header>`;
 }
 
 /**
@@ -86,28 +71,42 @@ export function montar(contenedor, { entrada, servicios }) {
   const { ruta } = entrada;
   const esConsulta = ruta === RUTA_CONSULTA;
   contenedor.innerHTML = esConsulta
-    ? renderizarCabeceraConsulta()
+    ? `${renderizarCabeceraConsulta()}<div id="consulta-resultado" aria-live="polite">${renderizarEstadoVacioConsulta()}</div>`
     : html`<h1 class="panel-titulo">${TITULO_POR_RUTA[ruta]}</h1>`;
   // El formulario solo navega a #/consulta-pedido?pedido={n}; quien consulta es el router
   // (a través de alMostrar), nunca el formulario.
   const busqueda = esConsulta ? conectarBusquedaPedido(contenedor, PREFIJO_CONSULTA, servicios.navegar) : null;
+  const bandejaMontada = bandejaDeRuta(ruta) ? montarBandeja(contenedor, { tipo: bandejaDeRuta(ruta), servicios }) : null;
+
+  const resultado = esConsulta ? contenedor.querySelector("#consulta-resultado") : null;
+  /** Evita que una respuesta tardía pise a una consulta más reciente. */
+  let consultaActual = 0;
+
+  /** Pide el contexto del pedido y pinta la ficha, el seguimiento, los productos y las atenciones. */
+  async function consultar(pedido) {
+    const consulta = ++consultaActual;
+    resultado.innerHTML = renderizarCargandoConsulta(pedido);
+    try {
+      const contexto = await consultarContextoPedido(servicios.apiRequest, pedido);
+      if (consulta === consultaActual) resultado.innerHTML = renderizarConsultaPedido(contexto);
+    } catch (error) {
+      if (consulta === consultaActual) resultado.innerHTML = renderizarErrorConsulta(pedido, error.message);
+    }
+  }
 
   return {
     alMostrar(parametros) {
-      const { vista, portal } = obtenerPortal(servicios);
-      contenedor.append(vista); // mueve el único portal a la ruta visible (ids sin duplicar)
-      const bandeja = bandejaDeRuta(ruta);
-      vista.dataset.rutaSoporte = bandeja ?? SIN_BANDEJA;
-      if (bandeja) {
-        // Recarga solo la bandeja visible con su propio botón «Actualizar».
-        vista.querySelector(`[data-bandeja="${bandeja}"] button`)?.click();
-        return;
+      if (esConsulta) {
+        // Sin error visible hasta que se envíe; el campo refleja el pedido de la URL.
+        busqueda.limpiarError();
+        busqueda.campo.value = valorCampoConsulta(parametros);
+        const pedido = pedidoDeConsulta(parametros);
+        if (pedido) return consultar(pedido);
+        consultaActual += 1;
+        resultado.innerHTML = renderizarEstadoVacioConsulta();
+        return undefined;
       }
-      // Sin error visible hasta que se envíe; el campo refleja el pedido de la URL.
-      busqueda.limpiarError();
-      busqueda.campo.value = valorCampoConsulta(parametros);
-      const pedido = pedidoDeConsulta(parametros);
-      if (pedido) portal.mostrarContexto(pedido);
+      return bandejaMontada.alMostrar(parametros);
     },
   };
 }
