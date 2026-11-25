@@ -4,6 +4,17 @@
  * Administrador, Auditoría). Replican procedimientos de la tienda sin tocarla.
  */
 
+/**
+ * Cantidad con su sustantivo en singular o plural (F8): «1 reclamo escalado», «0 reclamos
+ * escalados», «2 reclamos escalados». Única función de plural de los Inicios del panel.
+ * @param {number} cantidad
+ * @param {string} singular
+ * @param {string} pluralTexto
+ */
+export function plural(cantidad, singular, pluralTexto) {
+  return `${cantidad} ${Number(cantidad) === 1 ? singular : pluralTexto}`;
+}
+
 /** Mismo formato que la tabla de auditoría de la tienda (auditoria-vista.js). */
 const FORMATO_FECHA_HORA = Object.freeze({ dateStyle: "short", timeStyle: "short" });
 

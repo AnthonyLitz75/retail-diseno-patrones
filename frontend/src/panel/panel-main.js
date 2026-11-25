@@ -36,7 +36,7 @@ import { planificarArranquePanel } from "./acceso.js";
 import { cerrarSesionPanel } from "./cerrar-sesion.js";
 import { crearPanelRouter } from "./panel-router.js";
 import { rutaDeVista } from "./menu-por-rol.js";
-import { ID_BOTON_CERRAR_SESION, ID_BOTON_MENU, renderizarBarraSuperior, renderizarMenuLateral } from "./panel-layout.js";
+import { ID_BOTON_MENU, renderizarBarraSuperior, renderizarMenuLateral } from "./panel-layout.js";
 import { crearCajonMenu } from "./cajon-menu.js";
 import { seguro, html } from "../utilidades/seguridad.js";
 
@@ -96,16 +96,18 @@ function pintarMarco(usuario) {
     menu: document.getElementById("panel-menu"),
     documento: document,
   });
-  const botonSalir = document.getElementById(ID_BOTON_CERRAR_SESION);
-  botonSalir?.addEventListener("click", () => void cerrarSesionPanel({
-    apiRequest,
-    boton: botonSalir,
-    limpiarUsuario: () => {
-      estadoPanel.usuarioSesion = null;
-    },
-    redirigir,
-    mostrarToast,
-  }));
+  // «Cerrar sesión» está en la barra (id único) y en el pie del cajón: mismo comportamiento.
+  for (const botonSalir of document.querySelectorAll("[data-cerrar-sesion]")) {
+    botonSalir.addEventListener("click", () => void cerrarSesionPanel({
+      apiRequest,
+      boton: botonSalir,
+      limpiarUsuario: () => {
+        estadoPanel.usuarioSesion = null;
+      },
+      redirigir,
+      mostrarToast,
+    }));
+  }
 }
 
 function configurarServiciosGlobales() {

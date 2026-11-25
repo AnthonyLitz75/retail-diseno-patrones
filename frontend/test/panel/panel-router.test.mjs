@@ -159,16 +159,25 @@ function crearEntorno(rol, hashInicial) {
 
 // ---------- crearPanelRouter ----------
 
-test("al iniciar muestra la ruta del hash, marca su ítem y actualiza título y foco", async () => {
+test("al iniciar muestra la ruta del hash, marca su ítem y actualiza el título (sin mover el foco)", async () => {
   const e = crearEntorno("ALMACEN", "#/pedidos");
   await e.router.iniciar();
   assert.deepEqual(e.visibles(), ["#/pedidos"]);
   assert.deepEqual(e.activos(), ["#/pedidos"]);
   assert.equal(e.documento.title, "Pedidos por atender · Panel del personal · Píxel Andino");
+  // F3: en la carga inicial el foco no se mueve al <h1>; así el primer Tab va a «Saltar al contenido».
+  assert.equal(e.documento.activeElement, null);
+  assert.deepEqual(e.reemplazos, []);
+});
+
+test("F3: tras una navegación dentro del panel el foco sí pasa al <h1> de la nueva pantalla", async () => {
+  const e = crearEntorno("ALMACEN", "#/inicio");
+  await e.router.iniciar();
+  assert.equal(e.documento.activeElement, null);
+  await e.irA("#/pedidos");
   assert.equal(e.documento.activeElement?.tagName, "H1");
   assert.equal(e.documento.activeElement.textContent, "Pedidos por atender");
   assert.equal(e.documento.activeElement.getAttribute("tabindex"), "-1");
-  assert.deepEqual(e.reemplazos, []);
 });
 
 test("al cambiar el hash solo el ítem de la ruta actual lleva aria-current", async () => {

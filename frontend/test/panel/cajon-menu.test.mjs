@@ -27,8 +27,9 @@ class Elemento {
   }
   *todos() { for (const h of this.children) { yield h; yield* h.todos(); } }
   querySelectorAll(selector) {
-    if (selector !== "a[href]") return [];
-    return [...this.todos()].filter((n) => n.tagName === "A" && n.getAttribute("href"));
+    if (selector === "a[href]") return [...this.todos()].filter((n) => n.tagName === "A" && n.getAttribute("href"));
+    if (selector === "a[href], button") return [...this.todos()].filter((n) => (n.tagName === "A" && n.getAttribute("href")) || n.tagName === "BUTTON");
+    return [];
   }
 }
 
@@ -55,7 +56,10 @@ function crearEntorno() {
   contenido.append(enlaceContenido);
   cuerpo.append(boton, menu, contenido);
 
-  const cajon = crearCajonMenu({ boton, menu, documento });
+  // F4: el foco al abrir se pide en el siguiente frame; aquí el «frame» llega justo después de
+  // cada evento (el orden con la visibilidad se prueba en tanda1.test.mjs).
+  const frames = [];
+  const cajon = crearCajonMenu({ boton, menu, documento, siguienteFrame: (fn) => frames.push(fn), esperar() {} });
   const disparar = (objetivo, tipo, extra = {}) => {
     const evento = { type: tipo, target: objetivo, defaultPrevented: false, preventDefault() { this.defaultPrevented = true; }, ...extra };
     // Burbujeo como en el navegador: del objetivo a sus ancestros y, al final, el documento.
@@ -63,6 +67,7 @@ function crearEntorno() {
       for (const fn of nodo.oyentes?.[tipo] ?? []) fn(evento);
     }
     for (const fn of [...(oyentes[tipo] ?? [])]) fn(evento);
+    frames.splice(0).forEach((f) => f());
     return evento;
   };
   return { cajon, boton, menu, enlaces, contenido, enlaceContenido, documento, disparar, oyentes };

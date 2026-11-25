@@ -63,7 +63,7 @@ test("la barra superior tiene marca, enlace a la tienda, chip del usuario y cerr
   assert.match(barra, /^<header/);
   assert.match(barra, />PA</);
   assert.match(barra, /Píxel Andino/);
-  assert.match(barra, /Panel del personal/);
+  assert.match(barra.replace(/<[^>]+>/g, ""), /Panel del personal/, "el texto completo sigue ahí (en celular solo se ve «Panel»)");
   assert.match(barra, /<a [^>]*href="\/"[^>]*>[^<]*Ir a la tienda/);
   assert.match(barra, />AL</);
   assert.match(barra, />Ana López</);
@@ -91,7 +91,8 @@ test("el menú lateral pinta los grupos y entradas del rol con su ícono", () =>
     const menu = renderizarMenuLateral(rol);
     const entradas = entradasDeRol(rol);
     assert.match(menu, new RegExp(`^<nav [^>]*aria-label="Menú de ${ETIQUETA_ROL[rol]}"`), rol);
-    assert.equal(contar(menu, /<a /g), entradas.length, rol);
+    // El cajón trae además «Ir a la tienda» y «Cerrar sesión» en su pie (tanda 2, punto 8).
+    assert.equal(contar(menu, /class="panel-menu-enlace"/g), entradas.length, rol);
     assert.equal(contar(menu, /<svg[^>]*aria-hidden="true"/g), entradas.length, rol);
     for (const { ruta, etiqueta } of entradas) {
       assert.match(menu, new RegExp(`href="${ruta}"[^>]*>[\\s\\S]*?${etiqueta}`), `${rol} ${ruta}`);

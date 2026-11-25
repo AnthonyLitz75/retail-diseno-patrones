@@ -52,16 +52,18 @@ export function renderizarBarraSuperior({ nombre = "", rol = "" } = {}) {
   <div class="panel-marca">
     <span class="panel-marca-logo" aria-hidden="true">PA</span>
     <span class="panel-marca-nombre">Píxel Andino</span>
-    <span class="panel-marca-etiqueta">Panel del personal</span>
+    <span class="panel-marca-etiqueta">Panel<span class="panel-marca-etiqueta-resto"> del personal</span></span>
   </div>
   <div class="panel-cabecera-acciones">
     <a class="panel-enlace-tienda" href="/">Ir a la tienda</a>
     <div class="panel-chip-usuario">
       <span class="panel-avatar" aria-hidden="true">${iniciales(nombre)}</span>
-      <span class="panel-chip-nombre">${nombre}</span>
-      <span class="panel-insignia panel-insignia-azul">${etiquetaRol(rol)}</span>
+      <span class="panel-chip-texto">
+        <span class="panel-chip-nombre">${nombre}</span>
+        <span class="panel-insignia panel-insignia-azul panel-chip-rol">${etiquetaRol(rol)}</span>
+      </span>
     </div>
-    <button type="button" id="${ID_BOTON_CERRAR_SESION}" class="panel-boton-salir">${seguro(icono("cerrar-sesion"))}<span>Cerrar sesión</span></button>
+    <button type="button" id="${ID_BOTON_CERRAR_SESION}" class="panel-boton-salir" data-cerrar-sesion>${seguro(icono("cerrar-sesion"))}<span>Cerrar sesión</span></button>
   </div>
 </header>`;
 }
@@ -84,7 +86,14 @@ export function renderizarMenuLateral(rol, rutaActiva = "") {
     <ul class="panel-menu-lista">${seguro(enlaces.join(""))}</ul>
   </div>`;
   });
+  // Pie del cajón (solo se ve por debajo de 576 px, donde la barra los oculta): «Ir a la tienda» y
+  // «Cerrar sesión», con el mismo comportamiento. Sin id (el de la barra es único): data-cerrar-sesion.
+  const pie = `<div class="panel-menu-pie">
+    <a class="panel-enlace-tienda" href="/">Ir a la tienda</a>
+    <button type="button" class="panel-boton-salir" data-cerrar-sesion>Cerrar sesión</button>
+  </div>`;
   return html`<nav class="panel-menu" id="panel-menu" aria-label="Menú de ${etiquetaRol(rol)}">
   ${seguro(grupos.join(""))}
+  ${seguro(pie)}
 </nav>`;
 }

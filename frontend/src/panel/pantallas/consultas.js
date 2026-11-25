@@ -6,6 +6,7 @@
 
 import { renderizarVistaConsultas } from "../../layout/vistas-personal.js";
 import { configurarBandejaVendedor } from "../../vendedor/vendedor-vista.js";
+import { encabezadoPantalla } from "./titulo-pantalla.js";
 
 /** Ids que usa el módulo, en el orden de sus `elementos` (los mismos que en main.js). */
 export const IDS_CONSULTAS = Object.freeze([
@@ -17,11 +18,11 @@ export const IDS_CONSULTAS = Object.freeze([
 
 /**
  * @param {HTMLElement} contenedor
- * @param {{ servicios: { apiRequest: Function, estado: object, mostrarToast: Function } }} contexto
+ * @param {{ entrada: { etiqueta: string }, servicios: { apiRequest: Function, estado: object, mostrarToast: Function } }} contexto
  */
-export function montar(contenedor, { servicios }) {
+export function montar(contenedor, { entrada, servicios }) {
   const { apiRequest, estado, mostrarToast } = servicios;
-  contenedor.innerHTML = renderizarVistaConsultas();
+  contenedor.innerHTML = `${encabezadoPantalla(entrada)}${renderizarVistaConsultas()}`;
   contenedor.querySelector("#vista-consultas").hidden = false;
   const [seccionPreguntasVendedor, estadoPreguntasVendedor, listaPreguntasVendedor, btnActualizarPreguntas] =
     IDS_CONSULTAS.map((id) => contenedor.querySelector(`#${id}`));

@@ -11,6 +11,8 @@ import { renderizarVistaProductos } from "../../layout/vistas-personal.js";
 import { crearPanelProductos } from "../../catalogo/gestion/panel-productos.js";
 import { configurarFormularioProducto } from "../../catalogo/gestion/formulario-producto.js";
 import { mostrarConfirmacion } from "../../utilidades/notificaciones.js";
+import { cargarCategoriasProducto, ID_SELECTOR_CATEGORIA } from "../categorias-producto.js";
+import { encabezadoPantalla } from "./titulo-pantalla.js";
 
 export const RUTA_PRODUCTOS = "#/productos";
 
@@ -32,9 +34,9 @@ export function pideNuevoProducto(parametros) {
  * @param {HTMLElement} contenedor
  * @param {{ servicios: object }} contexto
  */
-export function montar(contenedor, { servicios }) {
+export function montar(contenedor, { entrada, servicios }) {
   const { apiRequest, estado, mostrarToast, cambiarVista, modalesProducto = {}, cambiosProductos, reemplazarRuta } = servicios;
-  contenedor.innerHTML = renderizarVistaProductos();
+  contenedor.innerHTML = `${encabezadoPantalla(entrada)}${renderizarVistaProductos()}`;
   contenedor.querySelector("#vista-productos").hidden = false;
 
   const panelProductos = crearPanelProductos({
@@ -83,7 +85,16 @@ export function montar(contenedor, { servicios }) {
         // Reemplaza el hash para que recargar la página no vuelva a abrir el formulario.
         reemplazarRuta?.(RUTA_PRODUCTOS);
       }
-      await panelProductos.cargar();
+      // F1: el selector «Categoría» del formulario se rellena en cada visita (salen las categorías
+      // que el ADMIN acabe de crear). Si falla, avisa y el selector queda con su opción por defecto.
+      await Promise.all([
+        panelProductos.cargar(),
+        cargarCategoriasProducto({
+          apiRequest,
+          selector: contenedor.querySelector(`#${ID_SELECTOR_CATEGORIA}`),
+          mostrarToast,
+        }),
+      ]);
     },
   };
 }

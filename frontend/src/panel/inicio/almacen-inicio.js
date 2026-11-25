@@ -15,6 +15,9 @@ import {
   ESTADOS_COLA,
   agruparPedidosPorEstado,
   calcularIndicadoresAlmacen,
+  MAX_PEDIDOS_POR_COLUMNA,
+  detallePorPreparar,
+  detalleProductosActivos,
   etiquetaStock,
   resumenArticulos,
   stockCritico,
@@ -53,12 +56,12 @@ export function renderizarIndicadores({ pedidos = null, productos = null } = {})
   const sinDatos = "Sin datos";
   return [
     pedidos
-      ? kpi("Por preparar", pedidos.porPreparar, `${pedidos.pendientes} pendientes · ${pedidos.enPreparacion} en preparación`)
+      ? kpi("Por preparar", pedidos.porPreparar, detallePorPreparar(pedidos.pendientes, pedidos.enPreparacion))
       : kpi("Por preparar", SIN_VALOR, sinDatos),
     pedidos ? kpi("Despachados", pedidos.despachados, "En camino al cliente") : kpi("Despachados", SIN_VALOR, sinDatos),
     productos ? kpi("Stock bajo", productos.stockBajo, "Por debajo del mínimo") : kpi("Stock bajo", SIN_VALOR, sinDatos),
     productos
-      ? kpi("Unidades en almacén", productos.unidades, `${productos.productosActivos} productos activos`)
+      ? kpi("Unidades en almacén", productos.unidades, detalleProductosActivos(productos.productosActivos))
       : kpi("Unidades en almacén", SIN_VALOR, sinDatos),
   ].join("");
 }
@@ -83,8 +86,10 @@ function cabeceraColumna(estado, contador) {
 
 /** Columna de la cola con su contador; «Sin pedidos» si está vacía. */
 export function renderizarColumna(estado, pedidos) {
+  const resto = pedidos.length - MAX_PEDIDOS_POR_COLUMNA;
+  const verMas = resto > 0 ? `<a class="panel-enlace panel-cola-mas" href="#/pedidos">Ver ${resto} más</a>` : "";
   const contenido = pedidos.length
-    ? html`<ul class="panel-cola-lista">${seguro(pedidos.map(renderizarTarjetaPedido).join(""))}</ul>`
+    ? html`<ul class="panel-cola-lista">${seguro(pedidos.slice(0, MAX_PEDIDOS_POR_COLUMNA).map(renderizarTarjetaPedido).join(""))}</ul>${seguro(verMas)}`
     : '<p class="panel-vacio">Sin pedidos</p>';
   return html`<section class="panel-cola-columna" aria-label="${COLUMNAS[estado].titulo}">
   ${seguro(cabeceraColumna(estado, pedidos.length))}
@@ -117,12 +122,12 @@ export function renderizarInicioAlmacen() {
     <p class="panel-apoyo">Pedidos por preparar y mercadería que necesita reposición.</p>
   </header>
   <nav class="panel-chips-rapidos" aria-label="Accesos rápidos">
-    <a class="panel-chip" href="#/inicio">Inicio</a>
+    <a class="panel-chip" href="#/inicio" aria-current="page">Inicio</a>
     <a class="panel-chip" href="#/pedidos">Pedidos</a>
     <a class="panel-chip" href="#/inventario">Kardex</a>
   </nav>
   <section id="inicio-indicadores" class="panel-kpis" aria-label="Indicadores" aria-busy="true">${seguro(renderizarCargando())}</section>
-  <div class="panel-inicio-rejilla">
+  <div class="panel-inicio-rejilla panel-inicio-rejilla-cola">
     <section class="panel-tarjeta panel-bloque-cola" aria-labelledby="inicio-titulo-cola">
       <div class="panel-bloque-cabecera">
         <h2 id="inicio-titulo-cola" class="panel-subtitulo">Cola de pedidos</h2>
@@ -142,10 +147,16 @@ export function renderizarInicioAlmacen() {
           <select id="inicio-producto-entrada" class="form-select" required>
             <option value="">Selecciona un producto</option>
           </select>
-          <label for="inicio-cantidad-entrada" class="form-label">Cantidad</label>
-          <input id="inicio-cantidad-entrada" class="form-control" type="number" min="1" step="1" inputmode="numeric" required>
-          <label for="inicio-motivo-entrada" class="form-label">Motivo</label>
-          <input id="inicio-motivo-entrada" class="form-control" type="text" maxlength="${MAX_MOTIVO_ENTRADA}" required>
+          <div class="panel-formulario-fila">
+            <div class="panel-campo">
+              <label for="inicio-cantidad-entrada" class="form-label">Cantidad</label>
+              <input id="inicio-cantidad-entrada" class="form-control" type="number" min="1" step="1" inputmode="numeric" required>
+            </div>
+            <div class="panel-campo">
+              <label for="inicio-motivo-entrada" class="form-label">Motivo</label>
+              <input id="inicio-motivo-entrada" class="form-control" type="text" maxlength="${MAX_MOTIVO_ENTRADA}" required>
+            </div>
+          </div>
           <div id="inicio-errores-entrada" class="panel-errores-formulario" role="alert"></div>
           <button id="inicio-registrar-entrada" class="panel-boton panel-boton-principal" type="submit">Registrar entrada</button>
           <p class="panel-ayuda">Queda registrada en el kardex con tu usuario y la fecha.</p>

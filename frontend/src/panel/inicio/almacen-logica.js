@@ -6,6 +6,7 @@
  */
 
 import { ESTADO_PEDIDO } from "../../utilidades/constantes.js";
+import { plural } from "../utilidades-panel.js";
 import { UMBRAL_STOCK_BAJO } from "../../catalogo/gestion/panel-productos.js";
 
 /** Estados de la cola, en el orden de sus columnas. */
@@ -90,7 +91,7 @@ export function stockCritico(productos) {
 export function etiquetaStock(stock) {
   const cantidad = Math.max(0, Number(stock) || 0);
   if (cantidad === 0) return { texto: "Agotado", variante: "rojo" };
-  return { texto: cantidad === 1 ? "1 unidad" : `${cantidad} unidades`, variante: "ambar" };
+  return { texto: plural(cantidad, "unidad", "unidades"), variante: "ambar" };
 }
 
 /** «Nombre × cantidad» con una sola línea; si no, la suma de unidades: «{n} artículos». */
@@ -98,7 +99,20 @@ export function resumenArticulos(pedido) {
   const lineas = comoLista(pedido?.productos);
   if (lineas.length === 1) return `${lineas[0].nombreProducto} × ${lineas[0].cantidad}`;
   const unidades = lineas.reduce((total, l) => total + (Number(l.cantidad) || 0), 0);
-  return `${unidades} artículos`;
+  return plural(unidades, "artículo", "artículos");
+}
+
+/** Pedidos que se muestran por columna de la cola; el resto, tras «Ver {n} más». */
+export const MAX_PEDIDOS_POR_COLUMNA = 4;
+
+/** Detalle del indicador «Por preparar»: «{n} pendiente(s) · {m} en preparación». */
+export function detallePorPreparar(pendientes, enPreparacion) {
+  return `${plural(pendientes, "pendiente", "pendientes")} · ${enPreparacion} en preparación`;
+}
+
+/** Detalle del indicador «Unidades en almacén»: «{n} producto(s) activo(s)». */
+export function detalleProductosActivos(cantidad) {
+  return plural(cantidad, "producto activo", "productos activos");
 }
 
 /**

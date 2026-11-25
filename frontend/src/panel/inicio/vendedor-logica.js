@@ -63,6 +63,11 @@ export function nombreProductoPregunta(pregunta, productos) {
   return producto?.nombre ?? `Producto #${pregunta?.productoId}`;
 }
 
+/** Texto del enlace bajo «Productos con stock bajo»: «Ver el producto» o «Ver los {n}». */
+export function textoVerStockBajo(total) {
+  return total === 1 ? "Ver el producto" : `Ver los ${total}`;
+}
+
 export function detallePreguntas(pendientes) {
   return pendientes === 0 ? "Todo respondido" : "Esperan tu respuesta";
 }

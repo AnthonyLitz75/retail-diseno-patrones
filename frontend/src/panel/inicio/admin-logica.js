@@ -8,7 +8,7 @@
 import { indicadoresDestacados } from "../../administracion/administracion.js";
 import { describirActor } from "../../administracion/auditoria-vista.js";
 import { contarPestanas } from "../../catalogo/gestion/panel-productos.js";
-import { formatearFechaHora } from "../utilidades-panel.js";
+import { formatearFechaHora, plural } from "../utilidades-panel.js";
 
 export const TAMANO_ACTIVIDAD = 5;
 
@@ -49,7 +49,7 @@ export function indicadoresAdmin(resumen) {
       valor: escalados.valor,
       detalle: (resumen.escalados ?? 0) === 0 ? "Ninguno abierto" : "Esperan al administrador",
     },
-    { etiqueta: "Valor del inventario", valor: inventario.valor, detalle: inventario.nota },
+    { etiqueta: "Valor del inventario", valor: inventario.valor, detalle: `${plural(resumen.unidadesEnStock ?? 0, "unidad", "unidades")} · ${plural(resumen.productosActivos ?? 0, "producto", "productos")}` },
   ];
 }
 
@@ -64,17 +64,17 @@ export function filasAtencion({ resumen, productos }) {
   if (productos) {
     const stockBajo = contarPestanas(productos)["stock-bajo"];
     if (stockBajo > 0) {
-      filas.push({ texto: `${stockBajo} productos con stock bajo`, detalle: "Revisa el inventario antes de que se agoten", enlace: "Ver inventario", ruta: "#/inventario" });
+      filas.push({ texto: `${plural(stockBajo, "producto con stock bajo", "productos con stock bajo")}`, detalle: "Revisa el inventario antes de que se agoten", enlace: "Ver inventario", ruta: "#/inventario" });
     }
   }
   if (resumen) {
     const escalados = resumen.escalados ?? 0;
     if (escalados > 0) {
-      filas.push({ texto: `${escalados} reclamos escalados`, detalle: "Soporte pidió tu intervención", enlace: "Ver incidencias", ruta: "#/incidencias" });
+      filas.push({ texto: `${plural(escalados, "reclamo escalado", "reclamos escalados")}`, detalle: "Soporte pidió tu intervención", enlace: "Ver incidencias", ruta: "#/incidencias" });
     }
     const enPreparacion = resumen.pedidosPorEstado?.EN_PREPARACION ?? 0;
     if (enPreparacion > 0) {
-      filas.push({ texto: `${enPreparacion} pedidos en preparación`, detalle: "Almacén los está atendiendo", enlace: "Ver pedidos", ruta: "#/pedidos" });
+      filas.push({ texto: `${plural(enPreparacion, "pedido en preparación", "pedidos en preparación")}`, detalle: "Almacén los está atendiendo", enlace: "Ver pedidos", ruta: "#/pedidos" });
     }
   }
   if (!productos) fallos.push({ texto: "No se pudo comprobar stock.", fuente: "gestion" });
@@ -115,5 +115,8 @@ export function actividadReciente(pagina) {
   return items.slice(0, TAMANO_ACTIVIDAD).map((registro) => ({
     titulo: registro.accionEtiqueta || registro.accion,
     detalle: `${describirActor(registro)} · ${formatearFechaHora(registro.fecha)}`,
+    // Por separado para que la vista deje la fecha en una sola línea (white-space: nowrap).
+    actor: describirActor(registro),
+    fecha: formatearFechaHora(registro.fecha),
   }));
 }

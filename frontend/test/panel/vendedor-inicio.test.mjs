@@ -97,7 +97,7 @@ const bajos = [
 
 test("tabla de stock bajo: clase propia del panel, encabezados y acción oculta para lectores", () => {
   const html = renderizarTablaStockBajo(bajos, 2);
-  assert.match(html, /<div class="panel-tabla-contenedor">\s*<table class="panel-tabla">/);
+  assert.match(html, /<div class="panel-tabla-contenedor">\s*<table class="panel-tabla panel-tabla-stock">/);
   assert.doesNotMatch(html, /class="table/, "las tablas nuevas no usan .table");
   assert.match(html, /<th scope="col">Producto<\/th>/);
   assert.match(html, /<th scope="col" class="panel-num">Stock<\/th>/);
@@ -158,8 +158,9 @@ test("consultas vacías: recuadro «No hay preguntas pendientes» con su línea 
 
 test("catálogo: barras con texto, ancho proporcional y la parte visual oculta a lectores", () => {
   const html = renderizarCatalogo({ activos: 12, desactivados: 3 });
-  assert.match(html, /Activos · 12/);
-  assert.match(html, /Desactivados · 3/);
+  // Tanda 2 (punto 5): etiqueta, barra y número en una fila; el texto sigue ahí para los lectores.
+  assert.match(html, /<p class="panel-barra-etiqueta">Activos<\/p>[\s\S]*?<p class="panel-barra-cantidad">12<\/p>/);
+  assert.match(html, /<p class="panel-barra-etiqueta">Desactivados<\/p>[\s\S]*?<p class="panel-barra-cantidad">3<\/p>/);
   assert.match(html, /<div class="panel-barra-relleno panel-barra-verde" style="width: 80%"><\/div>/);
   assert.match(html, /<div class="panel-barra-relleno panel-barra-gris" style="width: 20%"><\/div>/);
   assert.equal(contar(html, /class="panel-barra" aria-hidden="true"/g), 2);

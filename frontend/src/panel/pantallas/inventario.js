@@ -7,6 +7,7 @@
 
 import { renderizarVistaInventario } from "../../layout/vistas-personal.js";
 import { configurarPanelInventario } from "../../inventario/inventario-vista.js";
+import { encabezadoPantalla } from "./titulo-pantalla.js";
 
 /** Ids que el módulo necesita, en el orden de sus `elementos` (los mismos que en main.js). */
 const ELEMENTOS = Object.freeze({
@@ -45,11 +46,11 @@ export function crearCargaProductos({ apiRequest, estado }) {
 
 /**
  * @param {HTMLElement} contenedor
- * @param {{ servicios: { apiRequest: Function, estado: object, mostrarToast: Function } }} contexto
+ * @param {{ entrada: { etiqueta: string }, servicios: { apiRequest: Function, estado: object, mostrarToast: Function } }} contexto
  */
-export function montar(contenedor, { servicios }) {
+export function montar(contenedor, { entrada, servicios }) {
   const { apiRequest, estado, mostrarToast } = servicios;
-  contenedor.innerHTML = renderizarVistaInventario();
+  contenedor.innerHTML = `${encabezadoPantalla(entrada)}${renderizarVistaInventario()}`;
   contenedor.querySelector("#vista-inventario").hidden = false;
   const elementos = Object.fromEntries(
     Object.entries(ELEMENTOS).map(([clave, id]) => [clave, contenedor.querySelector(`#${id}`)]),

@@ -14,6 +14,7 @@ import { SIN_VALOR, renderizarCargando, renderizarErrorBloque, renderizarKpi } f
 import {
   barrasCatalogo,
   detallePreguntas,
+  textoVerStockBajo,
   estadoStockBajo,
   indicadoresProductos,
   nombreProductoPregunta,
@@ -60,9 +61,9 @@ export function renderizarTablaStockBajo(lista, total) {
   <td><button type="button" class="panel-boton panel-boton-secundario" data-ajustar-stock="${p.id}">Ajustar stock</button></td>
 </tr>`;
   });
-  return html`<p class="panel-bloque-enlace"><a class="panel-enlace" href="#/productos">Ver los ${total}</a></p>
+  return html`<p class="panel-bloque-enlace"><a class="panel-enlace" href="#/productos">${textoVerStockBajo(total)}</a></p>
 <div class="panel-tabla-contenedor">
-  <table class="panel-tabla">
+  <table class="panel-tabla panel-tabla-stock">
     <thead><tr><th scope="col">Producto</th><th scope="col" class="panel-num">Stock</th><th scope="col">Estado</th><th scope="col"><span class="visually-hidden">Acción</span></th></tr></thead>
     <tbody>${seguro(filas.join(""))}</tbody>
   </table>
@@ -90,8 +91,9 @@ export function renderizarConsultas(preguntas, productos) {
 
 function barra(etiqueta, { cantidad, porcentaje }, color) {
   return html`<div class="panel-barra-fila">
-  <p class="panel-barra-etiqueta">${etiqueta} · ${cantidad}</p>
+  <p class="panel-barra-etiqueta">${etiqueta}</p>
   <div class="panel-barra" aria-hidden="true"><div class="panel-barra-relleno panel-barra-${color}" style="width: ${porcentaje}%"></div></div>
+  <p class="panel-barra-cantidad">${cantidad}</p>
 </div>`;
 }
 
@@ -132,9 +134,11 @@ export function renderizarInicioVendedor() {
         <div id="inicio-consultas" aria-busy="true">${cargando}</div>
       </section>
       <section class="panel-tarjeta" aria-labelledby="inicio-titulo-catalogo">
-        <h2 id="inicio-titulo-catalogo" class="panel-subtitulo">Catálogo</h2>
+        <div class="panel-bloque-cabecera">
+          <h2 id="inicio-titulo-catalogo" class="panel-subtitulo">Catálogo</h2>
+          <a class="panel-enlace" href="#/productos">Administrar productos</a>
+        </div>
         <div id="inicio-catalogo" aria-busy="true">${cargando}</div>
-        <a class="panel-enlace" href="#/productos">Administrar productos</a>
       </section>
     </div>
   </div>

@@ -113,7 +113,7 @@ const TABLAS = {
 
 for (const [nombre, html] of Object.entries(TABLAS)) {
   test(`${nombre}: dentro de un contenedor con desplazamiento y con <th scope> correcto`, () => {
-    assert.match(html, /<div class="panel-tabla-contenedor">\s*<table class="panel-tabla">/);
+    assert.match(html, /<div class="panel-tabla-contenedor">\s*<table class="panel-tabla( panel-tabla-stock)?">/);
     const cabecera = html.slice(html.indexOf("<thead>"), html.indexOf("</thead>"));
     const cuerpo = html.slice(html.indexOf("<tbody>"), html.indexOf("</tbody>"));
     const thCabecera = cabecera.match(/<th\b[^>]*>/g) ?? [];

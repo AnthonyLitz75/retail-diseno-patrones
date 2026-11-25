@@ -7,6 +7,7 @@
 
 import { accionDevolucion, accionesReclamo } from "../../soporte/soporte-vista.js";
 import { resumirTexto } from "./vendedor-logica.js";
+import { plural } from "../utilidades-panel.js";
 
 export const MAX_FILAS_SOPORTE = 5;
 export const MAX_MOTIVO_RECLAMO = 60;
@@ -99,7 +100,7 @@ export function accionDevolucionInicio(devolucion) {
 /** P9: el nombre del producto con una sola línea; si no, «{n} productos». */
 export function productoDevolucion(devolucion) {
   const lineas = comoLista(devolucion?.lineas);
-  return lineas.length === 1 ? String(lineas[0].nombreProducto ?? "") : `${lineas.length} productos`;
+  return lineas.length === 1 ? String(lineas[0].nombreProducto ?? "") : plural(lineas.length, "producto", "productos");
 }
 
 export function resumirMotivo(motivo) {

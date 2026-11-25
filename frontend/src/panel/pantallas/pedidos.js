@@ -7,17 +7,18 @@
 
 import { renderizarVistaPedidos } from "../../layout/vistas-personal.js";
 import { configurarControladorPedidos } from "../../pedidos/pedidos-controlador.js";
+import { encabezadoPantalla } from "./titulo-pantalla.js";
 
 /** Ids que el módulo necesita (los mismos que main.js le pasa en la tienda). */
 export const IDS_PEDIDOS = Object.freeze(["seccion-pedidos", "titulo-pedidos", "estado-pedidos", "lista-pedidos"]);
 
 /**
  * @param {HTMLElement} contenedor
- * @param {{ servicios: { apiRequest: Function, estado: object, Modal?: object, cambiarVista: Function } }} contexto
+ * @param {{ entrada: { etiqueta: string }, servicios: { apiRequest: Function, estado: object, Modal?: object, cambiarVista: Function } }} contexto
  */
-export function montar(contenedor, { servicios }) {
+export function montar(contenedor, { entrada, servicios }) {
   const { apiRequest, estado, Modal, cambiarVista } = servicios;
-  contenedor.innerHTML = renderizarVistaPedidos();
+  contenedor.innerHTML = `${encabezadoPantalla(entrada)}${renderizarVistaPedidos()}`;
   // Mismo mecanismo que la tienda: la vista se muestra quitando el atributo hidden.
   contenedor.querySelector("#vista-pedidos").hidden = false;
   const [seccionPedidos, tituloPedidos, estadoPedidos, listaPedidos] =

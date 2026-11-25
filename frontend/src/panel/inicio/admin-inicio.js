@@ -55,7 +55,8 @@ export function renderizarPedidosPorEstado({ total, barras }) {
 /** Actividad reciente (actividadReciente) o su texto de vacío. */
 export function renderizarActividad(items) {
   if (!items.length) return '<p class="panel-vacio">Aún no hay actividad registrada.</p>';
-  const filas = items.map((i) => html`<li class="panel-actividad"><p class="panel-actividad-titulo">${i.titulo}</p><p class="panel-actividad-detalle">${i.detalle}</p></li>`);
+  const filas = items.map((i) => html`<li class="panel-actividad"><p class="panel-actividad-titulo">${i.titulo}</p>${i.fecha ? seguro(html`<p class="panel-actividad-detalle panel-actividad-actor" title="${i.actor}">${i.actor}</p>
+  <p class="panel-actividad-detalle panel-actividad-fecha">${i.fecha}</p>`) : seguro(html`<p class="panel-actividad-detalle">${i.detalle}</p>`)}</li>`);
   return html`<ul class="panel-lista-actividad">${seguro(filas.join(""))}</ul>`;
 }
 

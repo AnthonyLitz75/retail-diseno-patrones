@@ -2,7 +2,7 @@
  * @file cajon-menu.js
  * Panel del personal (spec 13, T12): menú lateral como cajón por debajo de 992 px.
  * - El botón (44 × 44 px) lleva aria-label, aria-controls y aria-expanded.
- * - Abrir: foco a la primera entrada. Cerrar con Escape, al tocar fuera o al elegir una
+ * - Abrir: foco a la primera entrada (cuando el cajón ya es visible, no antes). Cerrar con Escape, al tocar fuera o al elegir una
  *   entrada; el foco vuelve al botón.
  * - Mientras está abierto, Tab y Mayús+Tab solo recorren el botón y las entradas del menú.
  * panel.css muestra el botón y convierte el menú en cajón solo por debajo de 992 px; en
@@ -10,15 +10,24 @@
  */
 
 const ETIQUETA_BOTON = "Abrir menú";
+/** Respaldo si el frame llega antes de que acabe la transición del cajón (0,2 s en panel.css). */
+const ESPERA_RESPALDO_MS = 250;
 
 /**
  * @param {{ boton: HTMLButtonElement, menu: HTMLElement, documento?: Document }} opciones
  * @returns {{ abrir: () => void, cerrar: (opciones?: { devolverFoco?: boolean }) => void, estaAbierto: () => boolean }}
  */
-export function crearCajonMenu({ boton, menu, documento = globalThis.document }) {
+export function crearCajonMenu({
+  boton,
+  menu,
+  documento = globalThis.document,
+  siguienteFrame = (fn) => (globalThis.requestAnimationFrame ? globalThis.requestAnimationFrame(fn) : globalThis.setTimeout(fn, 16)),
+  esperar = (fn, ms) => globalThis.setTimeout(fn, ms),
+}) {
   let abierto = false;
   const entradas = () => [...menu.querySelectorAll("a[href]")];
-  const enfocables = () => [boton, ...entradas()];
+  // El pie del cajón trae también un botón («Cerrar sesión»): entra en el recorrido con Tab.
+  const enfocables = () => [boton, ...menu.querySelectorAll("a[href], button")];
 
   boton.setAttribute("aria-label", ETIQUETA_BOTON);
   boton.setAttribute("aria-controls", menu.id);
@@ -58,7 +67,19 @@ export function crearCajonMenu({ boton, menu, documento = globalThis.document })
     pintarEstado();
     documento.addEventListener("keydown", alTeclear);
     documento.addEventListener("click", alPulsarFuera);
-    (entradas()[0] ?? boton).focus();
+    // El menú pasa de visibility:hidden a visible con una transición: en este mismo instante aún
+    // está oculto y un navegador real no le da el foco. Se pide en el siguiente frame y, si
+    // aún no es visible, se reintenta una vez cuando acaba la transición (0,2 s).
+    siguienteFrame(() => {
+      if (!abierto || enfocarPrimeraEntrada()) return;
+      esperar(() => { if (abierto) enfocarPrimeraEntrada(); }, ESPERA_RESPALDO_MS);
+    });
+  }
+
+  function enfocarPrimeraEntrada() {
+    const destino = entradas()[0] ?? boton;
+    destino.focus();
+    return documento.activeElement === destino;
   }
 
   function cerrar({ devolverFoco = true } = {}) {

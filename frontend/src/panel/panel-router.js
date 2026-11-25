@@ -166,12 +166,17 @@ export function crearPanelRouter({ rol, ventana, documento, menu, area, cargador
     }
   }
 
+  /** La primera pantalla de la página no mueve el foco (F3): así el primer Tab va a «Saltar al contenido». */
+  let primeraVista = true;
+
   function mostrar(contenedor) {
     for (const hijo of area.children) hijo.hidden = hijo !== contenedor;
+    const moverFoco = !primeraVista;
+    primeraVista = false;
     const titulo = contenedor.querySelector("h1");
     if (titulo) {
       if (!titulo.hasAttribute("tabindex")) titulo.setAttribute("tabindex", "-1");
-      titulo.focus();
+      if (moverFoco) titulo.focus();
     }
   }
 

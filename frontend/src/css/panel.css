@@ -635,6 +635,9 @@ body.panel-pagina {
 /* ---------- Tablas propias del panel (no usan .table de Bootstrap; spec 11) ---------- */
 
 .panel-tabla-contenedor {
+  /* F6: position relative para que los .visually-hidden con posición absoluta (texto de
+     cabeceras) se queden dentro del recuadro y no ensanchen la página. */
+  position: relative;
   overflow-x: auto;
 }
 
@@ -807,7 +810,8 @@ body.panel-pagina {
 
 .panel-inicio-columnas {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  /* Tanda 2: una tabla debajo de la otra, a todo el ancho. */
+  grid-template-columns: minmax(0, 1fr);
   gap: 24px;
 }
 
@@ -861,7 +865,7 @@ section[data-ruta="#/consulta-pedido"] > .panel-busqueda {
 
 :root {
   /* Colores de «Pedidos por estado» (spec 17): de la paleta de insignias y tokens existentes. */
-  --panel-estado-pendiente: var(--panel-insignia-ambar-texto);
+  --panel-estado-pendiente: #d97706; /* ámbar del boceto (tanda 2) */
   --panel-estado-en-preparacion: var(--retail-blue);
   --panel-estado-despachado: var(--panel-insignia-azul-texto);
   --panel-estado-entregado: #15803d;
@@ -1053,6 +1057,7 @@ section[data-ruta="#/consulta-pedido"] > .panel-busqueda {
 
 /* Tablas heredadas montadas en el panel: desplazamiento horizontal dentro de su contenedor. */
 .panel-pagina .table-responsive {
+  position: relative; /* F6: ver .panel-tabla-contenedor */
   overflow-x: auto;
   max-width: 100%;
 }
@@ -1072,5 +1077,402 @@ section[data-ruta="#/consulta-pedido"] > .panel-busqueda {
   .panel-inicio .panel-atencion .panel-boton,
   .panel-inicio .panel-consulta .panel-boton {
     min-height: 48px;
+  }
+}
+
+/* ---------- Tanda 1 (arreglos del informe de pruebas manuales) ---------- */
+
+/* F2: pedidos, productos, consultas e inventario montan un módulo con su propio título (h2);
+   el <h1> de la pantalla lo pone el panel, así que ese h2 se oculta para que no haya dos. */
+.panel-pagina #titulo-pedidos,
+.panel-pagina #titulo-inventario,
+.panel-pagina #titulo-formulario,
+.panel-pagina #titulo-preguntas-vendedor {
+  display: none;
+}
+
+/* F3: el <h1> es un destino de foco por código (tabindex="-1"), no un control: sin contorno. */
+.panel-pagina h1[tabindex="-1"]:focus,
+.panel-pagina h1[tabindex="-1"]:focus-visible {
+  outline: none;
+}
+
+/* F5: la tarjeta de contexto del pedido consultado (hijo directo de #vista-soporte sin
+   data-bandeja) solo se ve en #/consulta-pedido. */
+#vista-soporte[data-ruta-soporte="reclamos"] > section:not([data-bandeja]),
+#vista-soporte[data-ruta-soporte="devoluciones"] > section:not([data-bandeja]) {
+  display: none;
+}
+
+/* F7: la tabla de líneas de una devolución se desplaza dentro de su tarjeta en vez de ensanchar la página. */
+.panel-pagina #vista-soporte [data-bandeja="devoluciones"] table {
+  display: block;
+  position: relative; /* F6 */
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+/* ---------- Tanda 2 (fidelidad visual con los bocetos) ---------- */
+
+/* 1. Barra: «Panel del personal» como etiqueta en mayúsculas con filete a la izquierda. */
+.panel-marca-etiqueta {
+  padding-left: 12px;
+  border-left: 1px solid #cbd5e1;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* 1. Chip del usuario: pastilla con borde; avatar y, al lado, nombre con el rol debajo. */
+.panel-chip-usuario {
+  padding: 4px 16px 4px 4px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--panel-radio-pastilla);
+}
+
+.panel-chip-texto {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+@media (min-width: 992px) {
+  .panel-chip-rol {
+    padding: 0;
+    background: transparent;
+    color: var(--retail-blue-dark);
+    font-size: 12px;
+    font-weight: 600;
+  }
+}
+
+/* Pie del cajón («Ir a la tienda» y «Cerrar sesión»): solo por debajo de 576 px. */
+.panel-menu-pie {
+  display: none;
+}
+
+/* 2. Enlaces de cabecera de tarjeta: sin subrayado; subrayado con el ratón y el foco. */
+.panel-enlace {
+  text-decoration: none;
+}
+
+.panel-enlace:hover,
+.panel-enlace:focus-visible {
+  text-decoration: underline;
+}
+
+.panel-bloque-cabecera {
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.panel-bloque-cabecera .panel-subtitulo {
+  margin: 0;
+}
+
+/* «Ver los {n}» y «Ver todas» llegan dentro del bloque que carga el módulo: se anclan a la
+   línea del título, a la derecha. */
+.panel-tarjeta {
+  position: relative;
+}
+
+.panel-bloque-enlace {
+  position: absolute;
+  top: 9px;
+  right: 20px;
+  margin: 0;
+}
+
+/* 3. Cola de Almacén: cada columna es un recuadro gris con tarjetas de pedido blancas. */
+.panel-cola-columna {
+  padding: 12px;
+  background: #f1f5f9;
+  border-radius: 12px;
+}
+
+.panel-pedido {
+  min-width: 0;
+  padding: 12px;
+  background: #ffffff;
+}
+
+.panel-pedido .panel-boton-accion {
+  padding-inline: 8px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.panel-cola-mas {
+  justify-content: center;
+  width: 100%;
+  margin-top: 12px;
+}
+
+/* Más ancho para la cola: «Marcar como despachado» cabe en una línea a 1366 px. */
+@media (min-width: 1200px) {
+  .panel-inicio-rejilla-cola {
+    grid-template-columns: minmax(0, 11fr) minmax(0, 4fr);
+  }
+}
+
+/* 4. Entrada rápida: Cantidad (1 parte) y Motivo (2 partes) en la misma fila. */
+.panel-formulario-fila {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 12px;
+}
+
+.panel-campo {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+/* 5. Catálogo: etiqueta, barra y número en una sola fila (como «Pedidos por estado»). */
+.panel-barra-fila {
+  display: grid;
+  grid-template-columns: minmax(96px, 30%) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.panel-barra-etiqueta,
+.panel-barra-cantidad {
+  margin: 0;
+}
+
+.panel-barra-cantidad {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 7. Admin: la fecha de «Actividad reciente» no se parte («p. m.» no baja sola). */
+.panel-actividad-fecha {
+  white-space: nowrap;
+}
+
+/* 9. Accesos rápidos: el de la ruta actual va relleno con el color primario del panel. */
+.panel-chip[aria-current="page"] {
+  background: var(--retail-blue-dark);
+  border-color: var(--retail-blue-dark);
+  color: #ffffff;
+}
+
+/* Celular (< 576 px). */
+@media (max-width: 575.98px) {
+  /* 8. Barra en una sola fila: menú, «PA» y «Panel» a la izquierda; avatar e insignia a la derecha. */
+  .panel-cabecera {
+    flex-wrap: nowrap;
+    gap: 8px;
+    padding: 10px 12px;
+  }
+
+  .panel-marca {
+    flex: 1 1 auto;
+    gap: 8px;
+  }
+
+  .panel-marca-nombre,
+  .panel-marca-etiqueta-resto {
+    display: none;
+  }
+
+  .panel-marca-etiqueta {
+    padding-left: 8px;
+  }
+
+  .panel-cabecera .panel-enlace-tienda,
+  .panel-cabecera .panel-boton-salir {
+    display: none;
+  }
+
+  .panel-menu {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .panel-menu-pie {
+    display: grid;
+    gap: 8px;
+    margin-top: auto;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.14);
+  }
+
+  .panel-menu-pie .panel-enlace-tienda {
+    justify-content: center;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    color: #ffffff;
+  }
+
+  .panel-menu-pie .panel-boton-salir {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .panel-formulario-fila {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* 10. Tablas de los Inicios (Reclamos, Devoluciones, Productos con stock bajo) como tarjetas
+     apiladas: pedido o producto con su insignia, luego el detalle y el botón a todo el ancho.
+     Mismo HTML (la tabla sigue siendo una tabla); desde 576 px vuelven a ser tablas. */
+  .panel-inicio .panel-tabla-contenedor {
+    overflow: visible;
+  }
+
+  .panel-inicio .panel-tabla,
+  .panel-inicio .panel-tabla tbody {
+    display: block;
+    min-width: 0;
+  }
+
+  .panel-inicio .panel-tabla thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .panel-inicio .panel-tabla tbody tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "principal estado"
+      "detalle detalle"
+      "accion accion";
+    align-items: center;
+    gap: 6px 12px;
+    margin-bottom: 12px;
+    padding: 14px;
+    background: #ffffff;
+    border: 1px solid var(--retail-border);
+    border-radius: 12px;
+  }
+
+  .panel-inicio .panel-tabla tbody tr:last-child {
+    margin-bottom: 0;
+  }
+
+  .panel-inicio .panel-tabla tbody th,
+  .panel-inicio .panel-tabla tbody td {
+    padding: 0;
+    border: 0;
+    text-align: left;
+  }
+
+  .panel-inicio .panel-tabla tbody th {
+    grid-area: principal;
+    font-weight: 700;
+  }
+
+  .panel-inicio .panel-tabla tbody td:nth-child(2) {
+    grid-area: detalle;
+  }
+
+  .panel-inicio .panel-tabla tbody td:nth-child(3) {
+    grid-area: estado;
+    justify-self: end;
+  }
+
+  .panel-inicio .panel-tabla tbody td:nth-child(4) {
+    grid-area: accion;
+    margin-top: 6px;
+  }
+
+  .panel-inicio .panel-tabla tbody td:nth-child(4) .panel-boton {
+    display: flex;
+    width: 100%;
+    min-height: 48px;
+  }
+
+  .panel-tabla-stock td.panel-num::before {
+    content: "Stock: ";
+    color: var(--panel-texto-secundario);
+  }
+}
+
+/* ---------- Tanda 3 (retoques finales de fidelidad) ---------- */
+
+/* 1. Almacén en dos columnas (desde 1200 px): la columna derecha mide al menos 340 px y la
+   cola ocupa el resto, con paddings ajustados para que «Marcar como despachado» siga en una
+   línea. Las columnas de la cola se alinean arriba: una vacía mide solo lo que su contenido. */
+.panel-cola {
+  align-items: start;
+}
+
+@media (min-width: 1200px) {
+  .panel-inicio-rejilla-cola {
+    grid-template-columns: minmax(0, 1fr) minmax(340px, 30%);
+  }
+
+  .panel-inicio-rejilla-cola .panel-bloque-cola {
+    padding: 20px 16px; /* vertical como el resto de tarjetas; horizontal más corto para el botón */
+  }
+
+  .panel-inicio-rejilla-cola .panel-cola {
+    gap: 12px;
+  }
+
+  .panel-inicio-rejilla-cola .panel-cola-columna,
+  .panel-inicio-rejilla-cola .panel-pedido {
+    padding: 10px;
+  }
+
+  .panel-inicio-rejilla-cola .panel-pedido .panel-boton-accion {
+    padding-inline: 6px;
+  }
+}
+
+/* 2. Cabeceras de tarjeta: misma altura que el título solo («Productos con stock bajo»). El
+   enlace conserva su zona pulsable de 44 px con un margen negativo, sin alargar la cabecera. */
+.panel-bloque-cabecera .panel-enlace {
+  margin-block: -12px; /* 44 px de zona pulsable en una cabecera de 20,4 px (el alto del título) */
+}
+
+/* 4. Actividad reciente: «{usuario} · {rol}» y, debajo, la fecha; dos líneas fijas. */
+.panel-actividad-actor,
+.panel-actividad-fecha {
+  white-space: nowrap;
+}
+
+.panel-actividad-actor {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 575.98px) {
+  /* 3. Importes largos («S/ 103,641.30») caben en la tarjeta sin cortarse. */
+  .panel-kpi-valor {
+    font-size: clamp(16px, 4.6vw, 24px);
+    overflow-wrap: normal;
+  }
+
+  /* 5. «PA» seguido de «Panel» (la regla de < 992 px oculta toda la etiqueta). */
+  .panel-marca-etiqueta {
+    display: inline-block;
+  }
+
+  /* 6. Pie del cajón: los dos con contorno claro sobre el fondo oscuro, 44 px, sin relleno. */
+  .panel-menu-pie .panel-enlace-tienda,
+  .panel-menu-pie .panel-boton-salir {
+    justify-content: center;
+    width: 100%;
+    min-height: 44px;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    color: #ffffff;
+    text-decoration: none;
+  }
+
+  .panel-menu-pie .panel-enlace-tienda:hover,
+  .panel-menu-pie .panel-boton-salir:hover {
+    background: rgba(255, 255, 255, 0.08);
+    text-decoration: none;
   }
 }
