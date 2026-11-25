@@ -180,7 +180,7 @@ export function renderizarCatalogoLayout({ heroHtml = '' } = {}) {
           <div class="card-body p-2 p-md-3">
             <!-- Inputs ocultos para sincronización con API -->
             <input id="busqueda" type="hidden" value="">
-            <select id="filtro-categoria" hidden aria-hidden="true">
+            <select id="filtro-categoria" hidden aria-label="Categoría">
               <option value="">Todas las categorías</option>
             </select>
 
@@ -297,7 +297,7 @@ export function renderizarCatalogoLayout({ heroHtml = '' } = {}) {
             </div>
             <div class="mb-3">
               <label for="checkout-direccion" class="form-label small fw-semibold mb-1 text-secondary">Dirección</label>
-              <input id="checkout-direccion" class="form-control form-control-sm" type="text" maxlength="250" autocomplete="street-address" placeholder="Calle, número y distrito (opcional)">
+              <input id="checkout-direccion" class="form-control form-control-sm" type="text" maxlength="250" autocomplete="address-line1" placeholder="Calle, número y distrito (opcional)">
             </div>
 
             <fieldset class="mb-3">
