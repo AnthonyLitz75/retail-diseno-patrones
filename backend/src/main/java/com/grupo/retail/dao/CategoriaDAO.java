@@ -12,6 +12,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -116,15 +117,46 @@ public class CategoriaDAO {
         return ArbolCategoriaBuilder.construirArbol(categorias, conteoPorCategoria, productosSinCategoria);
     }
 
+    public Optional<Categoria> buscarPorId(Long id) {
+        String sql = "SELECT id_categoria, nombre, activa, categoria_padre_id FROM categoria WHERE id_categoria = ?";
+        try (Connection conexion = proveedorConexiones.obtenerConexion();
+                PreparedStatement consulta = conexion.prepareStatement(sql)) {
+            consulta.setLong(1, id);
+            try (ResultSet resultado = consulta.executeQuery()) {
+                return resultado.next() ? Optional.of(mapear(resultado)) : Optional.empty();
+            }
+        } catch (SQLException error) {
+            throw new ErrorAccesoDatosException("No se pudo consultar la categoría", error);
+        }
+    }
+
+    public boolean tieneSubcategorias(Long id) {
+        String sql = "SELECT EXISTS (SELECT 1 FROM categoria WHERE categoria_padre_id = ?)";
+        try (Connection conexion = proveedorConexiones.obtenerConexion();
+                PreparedStatement consulta = conexion.prepareStatement(sql)) {
+            consulta.setLong(1, id);
+            try (ResultSet resultado = consulta.executeQuery()) {
+                return resultado.next() && resultado.getBoolean(1);
+            }
+        } catch (SQLException error) {
+            throw new ErrorAccesoDatosException("No se pudieron comprobar las subcategorías", error);
+        }
+    }
+
     public Categoria crear(String nombre) {
+        return crear(nombre, null);
+    }
+
+    public Categoria crear(String nombre, Long categoriaPadreId) {
         String sql = """
-                INSERT INTO categoria (nombre, activa)
-                VALUES (?, TRUE)
+                INSERT INTO categoria (nombre, activa, categoria_padre_id)
+                VALUES (?, TRUE, ?)
                 RETURNING id_categoria, nombre, activa, categoria_padre_id
                 """;
         try (Connection conexion = proveedorConexiones.obtenerConexion();
                 PreparedStatement consulta = conexion.prepareStatement(sql)) {
             consulta.setString(1, nombre);
+            consulta.setObject(2, categoriaPadreId, Types.BIGINT);
             try (ResultSet resultado = consulta.executeQuery()) {
                 if (!resultado.next()) {
                     throw new SQLException("PostgreSQL no devolvió la categoría creada");
@@ -139,16 +171,17 @@ public class CategoriaDAO {
         }
     }
 
-    public Optional<Categoria> actualizarNombre(Long id, String nombre) {
+    public Optional<Categoria> actualizar(Long id, String nombre, Long categoriaPadreId) {
         String sql = """
-                UPDATE categoria SET nombre = ?
+                UPDATE categoria SET nombre = ?, categoria_padre_id = ?
                 WHERE id_categoria = ?
                 RETURNING id_categoria, nombre, activa, categoria_padre_id
                 """;
         try (Connection conexion = proveedorConexiones.obtenerConexion();
                 PreparedStatement consulta = conexion.prepareStatement(sql)) {
             consulta.setString(1, nombre);
-            consulta.setLong(2, id);
+            consulta.setObject(2, categoriaPadreId, Types.BIGINT);
+            consulta.setLong(3, id);
             try (ResultSet resultado = consulta.executeQuery()) {
                 return resultado.next() ? Optional.of(mapear(resultado)) : Optional.empty();
             }

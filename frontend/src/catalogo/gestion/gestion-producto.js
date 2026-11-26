@@ -64,10 +64,25 @@ export async function listarProductosGestion(apiRequest) {
   return (await apiRequest("/api/productos/gestion")).json();
 }
 
+import { construirJerarquiaCategorias } from "../../administracion/categorias-logica.js";
+
 /** Categorías que se pueden asignar a un producto: solo las activas, por nombre. */
 export function categoriasAsignables(categorias) {
   return (Array.isArray(categorias) ? categorias : [])
     .filter((c) => c && c.activa !== false)
     .map((c) => c.nombre)
     .sort((a, b) => a.localeCompare(b, "es"));
+}
+
+/**
+ * Opciones ordenadas jerárquicamente (`Principal` -> `Principal → Subcategoría`) conservando
+ * `valor = nombre`. Las categorías huérfanas o planas se muestran con su nombre directo.
+ */
+export function opcionesCategoriasAsignables(categorias) {
+  const activas = (Array.isArray(categorias) ? categorias : []).filter((c) => c && c.activa !== false);
+  const { filas } = construirJerarquiaCategorias(activas);
+  return filas.map(({ categoria, esSubcategoria, padreNombre }) => ({
+    valor: categoria.nombre,
+    etiqueta: esSubcategoria && padreNombre ? `${padreNombre} → ${categoria.nombre}` : categoria.nombre,
+  }));
 }

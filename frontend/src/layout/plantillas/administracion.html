@@ -82,18 +82,63 @@
     </div>
   </section>
   <section id="admin-seccion-categorias" aria-labelledby="titulo-categorias-admin" class="mt-3">
-    <h3 id="titulo-categorias-admin" class="h5">Categorías</h3>
-    <form id="form-categoria-admin" class="row g-2 align-items-end">
-      <div class="col-12 col-md-9">
-        <label class="form-label" for="nombre-categoria-admin">Nueva categoría</label>
-        <input id="nombre-categoria-admin" class="form-control" maxlength="80" required>
+    <div class="panel-categorias-alta">
+      <div class="panel-categorias-seccion-cabecera">
+        <div>
+          <h3 id="titulo-categorias-admin" class="h5 mb-1">Nueva categoría</h3>
+          <p class="panel-categoria-ayuda mb-0">Organiza el catálogo con categorías principales y subcategorías. Los campos con <span class="text-danger" aria-hidden="true">*</span><span class="visually-hidden">asterisco</span> son obligatorios.</p>
+        </div>
       </div>
-      <div class="col-12 col-md-3 d-grid">
+      <form id="form-categoria-admin" class="row g-3 align-items-start" novalidate>
+      <div class="col-12 col-md-5">
+        <label class="form-label" for="nombre-categoria-admin">Nombre <span class="text-danger" aria-hidden="true">*</span><span class="visually-hidden"> (obligatorio)</span></label>
+        <input id="nombre-categoria-admin" class="form-control" maxlength="80" placeholder="Ej.: Periféricos gamer" autocomplete="off" aria-describedby="error-nombre-categoria-admin" required>
+        <p id="error-nombre-categoria-admin" class="invalid-feedback mb-0" role="alert"></p>
+      </div>
+      <div class="col-12 col-md-4">
+        <label class="form-label" for="padre-categoria-admin">Categoría padre (opcional)</label>
+        <select id="padre-categoria-admin" class="form-select">
+          <option value="">Ninguna (categoría principal)</option>
+        </select>
+      </div>
+      <div class="col-12 col-md-3 d-grid panel-categorias-alta-enviar">
         <button class="btn btn-primary" type="submit">Crear categoría</button>
       </div>
-    </form>
-    <p id="estado-categoria-admin" role="status" aria-live="polite"></p>
-    <div id="lista-categorias-admin" class="list-group"></div>
+      </form>
+    </div>
+    <div class="panel-categorias-listado">
+      <div class="panel-categorias-listado-cabecera">
+        <div>
+          <h3 class="h5 mb-1">Árbol de categorías</h3>
+          <p id="estado-categoria-admin" class="panel-categoria-ayuda mb-0" role="status" aria-live="polite"></p>
+          <button id="reintentar-carga-categorias" class="btn btn-link btn-sm px-0 panel-categoria-reintentar" type="button" hidden>Reintentar carga</button>
+        </div>
+        <div class="panel-categorias-herramientas">
+          <div id="filtro-estado-categorias" class="cuentas-filtros panel-categorias-filtros" role="group" aria-label="Filtrar categorías por estado">
+            <button type="button" class="cuentas-filtro" data-estado="todas" aria-pressed="true">Todas</button>
+            <button type="button" class="cuentas-filtro" data-estado="activas" aria-pressed="false">Activas</button>
+            <button type="button" class="cuentas-filtro" data-estado="inactivas" aria-pressed="false">Inactivas</button>
+          </div>
+          <div class="panel-categorias-busqueda">
+            <label class="visually-hidden" for="buscar-categorias-admin">Buscar categorías</label>
+            <div class="panel-categorias-buscador-campo">
+              <input id="buscar-categorias-admin" class="form-control form-control-sm" type="search" placeholder="Buscar categorías" autocomplete="off">
+              <button id="limpiar-busqueda-categorias" class="panel-categorias-limpiar" type="button" aria-label="Limpiar búsqueda" hidden>×</button>
+            </div>
+            <button id="alternar-todo-categorias" class="btn btn-outline-secondary btn-sm panel-categorias-accion-barra" type="button">Colapsar todo</button>
+            <button id="seleccionar-resultados-categorias" class="btn btn-outline-secondary btn-sm panel-categorias-accion-barra" type="button">Seleccionar visibles</button>
+          </div>
+        </div>
+      </div>
+      <div id="acciones-categorias-lote" class="panel-categorias-lote" role="group" aria-label="Acciones para las categorías seleccionadas" hidden>
+        <span id="resumen-seleccion-categorias" class="panel-categorias-seleccion-resumen" role="status" aria-live="polite"></span>
+        <div class="panel-categorias-lote-acciones">
+          <button id="activar-categorias-seleccionadas" class="btn btn-outline-success btn-sm" type="button">Activar seleccionadas</button>
+          <button id="desactivar-categorias-seleccionadas" class="btn btn-outline-danger btn-sm" type="button">Desactivar seleccionadas</button>
+        </div>
+      </div>
+      <ul id="lista-categorias-admin" class="panel-categorias-arbol" aria-label="Categorías registradas"></ul>
+    </div>
   </section>
   <section id="admin-seccion-reportes" aria-labelledby="titulo-reportes-admin" class="mt-3">
     <h3 id="titulo-reportes-admin" class="h5">Reportes</h3>

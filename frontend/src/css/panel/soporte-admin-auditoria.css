@@ -168,6 +168,11 @@ section[data-ruta="#/consulta-pedido"] > .panel-busqueda {
   display: none;
 }
 
+/* Cada ruta de administración ya muestra su <h1> propio: se oculta el <h2> genérico «Administración». */
+.panel-pagina #vista-administracion #titulo-administracion {
+  display: none;
+}
+
 /* Ajuste a de T09: los indicadores internos del módulo de Administración solo se ven en Reportes. */
 .panel-pagina section[data-ruta="#/categorias"] .indicadores-admin,
 .panel-pagina section[data-ruta="#/cuentas"] .indicadores-admin,

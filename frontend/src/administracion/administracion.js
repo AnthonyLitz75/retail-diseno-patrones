@@ -23,17 +23,19 @@ export async function listarCategoriasAdmin(apiRequest) {
   return (await apiRequest("/api/admin/categorias")).json();
 }
 
-export async function crearCategoria(apiRequest, nombre) {
+export async function crearCategoria(apiRequest, nombre, categoriaPadreId = null) {
+  const json = categoriaPadreId != null ? { nombre, categoriaPadreId } : { nombre };
   return apiRequest("/api/admin/categorias", {
     method: "POST",
-    json: { nombre },
+    json,
   });
 }
 
-export async function actualizarCategoria(apiRequest, id, nombre) {
+export async function actualizarCategoria(apiRequest, id, nombre, categoriaPadreId) {
+  const json = categoriaPadreId === undefined ? { nombre } : { nombre, categoriaPadreId };
   return apiRequest(`/api/admin/categorias/${id}`, {
     method: "PUT",
-    json: { nombre },
+    json,
   });
 }
 

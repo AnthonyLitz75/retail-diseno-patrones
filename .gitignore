@@ -55,3 +55,4 @@ specs/
 .sonar/
 **/.sonar/
 frontend/lcov.info
+reports/

@@ -18,7 +18,9 @@ test('usa las rutas administrativas para usuarios, categorías y reportes', asyn
   await desactivarCuenta(request, 5)
   await listarCategoriasAdmin(request)
   await crearCategoria(request, 'Audio')
+  await crearCategoria(request, 'Auriculares', 1)
   await actualizarCategoria(request, 2, 'Audio y video')
+  await actualizarCategoria(request, 3, 'Parlantes', null)
   await cambiarEstadoCategoria(request, 2, false)
   await cargarResumenAdmin(request, 'desde=2026-10-01')
   await solicitarCsv(request, 'ventas', 'hasta=2026-10-31')
@@ -27,12 +29,17 @@ test('usa las rutas administrativas para usuarios, categorías y reportes', asyn
   assert.deepEqual(llamadas.map(({ url }) => url), [
     '/api/admin/usuarios', '/api/admin/usuarios', '/api/admin/usuarios/5/rol',
     '/api/admin/usuarios/5/desactivar', '/api/admin/categorias', '/api/admin/categorias',
-    '/api/admin/categorias/2', '/api/admin/categorias/2/estado',
+    '/api/admin/categorias', '/api/admin/categorias/2', '/api/admin/categorias/3',
+    '/api/admin/categorias/2/estado',
     '/api/admin/reportes/resumen?desde=2026-10-01', '/api/admin/reportes/ventas.csv?hasta=2026-10-31',
     '/api/admin/reportes/movimientos.csv?desde=2026-10-01', '/api/admin/reportes/inventario.csv'
   ])
   assert.deepEqual(llamadas[2].opciones.json, { rol: 'ALMACEN' })
-  assert.deepEqual(llamadas[7].opciones.json, { activa: false })
+  assert.deepEqual(llamadas[5].opciones.json, { nombre: 'Audio' })
+  assert.deepEqual(llamadas[6].opciones.json, { nombre: 'Auriculares', categoriaPadreId: 1 })
+  assert.deepEqual(llamadas[7].opciones.json, { nombre: 'Audio y video' })
+  assert.deepEqual(llamadas[8].opciones.json, { nombre: 'Parlantes', categoriaPadreId: null })
+  assert.deepEqual(llamadas[9].opciones.json, { activa: false })
 })
 
 test('arma el rango de reporte con fechas yyyy-MM-dd (contrato 007) y valida el orden', () => {

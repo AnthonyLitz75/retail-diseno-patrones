@@ -1,10 +1,13 @@
 package com.grupo.retail.service;
 
-import com.grupo.retail.model.EventoAuditoria;
-import com.grupo.retail.model.AccionAuditoria;
 import com.grupo.retail.dao.CategoriaDAO;
+import com.grupo.retail.dto.CategoriaAdminDTO;
 import com.grupo.retail.dto.SolicitudCategoria;
+import com.grupo.retail.exception.RecursoNoEncontradoException;
+import com.grupo.retail.exception.ReglaNegocioException;
+import com.grupo.retail.model.AccionAuditoria;
 import com.grupo.retail.model.Categoria;
+import com.grupo.retail.model.EventoAuditoria;
 import com.grupo.retail.patterns.composite.ArbolCategoriaBuilder;
 import com.grupo.retail.patterns.composite.CategoriaComponente;
 import org.springframework.stereotype.Service;
@@ -29,6 +32,16 @@ public class CategoriaService {
         return categoriaDAO.listarTodas();
     }
 
+    public List<CategoriaAdminDTO> listarConConteos() {
+        List<Categoria> categorias = categoriaDAO.listarTodas();
+        Map<Long, Integer> conteos = categoriaDAO.consultarConteosPorCategoria();
+        return categorias.stream()
+                .map(categoria -> CategoriaAdminDTO.desde(
+                        categoria,
+                        conteos.getOrDefault(categoria.idCategoria(), 0)))
+                .toList();
+    }
+
     public List<CategoriaComponente> listarArbol() {
         List<Categoria> categorias = categoriaDAO.listarActivas();
         Map<Long, Integer> conteos = categoriaDAO.consultarConteosPorCategoria();
@@ -37,17 +50,35 @@ public class CategoriaService {
     }
 
     public Categoria crear(SolicitudCategoria solicitud, Long administradorId) {
-        Categoria creada = categoriaDAO.crear(normalizar(solicitud.nombre()));
+        String nombre = normalizar(solicitud.nombre());
+        Categoria padre = validarPadre(null, solicitud.categoriaPadreId());
+        Categoria creada = categoriaDAO.crear(nombre, solicitud.categoriaPadreId());
+        String detalle = padre != null
+                ? creada.nombre() + " (subcategoría de " + padre.nombre() + ")"
+                : creada.nombre();
         auditoriaService.registrarAparte(EventoAuditoria.de(administradorId, AccionAuditoria.CATEGORIA_CREADA,
-                CATEGORIA, creada.idCategoria(), creada.nombre()));
+                CATEGORIA, creada.idCategoria(), detalle));
         return creada;
     }
 
-    public Optional<Categoria> actualizarNombre(Long id, SolicitudCategoria solicitud, Long administradorId) {
-        Optional<Categoria> actualizada = categoriaDAO.actualizarNombre(id, normalizar(solicitud.nombre()));
-        actualizada.ifPresent(categoria -> auditoriaService.registrarAparte(EventoAuditoria.de(administradorId,
-                AccionAuditoria.CATEGORIA_RENOMBRADA, CATEGORIA, categoria.idCategoria(),
-                "Nuevo nombre: " + categoria.nombre())));
+    public Optional<Categoria> actualizar(Long id, SolicitudCategoria solicitud, Long administradorId) {
+        String nombre = normalizar(solicitud.nombre());
+        Optional<Categoria> actual = categoriaDAO.buscarPorId(id);
+        if (actual.isEmpty()) {
+            return Optional.empty();
+        }
+        Categoria padre = validarPadre(id, solicitud.categoriaPadreId());
+        if (solicitud.categoriaPadreId() != null && categoriaDAO.tieneSubcategorias(id)) {
+            throw new ReglaNegocioException(
+                    "No se puede convertir en subcategoría porque ya tiene subcategorías asociadas");
+        }
+        Optional<Categoria> actualizada = categoriaDAO.actualizar(id, nombre, solicitud.categoriaPadreId());
+        actualizada.ifPresent(categoria -> {
+            String sufijo = padre != null ? " (subcategoría de " + padre.nombre() + ")" : "";
+            auditoriaService.registrarAparte(EventoAuditoria.de(administradorId,
+                    AccionAuditoria.CATEGORIA_RENOMBRADA, CATEGORIA, categoria.idCategoria(),
+                    "Nombre: " + categoria.nombre() + sufijo));
+        });
         return actualizada;
     }
 
@@ -57,6 +88,21 @@ public class CategoriaService {
                 activa ? AccionAuditoria.CATEGORIA_ACTIVADA : AccionAuditoria.CATEGORIA_DESACTIVADA,
                 CATEGORIA, categoria.idCategoria(), categoria.nombre())));
         return actualizada;
+    }
+
+    private Categoria validarPadre(Long categoriaId, Long categoriaPadreId) {
+        if (categoriaPadreId == null) {
+            return null;
+        }
+        if (categoriaId != null && categoriaId.equals(categoriaPadreId)) {
+            throw new ReglaNegocioException("Una categoría no puede ser padre de sí misma");
+        }
+        Categoria padre = categoriaDAO.buscarPorId(categoriaPadreId)
+                .orElseThrow(() -> new RecursoNoEncontradoException("La categoría padre indicada no existe"));
+        if (padre.categoriaPadreId() != null) {
+            throw new ReglaNegocioException("Solo se permiten subcategorías bajo una categoría principal");
+        }
+        return padre;
     }
 
     private String normalizar(String nombre) {

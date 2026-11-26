@@ -1,6 +1,7 @@
 package com.grupo.retail.controller;
 
 import com.grupo.retail.dto.ActualizarEstadoCategoria;
+import com.grupo.retail.dto.CategoriaAdminDTO;
 import com.grupo.retail.dto.SolicitudCategoria;
 import com.grupo.retail.model.Categoria;
 import com.grupo.retail.service.CategoriaService;
@@ -32,8 +33,8 @@ public class CategoriaAdminController {
     }
 
     @GetMapping
-    public List<Categoria> listar(HttpServletRequest peticion) {
-        return categoriaService.listarTodas();
+    public List<CategoriaAdminDTO> listar(HttpServletRequest peticion) {
+        return categoriaService.listarConConteos();
     }
 
     @PostMapping
@@ -46,11 +47,11 @@ public class CategoriaAdminController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Categoria> actualizarNombre(
+    public ResponseEntity<Categoria> actualizar(
             @PathVariable Long id,
             @Valid @RequestBody SolicitudCategoria solicitud,
             HttpServletRequest peticion) {
-        return categoriaService.actualizarNombre(id, solicitud, sesionEmpleado.obtenerId(peticion))
+        return categoriaService.actualizar(id, solicitud, sesionEmpleado.obtenerId(peticion))
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }

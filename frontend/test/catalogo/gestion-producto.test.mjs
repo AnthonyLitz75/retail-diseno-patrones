@@ -5,6 +5,7 @@ import {
   categoriasAsignables,
   editarFichaProducto,
   listarProductosGestion,
+  opcionesCategoriasAsignables,
   prepararFicha
 } from '../../src/catalogo/gestion/gestion-producto.js'
 
@@ -54,4 +55,20 @@ test('solo se ofrecen categorías activas, ordenadas', () => {
     { nombre: 'Teclados', activa: true }, { nombre: 'Audio', activa: false }, { nombre: 'Mouse' }
   ]), ['Mouse', 'Teclados'])
   assert.deepEqual(categoriasAsignables(null), [])
+})
+
+test('opcionesCategoriasAsignables agrupa Principal -> Subcategoría manteniendo value = nombre', () => {
+  const categorias = [
+    { idCategoria: 2, nombre: 'Teclados', activa: true, categoriaPadreId: 1 },
+    { idCategoria: 1, nombre: 'Periféricos', activa: true, categoriaPadreId: null },
+    { idCategoria: 3, nombre: 'Mouse', activa: true, categoriaPadreId: 1 },
+    { idCategoria: 4, nombre: 'Webcam', activa: false, categoriaPadreId: 1 },
+    { idCategoria: 5, nombre: 'Accesorios', activa: true, categoriaPadreId: null }
+  ]
+  assert.deepEqual(opcionesCategoriasAsignables(categorias), [
+    { valor: 'Accesorios', etiqueta: 'Accesorios' },
+    { valor: 'Periféricos', etiqueta: 'Periféricos' },
+    { valor: 'Mouse', etiqueta: 'Periféricos → Mouse' },
+    { valor: 'Teclados', etiqueta: 'Periféricos → Teclados' }
+  ])
 })

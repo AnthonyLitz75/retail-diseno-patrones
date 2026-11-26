@@ -6,8 +6,8 @@
 
 import {
   cambiarEstadoProducto,
-  categoriasAsignables,
   editarFichaProducto,
+  opcionesCategoriasAsignables,
 } from "../catalogo/gestion/gestion-producto.js";
 import { mostrarConfirmacion } from "../utilidades/notificaciones.js";
 
@@ -42,9 +42,10 @@ export function configurarModalEditarProducto({
   async function cargarCategorias(actual) {
     campos.categoria.replaceChildren(new Option("Cargando categorías...", ""));
     try {
-      const nombres = categoriasAsignables(await (await apiRequest("/api/categorias")).json());
+      const opciones = opcionesCategoriasAsignables(await (await apiRequest("/api/categorias")).json());
+      const nombres = opciones.map((op) => op.valor);
       campos.categoria.replaceChildren(new Option("Selecciona una categoría", ""));
-      nombres.forEach((nombre) => campos.categoria.append(new Option(nombre, nombre)));
+      opciones.forEach((op) => campos.categoria.append(new Option(op.etiqueta, op.valor)));
       if (actual && !nombres.includes(actual)) {
         // La categoría actual ya no está activa: se muestra para que se vea, pero hay que cambiarla.
         campos.categoria.append(new Option(`${actual} (inactiva)`, ""));

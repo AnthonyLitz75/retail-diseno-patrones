@@ -7,21 +7,12 @@
  * por categoría con value = nombre.
  */
 
+import { opcionesCategoriasAsignables } from "../catalogo/gestion/gestion-producto.js";
+
 export const ID_SELECTOR_CATEGORIA = "categoria-producto";
 export const TEXTO_OPCION_POR_DEFECTO = "Selecciona una categoría";
 export const MENSAJE_ERROR_CATEGORIAS = "No se pudieron cargar las categorías. Reintenta al volver a abrir Productos.";
 
-/**
- * Recarga las opciones del selector con GET /api/categorias. Se llama en cada alMostrar de
- * #/productos para que salgan las categorías que el ADMIN acabe de crear. Si la carga falla,
- * avisa con un toast y deja el selector solo con su opción por defecto.
- *
- * @param {object} opciones
- * @param {Function} opciones.apiRequest
- * @param {{ value: string, replaceChildren: Function, append: Function } | null} opciones.selector
- * @param {(mensaje: string, tipo?: string) => void} [opciones.mostrarToast]
- * @param {(texto: string, valor: string) => unknown} [opciones.crearOpcion] por defecto `new Option`
- */
 export async function cargarCategoriasProducto({
   apiRequest,
   selector,
@@ -32,9 +23,9 @@ export async function cargarCategoriasProducto({
   const elegida = selector.value;
   try {
     const respuesta = await apiRequest("/api/categorias");
-    const categorias = await respuesta.json();
+    const opciones = opcionesCategoriasAsignables(await respuesta.json());
     selector.replaceChildren(crearOpcion(TEXTO_OPCION_POR_DEFECTO, ""));
-    for (const categoria of categorias) selector.append(crearOpcion(categoria.nombre, categoria.nombre));
+    for (const op of opciones) selector.append(crearOpcion(op.etiqueta, op.valor));
     // Se conserva la categoría ya elegida si sigue existiendo (si no, queda «Selecciona…»).
     selector.value = elegida;
   } catch {

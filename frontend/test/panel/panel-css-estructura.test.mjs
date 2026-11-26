@@ -51,6 +51,7 @@ test("panel.css mantiene el orden de cascada esperado entre sus submódulos", ()
     "./panel/tablas-y-vendedor.css",
     "./panel/soporte-admin-auditoria.css",
     "./panel/admin-inicio-v2.css",
+    "./panel/admin-categorias.css",
     "./panel/cuentas-v2.css",
     "./panel/cuentas-responsive.css",
     "./panel/soporte-inicio-v6.css",

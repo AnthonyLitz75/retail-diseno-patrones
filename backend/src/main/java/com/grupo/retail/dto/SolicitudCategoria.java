@@ -6,5 +6,10 @@ import jakarta.validation.constraints.Size;
 public record SolicitudCategoria(
         @NotBlank(message = "El nombre es obligatorio")
         @Size(max = 80, message = "El nombre no puede superar 80 caracteres")
-        String nombre) {
+        String nombre,
+        Long categoriaPadreId) {
+
+    public SolicitudCategoria(String nombre) {
+        this(nombre, null);
+    }
 }
