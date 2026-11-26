@@ -1,0 +1,177 @@
+/* ---------- Cuerpo: menú lateral y área de trabajo ---------- */
+
+/* El cuerpo es del color del marco: tras la esquina redondeada del área asoma el marco oscuro. */
+.panel-cuerpo {
+  display: flex;
+  min-height: calc(100vh - 68px);
+  background: var(--retail-navy);
+}
+
+.panel-menu {
+  flex: 0 0 var(--panel-ancho-menu);
+  width: var(--panel-ancho-menu);
+  padding: 20px 12px;
+  background: var(--retail-navy);
+}
+
+.panel-menu-grupo + .panel-menu-grupo {
+  margin-top: 24px;
+}
+
+.panel-menu-etiqueta {
+  margin: 0 0 8px;
+  padding: 0 12px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--panel-menu-etiqueta);
+}
+
+.panel-menu-lista {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.panel-menu-enlace {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: var(--panel-alto-pulsable);
+  padding: 0 12px;
+  border-radius: var(--panel-radio-control);
+  color: var(--panel-menu-texto);
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.panel-menu-enlace:hover {
+  color: var(--retail-surface);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.panel-menu-enlace[aria-current="page"] {
+  color: var(--retail-surface);
+  font-weight: 600;
+  background: var(--panel-menu-activo-fondo);
+}
+
+.panel-menu-enlace svg {
+  flex: 0 0 18px;
+}
+
+.panel-menu-enlace[aria-current="page"] svg {
+  color: var(--panel-acento-cielo);
+}
+
+/* Contadores del menú y de los accesos rápidos (contadores-menu.js). */
+.panel-contador {
+  margin-left: auto;
+  padding: 2px 8px;
+  border-radius: var(--panel-radio-pastilla);
+  background: var(--panel-contador-ambar);
+  color: var(--retail-navy);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.panel-contador-rojo {
+  background: var(--panel-contador-rojo);
+  color: var(--retail-surface);
+}
+
+.panel-chip .panel-contador {
+  margin-left: 8px;
+}
+
+/* Pie del cajón («Ir a la tienda» y «Cerrar sesión»): solo por debajo de 576 px. */
+.panel-menu-pie {
+  display: none;
+}
+
+.panel-area {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 32px 36px 40px;
+  background: var(--panel-area-fondo);
+}
+
+.panel-area:focus {
+  outline: none;
+}
+
+/* <h1> de cada pantalla (spec 11): recibe el foco por código al cambiar de ruta. */
+.panel-titulo {
+  margin: 0 0 24px;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--retail-navy);
+}
+
+.panel-titulo:focus {
+  outline: none;
+}
+
+.panel-titulo:focus-visible {
+  outline: 3px solid var(--retail-blue);
+  outline-offset: 2px;
+}
+
+/* Botón del cajón del menú (T12): 44 × 44 px, solo por debajo de 992 px. */
+.panel-boton-menu {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: var(--panel-alto-pulsable);
+  height: var(--panel-alto-pulsable);
+  padding: 0;
+  border: 1px solid rgba(203, 213, 225, 0.3);
+  border-radius: var(--panel-radio-control);
+  background: transparent;
+  color: var(--retail-border);
+}
+
+/* Tres barras dibujadas con sombras (decorativas, aria-hidden). */
+.panel-boton-menu-barras,
+.panel-boton-menu-barras::before,
+.panel-boton-menu-barras::after {
+  display: block;
+  width: 20px;
+  height: 2px;
+  border-radius: 2px;
+  background: currentColor;
+}
+
+.panel-boton-menu-barras {
+  position: relative;
+}
+
+.panel-boton-menu-barras::before,
+.panel-boton-menu-barras::after {
+  content: "";
+  position: absolute;
+  left: 0;
+}
+
+.panel-boton-menu-barras::before { top: -6px; }
+.panel-boton-menu-barras::after { top: 6px; }
+
+/* Foco visible también sobre el marco oscuro (contraste ≥ 3:1 con el marino). */
+.panel-pagina .panel-menu :focus-visible {
+  outline-color: var(--retail-surface);
+}
+
+.panel-pagina .panel-cabecera :focus-visible {
+  outline-color: var(--retail-surface);
+}
+
+/* F3: el <h1> es un destino de foco por código (tabindex="-1"), no un control: sin contorno. */
+.panel-pagina h1[tabindex="-1"]:focus,
+.panel-pagina h1[tabindex="-1"]:focus-visible {
+  outline: none;
+}
+

@@ -1,0 +1,197 @@
+/* ==========================================================================
+   Paginación del Catálogo (RF-03: 12 por página)
+   ========================================================================== */
+.catalog-pagination-nav {
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+}
+
+.catalog-pagination-nav .pagination {
+  gap: 0.35rem;
+}
+
+.catalog-pagination-nav .page-item .page-link {
+  border-radius: 8px;
+  border: 1px solid var(--retail-border);
+  color: #1e293b;
+  font-weight: 600;
+  font-size: 0.88rem;
+  padding: 0.45rem 0.85rem;
+  transition: all 0.15s ease;
+  background-color: var(--retail-surface);
+}
+
+.catalog-pagination-nav .page-item .page-link:hover {
+  background-color: #eff6ff;
+  border-color: var(--retail-blue);
+  color: var(--retail-blue);
+  transform: translateY(-1px);
+}
+
+.catalog-pagination-nav .page-item.active .page-link {
+  background-color: var(--retail-blue);
+  border-color: var(--retail-blue);
+  color: var(--retail-surface);
+  box-shadow: 0 4px 10px rgba(13, 110, 253, 0.28);
+}
+
+.catalog-pagination-nav .page-item.disabled .page-link {
+  color: #94a3b8;
+  background-color: var(--retail-bg-page);
+  border-color: var(--retail-border);
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Vitrina de producto en Banner Vertical y Banners Promocionales (Integración fluida sin cajas blancas) */
+.hero-vertical-placeholder {
+  background: transparent !important;
+  border-radius: 0 !important;
+  border: none !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin-top: 1rem;
+}
+
+.hero-vertical-placeholder img {
+  max-height: 125px !important;
+  max-width: 155px !important;
+  object-fit: contain !important;
+  filter: drop-shadow(0 14px 24px rgba(0, 0, 0, 0.42)) drop-shadow(0 0 22px rgba(29, 78, 216, 0.3)) !important;
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), filter 0.28s ease;
+}
+
+.hero-vertical-card:hover .hero-vertical-placeholder img {
+  transform: translateY(-4px) scale(1.06) !important;
+  filter: drop-shadow(0 18px 30px rgba(0, 0, 0, 0.52)) drop-shadow(0 0 30px rgba(59, 130, 246, 0.45)) !important;
+}
+
+.promo-banner-visual {
+  background: transparent !important;
+  border-radius: 0 !important;
+  border: none !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin-left: 1.5rem;
+}
+
+.promo-banner-visual img {
+  object-fit: contain !important;
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), filter 0.28s ease;
+}
+
+/* Mouse Razer en Zona Gaming (destaca sobre fondo oscuro con acento verde/cian) */
+.promo-img-mouse-razer {
+  max-height: 155px !important;
+  max-width: 135px !important;
+  filter: drop-shadow(0 16px 28px rgba(0, 0, 0, 0.75)) drop-shadow(0 0 26px rgba(0, 255, 136, 0.32)) !important;
+}
+
+.promo-banner-gaming:hover .promo-img-mouse-razer {
+  transform: translateY(-5px) scale(1.08) !important;
+  filter: drop-shadow(0 20px 32px rgba(0, 0, 0, 0.85)) drop-shadow(0 0 34px rgba(0, 255, 136, 0.5)) !important;
+}
+
+/* Tarjeta de Video NVIDIA en Alto Rendimiento (destaca sobre fondo azul zafiro/cobalto) */
+.promo-img-gpu-nvidia {
+  max-height: 180px !important;
+  max-width: 280px !important;
+  filter: drop-shadow(0 18px 32px rgba(0, 0, 0, 0.65)) drop-shadow(0 0 35px rgba(37, 99, 235, 0.45)) !important;
+}
+
+.promo-banner-components:hover .promo-img-gpu-nvidia {
+  transform: translateY(-5px) scale(1.06) !important;
+  filter: drop-shadow(0 22px 38px rgba(0, 0, 0, 0.75)) drop-shadow(0 0 45px rgba(59, 130, 246, 0.65)) !important;
+}
+
+/* ==========================================================================
+   Clases Semánticas del Catálogo y Vista 404 (Hito 1)
+   ========================================================================== */
+
+.card-404-max {
+  max-width: 540px;
+}
+
+.catalog-price-input-group {
+  max-width: 120px;
+}
+
+/* ==========================================================================
+   Explorar la tienda: chips de categorías y productos relacionados (bocetos)
+   ========================================================================== */
+.chips-categorias {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.chip-categoria {
+  padding: 0.5rem 1.1rem;
+  border: 1.5px solid var(--retail-border);
+  border-radius: 999px;
+  background: var(--retail-surface);
+  color: var(--retail-ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.chip-categoria:hover,
+.chip-categoria:focus-visible {
+  border-color: var(--retail-blue);
+  color: var(--retail-blue);
+}
+
+.relacionados-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.relacionado-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  height: 100%;
+  padding: 0.85rem;
+  border: 1px solid var(--retail-border);
+  border-radius: 0.75rem;
+  background: var(--retail-surface);
+  color: var(--retail-ink);
+  text-decoration: none;
+  box-shadow: var(--retail-shadow);
+}
+
+.relacionado-card:hover,
+.relacionado-card:focus-visible {
+  border-color: var(--retail-blue);
+  box-shadow: var(--retail-shadow-hover);
+}
+
+.relacionado-card img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: contain;
+}
+
+.relacionado-nombre {
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.relacionado-precio {
+  font-weight: 700;
+  color: var(--retail-blue);
+}
+
+.relacionado-precio-anterior,
+.relacionado-stock {
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: var(--retail-muted);
+}

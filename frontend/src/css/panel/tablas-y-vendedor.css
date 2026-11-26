@@ -1,0 +1,264 @@
+/* ---------- Tablas propias del panel (no usan .table de Bootstrap; spec 11) ---------- */
+
+.panel-tabla-contenedor {
+  /* F6: position relative para que los .visually-hidden con posición absoluta (texto de
+     cabeceras) se queden dentro del recuadro y no ensanchen la página. */
+  position: relative;
+  overflow-x: auto;
+}
+
+.panel-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.panel-tabla thead th {
+  padding: 10px 12px;
+  background: var(--panel-fila-encabezado);
+  color: var(--panel-texto-secundario);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-align: left;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.panel-tabla tbody th,
+.panel-tabla tbody td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--panel-borde-fila);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.panel-tabla tbody th {
+  font-weight: 600;
+  color: var(--retail-navy);
+}
+
+.panel-tabla tbody tr:last-child th,
+.panel-tabla tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.panel-tabla .panel-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Inicio del Vendedor (spec 15) ---------- */
+
+.panel-encabezado-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.panel-acciones-encabezado {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.panel-acciones-encabezado .panel-boton,
+.panel-consulta .panel-boton {
+  text-decoration: none;
+}
+
+/* «Ver los {n}» y «Ver todas» llegan dentro del bloque que carga el módulo: se anclan a la
+   línea del título, a la derecha. */
+.panel-bloque-enlace {
+  position: absolute;
+  top: 9px;
+  right: 20px;
+  margin: 0;
+  text-align: right;
+}
+
+.panel-lista-consultas {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.panel-consulta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--panel-borde-fila);
+}
+
+.panel-consulta:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.panel-consulta-texto {
+  min-width: 0;
+}
+
+.panel-consulta-texto p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.panel-consulta-producto {
+  font-weight: 700;
+  color: var(--retail-navy);
+}
+
+.panel-consulta-pregunta {
+  color: var(--panel-texto-secundario);
+}
+
+.panel-recuadro-vacio {
+  padding: 16px;
+  border: 1px dashed var(--retail-border);
+  border-radius: var(--panel-radio-control);
+  color: var(--panel-texto-secundario);
+}
+
+.panel-recuadro-titulo {
+  margin: 0 0 4px;
+  font-weight: 700;
+  color: var(--retail-navy);
+}
+
+.panel-barra-fila {
+  display: grid;
+  grid-template-columns: minmax(96px, 30%) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.panel-barra-etiqueta,
+.panel-barra-cantidad {
+  margin: 0;
+}
+
+.panel-barra-etiqueta {
+  font-weight: 600;
+}
+
+.panel-barra-cantidad {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.panel-barra {
+  height: 10px;
+  border-radius: var(--panel-radio-pastilla);
+  background: var(--panel-fila-encabezado);
+  overflow: hidden;
+}
+
+.panel-barra-relleno {
+  height: 100%;
+  border-radius: var(--panel-radio-pastilla);
+}
+
+.panel-barra-verde { background: var(--panel-insignia-verde-texto); }
+.panel-barra-gris { background: var(--retail-muted); }
+
+@media (max-width: 991.98px) {
+  .panel-acciones-encabezado {
+    width: 100%;
+  }
+
+  .panel-acciones-encabezado .panel-boton {
+    flex: 1 1 auto;
+  }
+
+  .panel-tabla {
+    min-width: 480px;
+  }
+}
+
+@media (max-width: 575.98px) {
+  /* 10. Tablas de los Inicios (Reclamos, Devoluciones, Productos con stock bajo) como tarjetas
+     apiladas: desde 576 px vuelven a ser tablas. */
+  .panel-inicio .panel-tabla-contenedor {
+    overflow: visible;
+  }
+
+  .panel-inicio .panel-tabla,
+  .panel-inicio .panel-tabla tbody {
+    display: block;
+    min-width: 0;
+  }
+
+  .panel-inicio .panel-tabla thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .panel-inicio .panel-tabla tbody tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "principal estado"
+      "detalle detalle"
+      "accion accion";
+    align-items: center;
+    gap: 6px 12px;
+    margin-bottom: 12px;
+    padding: 14px;
+    background: var(--retail-surface);
+    border: 1px solid var(--retail-border);
+    border-radius: 12px;
+  }
+
+  .panel-inicio .panel-tabla tbody tr:last-child {
+    margin-bottom: 0;
+  }
+
+  .panel-inicio .panel-tabla tbody th,
+  .panel-inicio .panel-tabla tbody td {
+    padding: 0;
+    border: 0;
+    text-align: left;
+  }
+
+  .panel-inicio .panel-tabla tbody th {
+    grid-area: principal;
+    font-weight: 700;
+  }
+
+  .panel-inicio .panel-tabla tbody td:nth-child(2) {
+    grid-area: detalle;
+  }
+
+  .panel-inicio .panel-tabla tbody td:nth-child(3) {
+    grid-area: estado;
+    justify-self: end;
+  }
+
+  .panel-inicio .panel-tabla tbody td:nth-child(4) {
+    grid-area: accion;
+    margin-top: 6px;
+  }
+
+  .panel-inicio .panel-tabla tbody td:nth-child(4) .panel-boton {
+    display: flex;
+    width: 100%;
+    min-height: 48px;
+  }
+
+  .panel-tabla-stock td.panel-num::before {
+    content: "Stock: ";
+    color: var(--panel-texto-secundario);
+  }
+}
+

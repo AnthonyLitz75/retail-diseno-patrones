@@ -3,6 +3,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { leerCssPanel, resolverVarsCss } from "./util-css.mjs";
 import { iniciales } from "../../src/panel/utilidades-panel.js";
 import { renderizarBarraSuperior } from "../../src/panel/panel-layout.js";
 import { actividadReciente } from "../../src/panel/inicio/admin-logica.js";
@@ -11,7 +12,7 @@ import { renderizarColaReclamos, renderizarDevolucionesPorAtender, renderizarEnM
 import { renderizarDetalleDevolucion, renderizarDetalleReclamo } from "../../src/panel/pantallas/bandeja-vista.js";
 
 const leer = (ruta) => readFileSync(new URL(ruta, import.meta.url), "utf8");
-const css = leer("../../src/css/panel.css");
+const css = leerCssPanel();
 const visible = (html) => html.replaceAll("&#x2F;", "/");
 const contar = (texto, re) => (texto.match(re) ?? []).length;
 const AHORA = new Date("2026-11-25T12:00:00Z");
@@ -43,7 +44,7 @@ function reglaEn(texto, selector) {
     if (m[1].split(",").some((x) => x.trim().split(/\n/).pop().trim() === selector)) cuerpos.push(m[2]);
   }
   assert.ok(cuerpos.length, `falta la regla ${selector}`);
-  return cuerpos.join(" ");
+  return resolverVarsCss(cuerpos.join(" "));
 }
 const regla = (selector) => reglaEn(css, selector);
 

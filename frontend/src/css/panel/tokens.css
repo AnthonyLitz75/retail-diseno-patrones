@@ -1,0 +1,71 @@
+/* ==========================================================================
+   PANEL.CSS — PANEL DEL PERSONAL (panel.html)
+   Tokens y marco según specs/panel-personal 11 (tokens) y 13 (marco).
+   Reutiliza las variables --retail-* de variables.css; las nuevas llevan prefijo --panel-.
+   ========================================================================== */
+
+:root {
+  --panel-texto-secundario: #475569;
+  --panel-menu-texto: #cbd5e1;
+  --panel-menu-etiqueta: #94a3b8;
+  --panel-menu-activo-fondo: rgba(56, 189, 248, 0.16);
+  --panel-marco-borde: rgba(148, 163, 184, 0.16);
+  --panel-area-fondo: #f3f5f9;
+  --panel-acento-cielo: #38bdf8;
+  --panel-contador-ambar: #fbbf24;
+  --panel-contador-rojo: #dc2626;
+
+  /* Tonos de iconos, avatares por rol e insignias de estado de cuenta (texto / fondo ≥ 4.5:1). */
+  --panel-tono-azul-fondo: #e7f0ff;
+  --panel-tono-azul-texto: #0a58ca;
+  --panel-tono-verde-fondo: #e6f6ec;
+  --panel-tono-verde-texto: #157f3b; /* ajuste mínimo de #15803d (4,48:1) para llegar a 4,5:1 sobre #e6f6ec */
+  --panel-tono-cielo-fondo: #e0f2fe;
+  --panel-tono-cielo-texto: #0369a1;
+  --panel-tono-gris-fondo: #f1f5f9;
+  --panel-tono-gris-texto: #475569;
+
+  /* Tarjeta de alerta (reclamos escalados). */
+  --panel-alerta-fondo: #fffbeb;
+  --panel-alerta-borde: #fcd34d;
+  --panel-alerta-texto: #78350f;
+  --panel-alerta-icono-fondo: #fde68a;
+  --panel-fila-encabezado: #eef2f7;
+  --panel-borde-fila: #e2e8f0;
+
+  /* Insignias de estado: fondo / texto (contraste ≥ 4.5:1). */
+  --panel-insignia-verde-fondo: #dcfce7;
+  --panel-insignia-verde-texto: #166534;
+  --panel-insignia-ambar-fondo: #fef3c7;
+  --panel-insignia-ambar-texto: #92400e;
+  --panel-insignia-rojo-fondo: #fee2e2;
+  --panel-insignia-rojo-texto: #991b1b;
+  --panel-insignia-azul-fondo: #dbeafe;
+  --panel-insignia-azul-texto: #1e40af;
+  --panel-insignia-neutro-fondo: #e2e8f0;
+  --panel-insignia-neutro-texto: #334155;
+
+  /* Forma y espacio. */
+  --panel-radio-tarjeta: 14px;
+  --panel-radio-control: 10px;
+  --panel-radio-pastilla: 999px;
+  --panel-ancho-menu: 248px;
+  --panel-alto-pulsable: 44px;
+  --panel-fuente: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+body.panel-pagina {
+  /* La página no se desplaza en horizontal; las tablas lo hacen dentro de su contenedor. */
+  overflow-x: hidden;
+  margin: 0;
+  font-family: var(--panel-fuente);
+  font-size: 14px;
+  color: var(--retail-ink);
+  background: var(--retail-bg-page);
+}
+
+.panel-pagina :focus-visible {
+  outline: 3px solid var(--retail-blue);
+  outline-offset: 2px;
+}
+

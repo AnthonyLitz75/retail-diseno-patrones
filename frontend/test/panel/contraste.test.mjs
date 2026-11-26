@@ -3,6 +3,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { leerCssPanel } from "./util-css.mjs";
 import { relacionContraste, luminanciaRelativa, colorSobreFondo, parsearColor } from "../../src/panel/contraste.js";
 
 // ---------- Función pura ----------
@@ -30,7 +31,7 @@ test("colores: hex corto y largo, rgb y rgba (compuesto sobre un fondo)", () => 
 // ---------- Tokens del panel ----------
 
 const leer = (ruta) => readFileSync(new URL(ruta, import.meta.url), "utf-8");
-const css = leer("../../src/css/variables.css") + leer("../../src/css/panel.css");
+const css = leer("../../src/css/variables.css") + leerCssPanel();
 
 /** Valor de una variable CSS (resuelve var(--x) una vez y toma la última definición). */
 function token(nombre) {

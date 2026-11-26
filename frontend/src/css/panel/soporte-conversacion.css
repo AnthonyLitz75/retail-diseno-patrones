@@ -1,0 +1,140 @@
+/* Conversación: burbuja blanca para el cliente y azul claro para Soporte. */
+.panel-conversacion {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.panel-mensaje {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  gap: 10px;
+}
+
+.panel-mensaje .panel-avatar-rol {
+  width: 32px;
+  height: 32px;
+}
+
+.panel-burbuja {
+  padding: 12px 14px;
+  border: 1px solid var(--retail-border);
+  border-radius: 4px 14px 14px 14px;
+}
+
+.panel-mensaje-cliente .panel-burbuja {
+  background: var(--retail-surface);
+}
+
+.panel-mensaje-soporte .panel-burbuja,
+.panel-mensaje-escalado .panel-burbuja {
+  background: #f5f9ff;
+  border-color: #dbe7ff;
+}
+
+.panel-mensaje-autor {
+  margin: 0 0 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--retail-navy);
+}
+
+.panel-mensaje-autor time {
+  margin-left: 6px;
+  font-weight: 400;
+  color: var(--panel-texto-secundario);
+}
+
+.panel-mensaje-texto {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Acciones y avisos */
+.panel-aviso-naranja {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  background: #fff7ed;
+  border: 1px solid #fdba74;
+  border-radius: 12px;
+  color: #7c2d12;
+}
+
+.panel-aviso-naranja p {
+  margin: 0;
+  font-weight: 600;
+}
+
+.panel-nota-gris {
+  margin: 0;
+  padding: 12px 14px;
+  background: var(--panel-tono-gris-fondo);
+  border-radius: 12px;
+  color: var(--panel-texto-secundario);
+}
+
+.panel-formulario-detalle {
+  display: grid;
+  gap: 12px;
+}
+
+.panel-formulario-detalle .form-label {
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+.panel-escalar {
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+  background: var(--retail-bg-page);
+  border: 1px solid var(--retail-border);
+  border-radius: 12px;
+}
+
+.panel-escalar[hidden] {
+  display: none;
+}
+
+.panel-acciones-detalle {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.panel-boton-rechazar {
+  background: var(--retail-surface);
+  border-color: #fca5a5;
+  color: #b91c1c;
+}
+
+.panel-boton-rechazar:hover:not(:disabled) {
+  background: #fef2f2;
+}
+
+.panel-detalle-enlace {
+  margin: 0;
+}
+
+.panel-detalle-subtitulo {
+  margin: 0 0 6px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--retail-navy);
+}
+
+.panel-detalle-motivo {
+  margin: 0;
+  padding: 12px 14px;
+  background: var(--retail-bg-page);
+  border-radius: 12px;
+  overflow-wrap: anywhere;
+}
+

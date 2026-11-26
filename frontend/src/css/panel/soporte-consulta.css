@@ -1,0 +1,284 @@
+/* Consulta de pedido: las tarjetas apiladas con 24 px entre sí. */
+.panel-consulta-pedido {
+  display: grid;
+  gap: 24px;
+}
+
+/* Consulta de pedido: ficha */
+.panel-ficha {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.panel-ficha-pedido {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--panel-texto-secundario);
+}
+
+.panel-ficha-cliente {
+  margin: 2px 0 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--retail-navy);
+}
+
+.panel-ficha-correo {
+  margin: 0;
+  color: var(--panel-texto-secundario);
+}
+
+.panel-ficha-insignias {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Consulta de pedido: seguimiento (línea de tiempo de 4 pasos) */
+.panel-seguimiento {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.panel-paso {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0 8px;
+  text-align: center;
+}
+
+.panel-paso::before {
+  content: "";
+  position: absolute;
+  top: 19px;
+  right: 50%;
+  width: 100%;
+  height: 2px;
+  background: var(--panel-menu-texto);
+}
+
+.panel-paso:first-child::before {
+  display: none;
+}
+
+.panel-paso-hecho::before {
+  background: var(--retail-blue-dark);
+}
+
+.panel-paso-cancelado::before {
+  background: var(--panel-menu-etiqueta);
+}
+
+.panel-paso-circulo {
+  position: relative;
+  z-index: 1;
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+
+.panel-paso-hecho .panel-paso-circulo { background: var(--retail-blue-dark); color: var(--retail-surface); }
+.panel-paso-pendiente .panel-paso-circulo { background: var(--panel-menu-texto); color: var(--panel-insignia-neutro-texto); }
+.panel-paso-cancelado .panel-paso-circulo { background: var(--retail-muted); color: var(--retail-surface); }
+
+.panel-paso-etiqueta,
+.panel-paso-fecha,
+.panel-paso-detalle {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.panel-paso-etiqueta {
+  margin-top: 8px;
+  font-weight: 700;
+  color: var(--retail-navy);
+}
+
+.panel-paso-fecha,
+.panel-paso-detalle {
+  font-size: 12px;
+  color: var(--panel-texto-secundario);
+}
+
+.panel-paso-pendiente .panel-paso-etiqueta {
+  color: var(--panel-texto-secundario);
+}
+
+/* Consulta de pedido: productos, pago y atenciones */
+.panel-consulta-columnas {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 24px;
+}
+
+.panel-consulta-lateral {
+  display: grid;
+  align-content: start;
+  gap: 24px;
+}
+
+.panel-tabla tfoot th,
+.panel-tabla tfoot td {
+  padding: 12px 16px;
+  border-top: 1px solid var(--panel-borde-fila);
+  font-weight: 700;
+  color: var(--retail-navy);
+}
+
+.panel-pago-resumen {
+  margin: 0;
+  font-weight: 600;
+  color: var(--retail-navy);
+}
+
+.panel-pago-nota,
+.panel-pago-detalle {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--panel-texto-secundario);
+}
+
+.panel-atenciones {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.panel-atencion-pedido {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--panel-borde-fila);
+}
+
+.panel-atencion-pedido:first-child {
+  border-top: 0;
+}
+
+.panel-atencion-pedido p {
+  margin: 0;
+}
+
+.panel-atencion-pedido .panel-enlace {
+  grid-column: 1 / -1;
+}
+
+@media (min-width: 992px) {
+  .panel-consulta-columnas {
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 991.98px) {
+  .panel-devolucion-fila {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .panel-devolucion-fila .panel-espera,
+  .panel-devolucion-fila .panel-insignia {
+    justify-self: start;
+  }
+
+  .panel-devolucion-fila .panel-boton {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Celular (< 576 px): la cola como tarjetas y el seguimiento en vertical. */
+@media (max-width: 575.98px) {
+  .panel-reclamos-cola tr {
+    display: grid;
+  }
+
+  .panel-reclamos-cola thead {
+    display: none;
+  }
+
+  .panel-inicio .panel-reclamos-cola tbody tr {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "principal estado"
+      "detalle detalle"
+      "espera espera"
+      "accion accion";
+  }
+
+  .panel-inicio .panel-reclamos-cola tbody td:nth-child(2) { grid-area: detalle; }
+  .panel-inicio .panel-reclamos-cola tbody td:nth-child(3) { grid-area: espera; justify-self: start; }
+  .panel-inicio .panel-reclamos-cola tbody td:nth-child(4) { grid-area: estado; justify-self: end; margin-top: 0; }
+  .panel-inicio .panel-reclamos-cola tbody td:nth-child(5) { grid-area: accion; margin-top: 6px; }
+
+  .panel-reclamos-cola .panel-boton {
+    display: flex;
+    width: 100%;
+    min-height: 48px;
+  }
+
+  .panel-otros-fila {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .panel-otros-fila .panel-enlace {
+    grid-column: 1 / -1;
+  }
+
+  .panel-devolucion-fila .panel-boton {
+    min-height: 48px;
+  }
+
+  /* Productos del pedido: caben en el ancho del celular, sin desplazamiento horizontal. */
+  .panel-pagina .panel-tabla-productos {
+    min-width: 0;
+  }
+
+  .panel-pagina .panel-tabla-productos th,
+  .panel-pagina .panel-tabla-productos td {
+    padding: 10px 6px;
+    font-size: 13px;
+  }
+
+  .panel-pagina .panel-tabla-productos thead th {
+    font-size: 11px;
+  }
+
+  .panel-seguimiento {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .panel-paso {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr);
+    grid-template-areas:
+      "circulo etiqueta"
+      "circulo fecha"
+      "circulo detalle";
+    column-gap: 12px;
+    padding: 0;
+    text-align: left;
+  }
+
+  .panel-paso::before {
+    top: -16px;
+    right: auto;
+    left: 19px;
+    width: 2px;
+    height: 16px;
+  }
+
+  .panel-paso-circulo { grid-area: circulo; }
+  .panel-paso-etiqueta { grid-area: etiqueta; margin-top: 0; }
+  .panel-paso-fecha { grid-area: fecha; }
+  .panel-paso-detalle { grid-area: detalle; }
+}
+

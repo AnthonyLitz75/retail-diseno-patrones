@@ -1,0 +1,163 @@
+/* Revisión UX (punto 7): menú "Gestionar" del personal (utilidades/menu-acciones.js).
+   Se abre hacia arriba para no quedar recortado dentro de los carruseles horizontales. */
+.menu-acciones {
+  position: relative;
+  margin-top: 0.5rem;
+}
+
+.menu-acciones-boton {
+  width: 100%;
+  min-height: 44px;
+  font-weight: 700;
+}
+
+.menu-acciones-lista {
+  position: absolute;
+  right: 0;
+  left: 0;
+  bottom: calc(100% + 4px);
+  z-index: 20;
+  margin: 0;
+  padding: 0.35rem;
+  list-style: none;
+  background: var(--retail-surface);
+  border: 1px solid var(--retail-border);
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.14);
+}
+
+.menu-acciones-lista[hidden] {
+  display: none;
+}
+
+.menu-acciones-item {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 0.75rem;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--retail-ink);
+  font-size: 0.9rem;
+  text-align: left;
+}
+
+.menu-acciones-item:hover,
+.menu-acciones-item:focus-visible {
+  background: #f1f5f9;
+}
+
+.menu-acciones-item-peligro {
+  color: #b02a37;
+}
+
+.product-card-question-btn {
+  font-size: 0.75rem;
+}
+
+/* Barra Compacta de Filtros */
+.catalog-filters-bar {
+  background: var(--retail-surface);
+  border: 1px solid var(--retail-border);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.filter-chips-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+  margin-bottom: 1rem;
+}
+
+.filter-chip {
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid var(--retail-border);
+  background: var(--retail-surface);
+  color: #334155;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.filter-chip:hover {
+  border-color: var(--retail-blue);
+  color: var(--retail-blue);
+}
+
+.filter-chip.is-active {
+  background: var(--retail-blue);
+  color: var(--retail-surface);
+  border-color: var(--retail-blue);
+}
+
+/* Migas de Pan (Breadcrumbs) */
+.store-breadcrumbs {
+  padding: 0.65rem 0;
+  margin-bottom: 0.75rem;
+}
+
+.store-breadcrumbs .breadcrumb {
+  margin-bottom: 0;
+}
+
+.store-breadcrumbs .breadcrumb-item {
+  font-size: 0.88rem;
+}
+
+.store-breadcrumbs .breadcrumb-item a {
+  color: var(--retail-blue);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.15s ease;
+}
+
+.store-breadcrumbs .breadcrumb-item a:hover {
+  text-decoration: underline;
+  color: var(--retail-blue-dark);
+}
+
+.store-breadcrumbs .breadcrumb-item.active {
+  color: var(--retail-muted);
+  font-weight: 600;
+}
+
+.store-breadcrumbs .breadcrumb-item + .breadcrumb-item::before {
+  color: #94a3b8;
+  content: "›";
+  font-size: 1.1rem;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+/* Vista 404 (Página no encontrada) */
+.view-404-card {
+  background: var(--retail-surface);
+  border-radius: 16px;
+  border: 1px solid var(--retail-border);
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
+}
+
+.icon-404-bubble {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  background: #fee2e2;
+  color: #ef4444;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 8px 20px rgba(239, 68, 68, 0.15);
+}
+

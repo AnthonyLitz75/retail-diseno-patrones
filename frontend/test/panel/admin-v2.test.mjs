@@ -2,7 +2,7 @@
 // atención por gravedad, pedidos por estado segmentados, atajos y actividad con iniciales).
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { leerCssPanel, resolverVarsCss } from "./util-css.mjs";
 import {
   actividadReciente, estadosPedidos, fechaDeHoy, filasAtencion, indicadoresAdmin, resumenAtencion, resumenPedidos,
 } from "../../src/panel/inicio/admin-logica.js";
@@ -14,17 +14,18 @@ import { ICONOS } from "../../src/panel/iconos.js";
 import { resolverRuta } from "../../src/panel/panel-router.js";
 import { pideAlta, selectorAltaDeRuta } from "../../src/panel/pantallas/administracion.js";
 
-const css = readFileSync(new URL("../../src/css/panel.css", import.meta.url), "utf8");
+const css = leerCssPanel();
 const visible = (html) => html.replaceAll("&#x2F;", "/");
 const cuenta = (texto, re) => (texto.match(re) ?? []).length;
 /** Cuerpos de todas las reglas cuyo selector (lista separada por comas) es exactamente el dado. */
-const regla = (selector) => {
+const regla = (selector, resolver = false) => {
   const cuerpos = [];
   for (const m of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
     if (m[1].split(",").some((x) => x.trim().split(/\n/).pop().trim() === selector)) cuerpos.push(m[2]);
   }
   assert.ok(cuerpos.length, `falta la regla ${selector}`);
-  return cuerpos.join(" ");
+  const texto = cuerpos.join(" ");
+  return resolver ? resolverVarsCss(texto) : texto;
 };
 
 const resumen = {
@@ -46,7 +47,7 @@ test("A1: la fecha va encima del <h1> (13 px, 600, #475569) y los dos botones ll
   assert.match(html, /id="inicio-descargar-csv"[^>]*><svg[^>]*aria-hidden="true"[\s\S]*?<\/svg>\s*<span>Descargar reporte \(CSV\)<\/span><\/button>/);
   assert.match(html, /href="#\/cuentas\?alta=1"[^>]*><svg[^>]*aria-hidden="true"[\s\S]*?<\/svg>\s*<span>Crear cuenta del personal<\/span><\/a>/);
   assert.ok(Object.hasOwn(ICONOS, "descarga") && Object.hasOwn(ICONOS, "mas"));
-  const f = regla(".panel-fecha");
+  const f = regla(".panel-fecha", true);
   assert.match(f, /font-size:\s*13px/);
   assert.match(f, /font-weight:\s*600/);
   assert.match(f, /color:\s*#475569/i);
@@ -154,7 +155,7 @@ test("A4: estilos: barra de 14 px con segmentos separados 3 px; casillas #f8fafc
   assert.match(s, /height:\s*14px/);
   assert.match(s, /gap:\s*3px/);
   assert.match(regla(".panel-segmento"), /border-radius:\s*999px/);
-  const c = regla(".panel-estado-casilla");
+  const c = regla(".panel-estado-casilla", true);
   assert.match(c, /background:\s*#f8fafc/i);
   assert.match(c, /border-radius:\s*12px/);
   const q = regla(".panel-estado-cuadro");

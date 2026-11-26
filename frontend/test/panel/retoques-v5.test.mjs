@@ -2,13 +2,14 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { leerCssPanel, resolverVarsCss } from "./util-css.mjs";
 import { ordenarCuentas } from "../../src/administracion/cuentas-logica.js";
 import { renderizarEncabezadoCuentas } from "../../src/panel/pantallas/administracion.js";
 import { indicadoresAdmin } from "../../src/panel/inicio/admin-logica.js";
 import { renderizarIndicadoresAdmin, renderizarInicioAdmin } from "../../src/panel/inicio/admin-inicio.js";
 
 const leer = (ruta) => readFileSync(new URL(ruta, import.meta.url), "utf8");
-const css = leer("../../src/css/panel.css");
+const css = leerCssPanel();
 const plantilla = leer("../../src/layout/plantillas/administracion.html");
 const seccionCuentas = plantilla.slice(plantilla.indexOf('<section id="admin-seccion-cuentas"'), plantilla.indexOf('<section id="admin-seccion-categorias"'));
 const visible = (html) => html.replaceAll("&#x2F;", "/");
@@ -41,7 +42,7 @@ function reglaEn(texto, selector) {
     if (m[1].split(",").some((x) => x.trim().split(/\n/).pop().trim() === selector)) cuerpos.push(m[2]);
   }
   assert.ok(cuerpos.length, `falta la regla ${selector}`);
-  return cuerpos.join(" ");
+  return resolverVarsCss(cuerpos.join(" "));
 }
 const regla = (selector) => reglaEn(css, selector);
 const movil = () => bloquesMedia("(max-width: 575.98px)");
@@ -72,7 +73,7 @@ test("4: «Crear cuenta» usa el botón primario del panel (#0a58ca), no .btn-pr
   assert.match(seccionCuentas, /<button class="panel-boton panel-boton-principal w-100" type="submit">Crear cuenta<\/button>/);
   assert.doesNotMatch(seccionCuentas, /btn-primary/);
   assert.match(css, /--retail-blue-dark|#0a58ca/);
-  assert.match(regla(".panel-boton-principal"), /background:\s*var\(--retail-blue-dark\)/);
+  assert.match(css, /\.panel-boton-principal[\s\S]*?background:\s*var\(--retail-blue-dark\)/);
 });
 
 test("5: «Desactivar» deshabilitado lleva borde #e2e8f0 y texto #64748b, sin atenuar el rojo", () => {

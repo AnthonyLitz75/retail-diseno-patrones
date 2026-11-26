@@ -2,13 +2,13 @@
 // cola de Almacén, entrada rápida, catálogo, Soporte, Admin y celular). Marcado + reglas de panel.css.
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { leerCssPanel, resolverVarsCss } from "./util-css.mjs";
 import { renderizarBarraSuperior, renderizarMenuLateral } from "../../src/panel/panel-layout.js";
 import { renderizarColumna, renderizarInicioAlmacen } from "../../src/panel/inicio/almacen-inicio.js";
 import { renderizarCatalogo, renderizarInicioVendedor, renderizarTablaStockBajo } from "../../src/panel/inicio/vendedor-inicio.js";
 import { MAX_PEDIDOS_POR_COLUMNA } from "../../src/panel/inicio/almacen-logica.js";
 
-const css = readFileSync(new URL("../../src/css/panel.css", import.meta.url), "utf8");
+const css = leerCssPanel();
 /** Cuerpos de todas las reglas cuyo selector (lista separada por comas) incluye exactamente el dado. */
 const regla = (selector) => {
   const cuerpos = [];
@@ -16,7 +16,7 @@ const regla = (selector) => {
     if (m[1].split(",").some((x) => x.trim().endsWith(selector) && (x.trim() === selector || /\s$/.test(x.trim().slice(0, x.trim().length - selector.length))))) cuerpos.push(m[2]);
   }
   assert.ok(cuerpos.length, `falta la regla ${selector}`);
-  return cuerpos.join(" ");
+  return resolverVarsCss(cuerpos.join(" "));
 };
 const cuenta = (texto, re) => (texto.match(re) ?? []).length;
 
@@ -115,7 +115,7 @@ test("7: la barra «Pendiente» es ámbar #d97706", () => {
 test("9: el acceso rápido de la ruta actual es el relleno primario y lleva aria-current=page", () => {
   assert.match(renderizarInicioAlmacen(), /<a class="panel-chip" href="#\/inicio" aria-current="page">Inicio<\/a>/);
   const r = regla('.panel-chip[aria-current="page"]');
-  assert.match(r, /background:\s*var\(--retail-blue-dark\)/, "el primario del panel (el mismo de los botones principales, con contraste 4.5:1)");
+  assert.match(css, /\.panel-chip\[aria-current="page"\]\s*\{[^}]*background:\s*var\(--retail-blue-dark\)/, "el primario del panel (el mismo de los botones principales, con contraste 4.5:1)");
   assert.match(r, /color:\s*#ffffff/i);
 });
 
@@ -127,15 +127,56 @@ test("10: el stock bajo marca su tabla y las celdas de acción siguen en el mism
   assert.match(html, /<th scope="row">Webcam<\/th>\s*<td class="panel-num">3<\/td>/);
 });
 
+function bloquesMedia(consulta) {
+  let salida = "";
+  let desde = 0;
+  for (;;) {
+    const i = css.indexOf(`@media ${consulta}`, desde);
+    if (i < 0) break;
+    const abre = css.indexOf("{", i);
+    let nivel = 1;
+    let j = abre + 1;
+    while (nivel > 0 && j < css.length) {
+      if (css[j] === "{") nivel += 1;
+      else if (css[j] === "}") nivel -= 1;
+      j += 1;
+    }
+    salida += css.slice(abre + 1, j - 1);
+    desde = j;
+  }
+  return salida;
+}
+
+function cssSinMedia() {
+  let salida = "";
+  let i = 0;
+  while (i < css.length) {
+    const siguiente = css.indexOf("@media", i);
+    if (siguiente < 0) {
+      salida += css.slice(i);
+      break;
+    }
+    salida += css.slice(i, siguiente);
+    const abre = css.indexOf("{", siguiente);
+    let nivel = 1;
+    let j = abre + 1;
+    while (nivel > 0 && j < css.length) {
+      if (css[j] === "{") nivel += 1;
+      else if (css[j] === "}") nivel -= 1;
+      j += 1;
+    }
+    i = j;
+  }
+  return salida;
+}
+
 test("10: por debajo de 576 px las filas son tarjetas y el botón ocupa todo el ancho a 48 px; desde 576 px vuelven a ser tablas", () => {
-  const m = css.slice(css.indexOf("Tanda 2"));
-  const bloque = m.slice(m.indexOf("Celular (< 576 px)"));
-  assert.match(bloque, /@media \(max-width: 575\.98px\)/);
+  const bloque = bloquesMedia("(max-width: 575.98px)");
   assert.match(bloque, /\.panel-inicio \.panel-tabla tbody tr\s*\{[^}]*display:\s*grid/);
   assert.match(bloque, /grid-template-areas:\s*"principal estado"\s*"detalle detalle"\s*"accion accion"/);
   assert.match(bloque, /td:nth-child\(4\) \.panel-boton\s*\{[^}]*width:\s*100%[^}]*min-height:\s*48px/);
   assert.match(bloque, /\.panel-tabla-stock td\.panel-num::before\s*\{[^}]*content:\s*"Stock: "/);
-  assert.doesNotMatch(css.slice(0, css.indexOf("Tanda 2")), /grid-template-areas:\s*"principal/, "fuera del @media no hay tarjetas");
+  assert.doesNotMatch(cssSinMedia(), /grid-template-areas:\s*"principal/, "fuera del @media no hay tarjetas");
 });
 
 // ---------- 8 (cajón): el pie entra en el recorrido con Tab ----------

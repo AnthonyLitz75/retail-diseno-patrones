@@ -1,0 +1,283 @@
+/* Devolución: progreso, líneas y recepción */
+.panel-progreso {
+  display: flex;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.panel-progreso-paso {
+  display: flex;
+  flex: 1 1 0;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding-top: 10px;
+  border-top: 4px solid var(--panel-menu-texto);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--panel-texto-secundario);
+}
+
+.panel-progreso-paso-hecho {
+  border-top-color: var(--retail-blue-dark);
+  color: var(--retail-navy);
+}
+
+.panel-progreso-paso-rechazado {
+  border-top-color: var(--retail-muted);
+  color: var(--panel-texto-secundario);
+}
+
+.panel-progreso-marca svg {
+  width: 16px;
+  height: 16px;
+}
+
+.panel-lineas {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.panel-linea {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--retail-border);
+  border-radius: 12px;
+}
+
+.panel-linea-nombre {
+  margin: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.panel-linea-resultado {
+  font-weight: 400;
+  color: var(--panel-texto-secundario);
+}
+
+.panel-linea-importe {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.panel-linea-recepcion {
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px;
+  border: 1px solid var(--retail-border);
+  border-radius: 12px;
+}
+
+.panel-apta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 20px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.panel-apta legend {
+  float: none;
+  width: auto;
+  margin: 0 8px 0 0;
+  padding: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.panel-opcion {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--panel-alto-pulsable);
+}
+
+.panel-opcion input {
+  width: 20px;
+  height: 20px;
+}
+
+.panel-reembolso-aviso {
+  margin: 0;
+  font-weight: 600;
+  color: var(--retail-navy);
+}
+
+/* Desde 992 px: dos paneles y casillas 2fr 1fr 1fr. */
+@media (min-width: 992px) {
+  .panel-bandeja {
+    grid-template-columns: minmax(360px, 440px) minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .panel-bandeja-volver {
+    display: none;
+  }
+
+  .panel-casillas {
+    grid-template-columns: 2fr 1fr 1fr;
+  }
+}
+
+/* Celular y tableta: o la lista o el detalle (con ?id= se ve el detalle). */
+@media (max-width: 991.98px) {
+  .panel-bandeja-detalle {
+    display: none;
+  }
+
+  .panel-bandeja-con-detalle .panel-bandeja-lista-panel {
+    display: none;
+  }
+
+  .panel-bandeja-con-detalle .panel-bandeja-detalle {
+    display: block;
+  }
+
+  .panel-bandeja-volver {
+    margin-bottom: 12px;
+  }
+
+  .panel-pestanas {
+    overflow-x: auto;
+  }
+
+  .panel-pestana {
+    border-radius: 999px;
+  }
+
+  .panel-detalle {
+    padding: 16px;
+  }
+}
+
+/* ---------- Soporte v7: últimos retoques ---------- */
+
+/* Círculo del agente en la conversación: iniciales (o icono de chat) en azul. */
+.panel-avatar-agente {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--panel-tono-azul-fondo);
+  color: var(--retail-blue-dark);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.panel-avatar-agente svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Casillas: la de Cliente más ancha; el correo solo se parte después de la @ (<wbr>). */
+.panel-casilla small {
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+/* Devolución aprobada: un recuadro por línea (producto arriba, opciones debajo). */
+.panel-linea-cabecera {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.panel-ayuda-recepcion {
+  margin: 0;
+  text-align: right;
+  font-size: 12px;
+  color: var(--retail-muted);
+}
+
+/* Respuesta del reclamo: casilla a la izquierda y botones a la derecha, en una sola fila. */
+.panel-acciones-fila {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.panel-acciones-fila .form-check {
+  margin: 0;
+}
+
+/* Una región de error vacía no deja hueco entre filas del formulario. */
+.panel-formulario-detalle .panel-errores-formulario:empty {
+  margin-top: -12px;
+  margin-bottom: 0;
+}
+
+.panel-otros-motivo {
+  font-size: 13px;
+  color: var(--panel-texto-secundario);
+}
+
+/* Soporte v8: la fila de la respuesta hace wrap. Casilla a la izquierda y botones a la derecha
+   cuando caben; si no, los botones bajan a una segunda fila alineados a la derecha. El texto de
+   un botón o de la casilla nunca se parte. */
+.panel-acciones-fila .panel-acciones-detalle {
+  margin-left: auto;
+  justify-content: flex-end;
+}
+
+.panel-acciones-fila .form-check-label,
+.panel-acciones-detalle .panel-boton {
+  white-space: nowrap;
+}
+
+/* Casilla «Solicitada»: fecha y hora en una línea y debajo cuánto hace. */
+.panel-casilla-fecha {
+  display: block;
+  white-space: nowrap;
+}
+
+.panel-casilla-espera {
+  font-size: 12px;
+  color: var(--retail-muted);
+}
+
+@media (max-width: 575.98px) {
+  .panel-bandeja .panel-boton {
+    min-height: 48px;
+  }
+
+  .panel-bandeja-volver {
+    width: 100%;
+    min-height: 48px;
+  }
+
+  .panel-pestana {
+    min-height: 48px;
+  }
+
+  .panel-acciones-detalle .panel-boton {
+    flex: 1 1 100%;
+  }
+
+  .panel-progreso-paso {
+    font-size: 12px;
+  }
+
+  .panel-acciones-fila {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .panel-acciones-fila .panel-acciones-detalle {
+    margin-left: 0;
+  }
+}

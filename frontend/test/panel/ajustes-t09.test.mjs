@@ -2,14 +2,14 @@
 // por ruta, utilidades del panel (fecha y descarga) y carga diferida de Administración.
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { leerCssPanel } from "./util-css.mjs";
 import { formatearFechaHora, guardarArchivo } from "../../src/panel/utilidades-panel.js";
 import { crearPantallaAdministracion } from "../../src/panel/pantallas/administracion.js";
 
 // ---------- a) Indicadores internos ocultos en categorías, cuentas e incidencias ----------
 
 test("panel.css oculta .indicadores-admin en #/categorias, #/cuentas e #/incidencias, no en #/reportes", () => {
-  const css = readFileSync(new URL("../../src/css/panel.css", import.meta.url), "utf-8");
+  const css = leerCssPanel();
   const regla = css.match(/([^{}]*\.indicadores-admin[^{}]*)\{([^}]*)\}/);
   assert.ok(regla, "existe una regla para .indicadores-admin");
   const [, selectores, cuerpo] = regla;

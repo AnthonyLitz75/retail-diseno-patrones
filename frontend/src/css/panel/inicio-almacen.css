@@ -1,0 +1,205 @@
+/* ---------- Inicio de Almacén (spec 14) ---------- */
+
+.panel-inicio-rejilla {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.panel-inicio-lateral {
+  display: grid;
+  gap: 24px;
+}
+
+.panel-cola {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: start;
+  gap: 20px;
+}
+
+.panel-cola-columna {
+  padding: 12px;
+  background: var(--panel-tono-gris-fondo);
+  border-radius: 12px;
+}
+
+.panel-cola-titulo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--retail-navy);
+}
+
+.panel-cola-lista,
+.panel-lista-stock {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.panel-pedido {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--retail-border);
+  border-radius: var(--panel-radio-control);
+  background: var(--retail-surface);
+}
+
+.panel-pedido p {
+  margin: 0;
+}
+
+.panel-pedido-numero {
+  font-weight: 700;
+  color: var(--retail-navy);
+}
+
+.panel-pedido-detalle {
+  color: var(--panel-texto-secundario);
+  overflow-wrap: anywhere;
+}
+
+.panel-pedido-monto {
+  font-weight: 600;
+}
+
+.panel-pedido .panel-boton-accion {
+  width: 100%;
+  margin-top: 8px;
+  padding-inline: 8px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.panel-cola-mas {
+  justify-content: center;
+  width: 100%;
+  margin-top: 12px;
+}
+
+.panel-fila-stock {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--panel-borde-fila);
+}
+
+.panel-fila-stock:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.panel-formulario {
+  display: grid;
+  gap: 6px;
+}
+
+.panel-formulario-fila {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 12px;
+}
+
+.panel-campo {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.panel-formulario .form-control,
+.panel-formulario .form-select {
+  min-height: var(--panel-alto-pulsable);
+  margin-bottom: 8px;
+}
+
+.panel-formulario [aria-invalid="true"] {
+  border-color: var(--panel-insignia-rojo-texto);
+}
+
+.panel-errores-formulario {
+  color: var(--panel-insignia-rojo-texto);
+  font-weight: 600;
+}
+
+.panel-ayuda {
+  margin: 0;
+  font-size: 13px;
+}
+
+@media (min-width: 1200px) {
+  .panel-inicio-rejilla-cola {
+    grid-template-columns: minmax(0, 1fr) minmax(340px, 30%);
+  }
+
+  .panel-inicio-rejilla-cola .panel-bloque-cola {
+    padding: 20px 16px; /* vertical como el resto de tarjetas; horizontal más corto para el botón */
+  }
+
+  .panel-inicio-rejilla-cola .panel-cola {
+    gap: 12px;
+  }
+
+  .panel-inicio-rejilla-cola .panel-cola-columna,
+  .panel-inicio-rejilla-cola .panel-pedido {
+    padding: 10px;
+  }
+
+  .panel-inicio-rejilla-cola .panel-pedido .panel-boton-accion {
+    padding-inline: 6px;
+  }
+}
+
+@media (max-width: 1199.98px) {
+  .panel-inicio-rejilla {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 991.98px) {
+  .panel-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .panel-kpi-valor {
+    font-size: 24px;
+  }
+
+  .panel-chips-rapidos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  /* Las tres columnas pasan a una sola lista vertical. */
+  .panel-cola {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .panel-pedido .panel-boton-accion {
+    min-height: 48px;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .panel-kpi-valor {
+    font-size: clamp(16px, 4.6vw, 24px);
+    overflow-wrap: normal;
+  }
+
+  .panel-formulario-fila {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+

@@ -1,0 +1,174 @@
+/* ---------- Bandejas de Reclamos y Devoluciones (v6, tanda 2) ---------- */
+
+.panel-bandeja {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+}
+
+.panel-bandeja-lista-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  gap: 12px;
+  min-width: 0;
+}
+
+.panel-bandeja-detalle {
+  min-width: 0;
+}
+
+/* Pestañas por estado con su contador: contenedor gris y la activa en blanco con sombra suave. */
+.panel-pestanas {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  overflow-x: auto;
+  background: #e9edf3;
+  border-radius: 12px;
+}
+
+.panel-pestana {
+  flex: 1 1 auto;
+  min-height: 40px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--panel-texto-secundario);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.panel-pestana[aria-selected="true"] {
+  background: var(--retail-surface);
+  color: var(--retail-navy);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.18);
+}
+
+.panel-pestana-total {
+  margin-left: 2px;
+  font-weight: 700;
+}
+
+.panel-bandeja-buscar .form-control {
+  min-height: var(--panel-alto-pulsable);
+}
+
+.panel-bandeja-lista {
+  display: grid;
+  gap: 8px;
+}
+
+/* Fila de la lista: botón; la elegida con fondo azul muy claro y una barra azul interior. */
+.panel-bandeja-fila {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  min-height: var(--panel-alto-pulsable);
+  padding: 12px 14px;
+  background: var(--retail-surface);
+  border: 1px solid var(--retail-border);
+  border-radius: 12px;
+  color: var(--retail-navy);
+  text-align: left;
+}
+
+.panel-bandeja-fila[aria-current="true"] {
+  background: #f5f9ff;
+  border-color: #dbe7ff;
+  box-shadow: inset 3px 0 0 var(--retail-blue-dark);
+}
+
+.panel-bandeja-fila-cabecera {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.panel-bandeja-fila-titulo {
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.panel-bandeja-fila-texto,
+.panel-bandeja-fila-quien {
+  font-size: 13px;
+  color: var(--panel-texto-secundario);
+  overflow-wrap: anywhere;
+}
+
+.panel-bandeja-fila-quien {
+  font-weight: 600;
+}
+
+/* Detalle */
+.panel-detalle {
+  display: grid;
+  gap: 20px;
+  padding: 24px;
+  background: var(--retail-surface);
+  border: 1px solid var(--retail-border);
+  border-radius: var(--panel-radio-tarjeta);
+}
+
+.panel-detalle-cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.panel-detalle-kicker {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--panel-texto-secundario);
+}
+
+.panel-detalle-titulo {
+  margin: 2px 0 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--retail-navy);
+  overflow-wrap: anywhere;
+}
+
+.panel-casillas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.panel-casilla {
+  min-width: 0;
+  padding: 12px 14px;
+  background: var(--retail-bg-page);
+  border: 1px solid var(--retail-border);
+  border-radius: 12px;
+}
+
+.panel-casilla dt {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--panel-texto-secundario);
+}
+
+.panel-casilla dd {
+  margin: 2px 0 0;
+  font-weight: 700;
+  color: var(--retail-navy);
+  overflow-wrap: anywhere;
+}
+
+.panel-casilla small {
+  display: block;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--panel-texto-secundario);
+}
+

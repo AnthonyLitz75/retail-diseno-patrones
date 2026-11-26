@@ -1,0 +1,141 @@
+/* Escritorio (≥ 992 px): el contenido es una hoja clara dentro del marco oscuro. El menú sube
+   1 px para cubrir el borde de la barra: no hay línea entre la barra y el menú. */
+@media (min-width: 992px) {
+  .panel-menu {
+    position: relative;
+    margin-top: -1px;
+    padding-top: 21px;
+  }
+
+  .panel-area {
+    border-top-left-radius: 20px;
+  }
+}
+
+/* Tablet y celular (< 992 px): el menú es un cajón fijo que se abre con el botón; el chip se
+   reduce a avatar y rol corto (el nombre y el rol largo quedan solo para lectores). */
+@media (max-width: 991.98px) {
+  .panel-boton-menu {
+    display: inline-flex;
+  }
+
+  .panel-cabecera {
+    flex-wrap: wrap;
+    padding: 10px 16px;
+  }
+
+  .panel-chip-nombre,
+  .panel-chip-rol {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .panel-chip-rol-corto {
+    display: inline;
+    color: var(--retail-border);
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .panel-menu {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1045;
+    width: min(var(--panel-ancho-menu), 85vw);
+    overflow-y: auto;
+    transform: translateX(-100%);
+    visibility: hidden;
+    transition: transform 0.2s ease, visibility 0.2s;
+  }
+
+  .panel-menu[data-abierto="true"] {
+    transform: none;
+    visibility: visible;
+    box-shadow: 0 0 0 100vmax rgba(11, 25, 44, 0.45);
+  }
+
+  .panel-area {
+    padding: 16px 14px;
+    border-radius: 20px 20px 0 0;
+  }
+}
+
+@media (max-width: 991.98px) and (prefers-reduced-motion: reduce) {
+  .panel-menu {
+    transition: none;
+  }
+}
+
+/* Celular (< 576 px): barra en una sola fila (menú, isotipo, nombre con «Panel» debajo, avatar
+   y rol corto). «Ir a la tienda» y «Cerrar sesión» pasan al pie del cajón. */
+@media (max-width: 575.98px) {
+  .panel-cabecera {
+    flex-wrap: nowrap;
+    gap: 10px;
+    padding: 10px 12px;
+  }
+
+  .panel-marca {
+    flex: 1 1 auto;
+    gap: 8px;
+  }
+
+  .panel-marca-logo {
+    width: 34px;
+    height: 34px;
+  }
+
+  .panel-marca-nombre {
+    font-size: 13px;
+  }
+
+  .panel-marca-etiqueta {
+    font-size: 10px;
+  }
+
+  .panel-marca-etiqueta-resto {
+    display: none;
+  }
+
+  .panel-cabecera .panel-enlace-tienda,
+  .panel-cabecera .panel-boton-salir {
+    display: none;
+  }
+
+  .panel-menu {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .panel-menu-pie {
+    display: grid;
+    gap: 8px;
+    margin-top: auto;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.14);
+  }
+
+  /* Los dos con el mismo contorno claro sobre el fondo oscuro, 44 px, sin relleno. */
+  .panel-menu-pie .panel-enlace-tienda,
+  .panel-menu-pie .panel-boton-salir {
+    justify-content: center;
+    width: 100%;
+    min-height: 44px;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    color: var(--retail-surface);
+    text-decoration: none;
+  }
+
+  .panel-menu-pie .panel-enlace-tienda:hover,
+  .panel-menu-pie .panel-boton-salir:hover {
+    background: rgba(255, 255, 255, 0.08);
+  }
+}
+

@@ -7,6 +7,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { leerCssPanel, resolverVarsCss } from "./util-css.mjs";
 import { renderizarBarraSuperior, ID_BOTON_MENU } from "../../src/panel/panel-layout.js";
 import { renderizarTablaStockBajo } from "../../src/panel/inicio/vendedor-inicio.js";
 import { renderizarColaReclamos } from "../../src/panel/inicio/soporte-inicio.js";
@@ -18,12 +19,12 @@ import { renderizarEncabezadoAuditoria } from "../../src/panel/pantallas/auditor
 import { renderizarCabeceraConsulta } from "../../src/panel/pantallas/soporte.js";
 
 const leer = (ruta) => readFileSync(new URL(ruta, import.meta.url), "utf-8");
-const css = leer("../../src/css/panel.css");
+const css = leerCssPanel();
 /** Cuerpo de la regla cuyo selector contiene `selector` (dentro o fuera de @media). */
 const regla = (selector, fuente = css) => {
   const indice = fuente.indexOf(selector);
   if (indice === -1) return "";
-  return fuente.slice(fuente.indexOf("{", indice) + 1, fuente.indexOf("}", indice));
+  return resolverVarsCss(fuente.slice(fuente.indexOf("{", indice) + 1, fuente.indexOf("}", indice)));
 };
 const bloqueMedia = (consulta) => {
   const partes = css.split(`@media ${consulta}`).slice(1);

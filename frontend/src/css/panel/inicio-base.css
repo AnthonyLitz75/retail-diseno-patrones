@@ -1,0 +1,173 @@
+/* ==========================================================================
+   PANTALLAS DEL PANEL: piezas comunes (encabezado, tarjetas, indicadores, estados)
+   ========================================================================== */
+
+.panel-encabezado {
+  margin-bottom: 24px;
+}
+
+.panel-encabezado .panel-titulo {
+  margin-bottom: 4px;
+}
+
+.panel-apoyo,
+.panel-ayuda,
+.panel-kpi-etiqueta,
+.panel-kpi-detalle,
+.panel-cargando,
+.panel-vacio {
+  color: var(--panel-texto-secundario);
+}
+
+.panel-apoyo {
+  margin: 0;
+}
+
+.panel-tarjeta {
+  position: relative;
+  padding: 20px;
+  background: var(--retail-surface);
+  border: 1px solid var(--retail-border);
+  border-radius: var(--panel-radio-tarjeta);
+}
+
+.panel-subtitulo {
+  margin: 0 0 16px;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--retail-navy);
+}
+
+.panel-bloque-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.panel-bloque-cabecera .panel-subtitulo {
+  margin: 0;
+}
+
+.panel-enlace {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--panel-alto-pulsable);
+  color: var(--retail-blue-dark);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.panel-enlace:hover,
+.panel-enlace:focus-visible {
+  text-decoration: underline;
+}
+
+.panel-bloque-cabecera .panel-enlace {
+  margin-block: -12px; /* 44 px de zona pulsable en una cabecera de 20,4 px (el alto del título) */
+}
+
+.panel-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.panel-kpi {
+  padding: 18px;
+  background: var(--retail-surface);
+  border: 1px solid var(--retail-border);
+  border-radius: var(--panel-radio-tarjeta);
+}
+
+.panel-kpi p {
+  margin: 0;
+}
+
+.panel-kpi-etiqueta {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.panel-kpi-valor {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--retail-navy);
+}
+
+.panel-kpi-detalle {
+  font-size: 13px;
+}
+
+.panel-boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--panel-alto-pulsable);
+  padding: 0 16px;
+  border-radius: var(--panel-radio-control);
+  border: 1px solid transparent;
+  font-weight: 600;
+}
+
+.panel-boton:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.panel-boton-principal,
+.panel-boton-accion {
+  background: var(--retail-blue-dark);
+  border-color: var(--retail-blue-dark);
+  color: var(--retail-surface);
+}
+
+.panel-boton-principal:hover:not(:disabled),
+.panel-boton-accion:hover:not(:disabled) {
+  background: #084298;
+}
+
+.panel-boton-secundario {
+  background: var(--retail-surface);
+  border-color: var(--retail-border);
+  color: var(--retail-navy);
+}
+
+.panel-error {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  color: var(--panel-insignia-rojo-texto);
+}
+
+.panel-cargando,
+.panel-vacio {
+  margin: 0;
+}
+
+.panel-chips-rapidos {
+  display: none;
+}
+
+.panel-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--panel-alto-pulsable);
+  padding: 0 16px;
+  border: 1px solid var(--retail-border);
+  border-radius: var(--panel-radio-pastilla);
+  background: var(--retail-surface);
+  color: var(--retail-navy);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.panel-chip[aria-current="page"] {
+  background: var(--retail-blue-dark);
+  border-color: var(--retail-blue-dark);
+  color: var(--retail-surface);
+}
+

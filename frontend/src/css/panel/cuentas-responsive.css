@@ -1,0 +1,106 @@
+/* Celular (< 576 px): atajos de 48 px y cuentas como tarjetas. */
+@media (max-width: 575.98px) {
+  .panel-atajo {
+    min-height: 48px;
+  }
+
+  .panel-kpi > .panel-icono-cuadro {
+    display: none;
+  }
+
+  .panel-kpi .panel-kpi-etiqueta {
+    padding-right: 0;
+  }
+
+  #recargar-cuentas-admin {
+    min-height: 48px;
+  }
+
+  .cuentas-tarjeta {
+    padding: 16px;
+  }
+
+  .cuentas-rejilla {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cuentas-herramientas {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .cuentas-filtros {
+    overflow-x: auto;
+  }
+
+  .cuentas-filtro {
+    flex: 0 0 auto;
+    min-height: 44px;
+  }
+
+  .cuentas-busqueda {
+    flex: 0 0 auto;
+  }
+
+  .cuentas-tabla,
+  #tabla-cuentas-admin {
+    display: block;
+  }
+
+  .cuentas-tabla thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  #tabla-cuentas-admin tr {
+    display: grid;
+    gap: 12px;
+    margin-bottom: 12px;
+    padding: 14px;
+    background: var(--retail-surface);
+    border: 1px solid var(--retail-border);
+    border-radius: 12px;
+  }
+
+  #tabla-cuentas-admin tr.cuenta-modificada {
+    background: var(--panel-alerta-fondo);
+  }
+
+  #tabla-cuentas-admin th,
+  #tabla-cuentas-admin td {
+    display: block;
+    padding: 0;
+    border: 0;
+  }
+
+  #tabla-cuentas-admin select {
+    width: 100%;
+    min-height: 48px;
+  }
+
+  #tabla-cuentas-admin .cuenta-desactivar,
+  #tabla-cuentas-admin .cuenta-guardar {
+    width: 100%;
+    min-height: 48px;
+  }
+}
+
+/* «Cuentas y roles» se arma con sus propias tarjetas: el módulo de Administración no añade otra
+   tarjeta ni su título «Administración» (el <h1> de la pantalla ya lo dice). */
+.panel-pagina section[data-ruta="#/cuentas"] #seccion-administracion {
+  background: transparent;
+  border: 0;
+  box-shadow: none !important; /* Bootstrap fija .shadow-sm con !important */
+}
+
+.panel-pagina section[data-ruta="#/cuentas"] #seccion-administracion > .card-body {
+  padding: 0;
+}
+
+.panel-pagina section[data-ruta="#/cuentas"] #titulo-administracion {
+  display: none;
+}
+

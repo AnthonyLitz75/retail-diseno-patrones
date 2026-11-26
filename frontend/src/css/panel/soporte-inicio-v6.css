@@ -1,0 +1,184 @@
+/* ---------- Retoques v5 ---------- */
+
+/* «Actualizar cuentas»: botón secundario del panel de 44 px. */
+#recargar-cuentas-admin {
+  min-height: 44px;
+}
+
+/* Alta de cuenta: «Crear cuenta» a todo el ancho con el alto de los botones del panel. */
+.cuentas-formulario .panel-boton {
+  width: 100%;
+}
+
+/* Atajos desde 992 px: icono de 28 px y menos relleno para que los nombres quepan en una línea. */
+@media (min-width: 992px) {
+  .panel-atajo {
+    padding: 8px 10px;
+  }
+
+  .panel-atajo .panel-icono-cuadro {
+    width: 28px;
+    height: 28px;
+  }
+}
+
+/* ---------- Soporte v6: Inicio y Consulta de pedido ---------- */
+
+/* Espera: etiqueta con icono de reloj; normal hasta 24 h, ámbar desde 24 h y rojo desde 48 h. */
+.panel-espera {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--panel-radio-pastilla);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.panel-espera svg {
+  width: 14px;
+  height: 14px;
+}
+
+.panel-espera-normal { background: var(--panel-tono-gris-fondo); color: var(--panel-texto-secundario); }
+.panel-espera-ambar { background: var(--panel-insignia-ambar-fondo); color: var(--panel-insignia-ambar-texto); }
+.panel-espera-rojo { background: var(--panel-insignia-rojo-fondo); color: #b91c1c; }
+
+/* Indicador urgente: «Reclamos abiertos» con alguno de más de 48 h. */
+.panel-kpi-urgente {
+  position: relative;
+  background: #fff7ed;
+  border-color: #fdba74;
+}
+
+.panel-kpi-urgente > .panel-icono-cuadro {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+}
+
+.panel-kpi-urgente .panel-kpi-etiqueta {
+  padding-right: 44px;
+}
+
+.panel-kpi-urgente .panel-kpi-etiqueta,
+.panel-kpi-urgente .panel-kpi-valor,
+.panel-kpi-urgente .panel-kpi-detalle {
+  color: #7c2d12;
+}
+
+.panel-icono-urgente { background: #fed7aa; color: #7c2d12; }
+
+/* Tu cola de reclamos */
+.panel-reclamos-ayuda {
+  margin: -8px 0 12px;
+  font-size: 13px;
+}
+
+.panel-reclamos-cliente,
+.panel-reclamos-motivo {
+  display: block;
+}
+
+.panel-reclamos-cliente {
+  font-weight: 700;
+  color: var(--retail-navy);
+}
+
+.panel-reclamos-motivo {
+  color: var(--panel-texto-secundario);
+}
+
+.panel-reclamos-cliente + .panel-reclamos-motivo {
+  font-size: 13px;
+}
+
+/* En manos de otros */
+.panel-otros {
+  margin-top: 16px;
+  padding: 14px 16px;
+  background: var(--retail-bg-page);
+  border: 1px solid var(--retail-border);
+  border-radius: 12px;
+}
+
+.panel-otros-cabecera {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--retail-navy);
+}
+
+.panel-otros-lista,
+.panel-devolucion-lista {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.panel-otros-fila {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--panel-borde-fila);
+}
+
+.panel-otros-fila:first-child {
+  border-top: 0;
+}
+
+.panel-otros-texto p,
+.panel-devolucion-texto p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.panel-otros-titulo {
+  font-weight: 600;
+  color: var(--retail-navy);
+}
+
+.panel-otros-detalle {
+  font-size: 13px;
+  color: var(--panel-texto-secundario);
+}
+
+.panel-otros-fila .panel-enlace {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--panel-alto-pulsable);
+}
+
+/* Devoluciones por atender */
+.panel-devolucion-fila {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid var(--panel-borde-fila);
+}
+
+.panel-devolucion-fila:first-child {
+  border-top: 0;
+}
+
+.panel-devolucion-fila .panel-boton {
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.panel-vacio-ok {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--panel-texto-secundario);
+}
+
+.panel-vacio-ok p {
+  margin: 0;
+}
+

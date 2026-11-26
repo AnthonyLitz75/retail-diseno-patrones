@@ -1,0 +1,233 @@
+/* ---------- Tanda 4 (Inicio del administrador y Cuentas y roles) ---------- */
+
+/* A1. Fecha de hoy sobre el <h1> del Inicio. */
+.panel-fecha {
+  margin: 0 0 4px;
+  color: var(--panel-texto-secundario);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.panel-boton svg {
+  flex: 0 0 auto;
+  margin-right: 8px;
+}
+
+/* A2. Cuadro de icono: 34 px, radio 10 px, un tono por significado. */
+.panel-icono-cuadro {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+}
+
+.panel-icono-azul { background: var(--panel-tono-azul-fondo); color: var(--panel-tono-azul-texto); }
+.panel-icono-verde { background: var(--panel-tono-verde-fondo); color: var(--panel-tono-verde-texto); }
+.panel-icono-cielo { background: var(--panel-tono-cielo-fondo); color: var(--panel-tono-cielo-texto); }
+.panel-icono-gris { background: var(--panel-tono-gris-fondo); color: var(--panel-tono-gris-texto); }
+.panel-icono-rojo { background: var(--panel-insignia-rojo-fondo); color: var(--panel-insignia-rojo-texto); }
+.panel-icono-ambar { background: var(--panel-insignia-ambar-fondo); color: var(--panel-insignia-ambar-texto); }
+.panel-icono-alerta { background: var(--panel-alerta-icono-fondo); color: var(--panel-alerta-texto); }
+
+/* Indicadores con el icono arriba a la derecha (así el importe usa todo el ancho de la tarjeta);
+   con reclamos escalados, tarjeta de alerta ámbar. */
+.panel-kpi-icono,
+.panel-kpi-alerta {
+  position: relative;
+}
+
+.panel-kpi-icono > .panel-icono-cuadro,
+.panel-kpi-alerta > .panel-icono-cuadro {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+}
+
+.panel-kpi-icono .panel-kpi-etiqueta,
+.panel-kpi-alerta .panel-kpi-etiqueta {
+  padding-right: 44px;
+}
+
+.panel-kpi-cuerpo {
+  min-width: 0;
+}
+
+.panel-kpi-alerta {
+  background: var(--panel-alerta-fondo);
+  border-color: var(--panel-alerta-borde);
+}
+
+.panel-kpi-alerta .panel-kpi-etiqueta,
+.panel-kpi-alerta .panel-kpi-valor,
+.panel-kpi-alerta .panel-kpi-detalle {
+  color: var(--panel-alerta-texto);
+}
+
+.panel-kpi-enlace {
+  display: inline-block;
+  margin-top: 2px;
+  color: var(--panel-alerta-texto);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.panel-kpi-enlace:hover,
+.panel-kpi-enlace:focus-visible {
+  text-decoration: underline;
+}
+
+/* A3. «Requiere tu atención»: resumen en la cabecera e icono de 40 px por fila. */
+.panel-resumen-cabecera {
+  color: var(--panel-texto-secundario);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.panel-icono-atencion {
+  width: 40px;
+  height: 40px;
+}
+
+.panel-atencion-texto {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* A4. «Pedidos por estado»: barra segmentada y una casilla por estado. */
+.panel-segmentos {
+  display: flex;
+  gap: 3px;
+  height: 14px;
+  margin-bottom: 16px;
+}
+
+.panel-segmento {
+  flex-basis: 0;
+  min-width: 6px;
+  border-radius: 999px;
+}
+
+.panel-estado-casillas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.panel-estado-casilla {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    "cuadro nombre"
+    "numero numero";
+  align-items: center;
+  gap: 4px 8px;
+  padding: 12px 14px;
+  background: var(--retail-bg-page);
+  border-radius: 12px;
+}
+
+.panel-estado-cuadro {
+  grid-area: cuadro;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+
+.panel-estado-nombre {
+  grid-area: nombre;
+  font-size: 13px;
+}
+
+.panel-estado-numero {
+  grid-area: numero;
+  color: var(--retail-navy);
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+/* A5. Columna derecha del Inicio (mínimo 320 px): atajos y actividad. */
+@media (min-width: 1200px) {
+  .panel-inicio-rejilla-admin {
+    grid-template-columns: minmax(0, 1fr) minmax(380px, 36%);
+  }
+}
+
+.panel-atajos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.panel-atajo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 8px 12px;
+  background: var(--retail-surface);
+  border: 1px solid var(--retail-border);
+  border-radius: 12px;
+  color: var(--retail-navy);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.panel-atajo:hover {
+  background: var(--retail-bg-page);
+}
+
+/* Círculo con las iniciales, coloreado por rol (actividad y cuentas). */
+.panel-avatar-rol {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.panel-rol-admin { background: var(--panel-tono-azul-fondo); color: var(--panel-tono-azul-texto); }
+.panel-rol-vendedor { background: var(--panel-tono-verde-fondo); color: var(--panel-tono-verde-texto); }
+.panel-rol-almacen { background: var(--panel-tono-cielo-fondo); color: var(--panel-tono-cielo-texto); }
+.panel-rol-soporte { background: var(--panel-insignia-ambar-fondo); color: var(--panel-insignia-ambar-texto); }
+.panel-rol-cliente { background: var(--panel-tono-gris-fondo); color: var(--panel-tono-gris-texto); }
+
+.panel-actividad {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.panel-actividad .panel-avatar-rol {
+  width: 32px;
+  height: 32px;
+}
+
+.panel-actividad-cuerpo {
+  min-width: 0;
+}
+
+/* La cabecera de «Actividad reciente» (título y enlace) cabe en una línea. */
+.panel-bloque-cabecera .panel-subtitulo,
+.panel-bloque-cabecera .panel-enlace {
+  white-space: nowrap;
+}
+
+/* Actividad reciente: «{usuario} · {rol}» y, debajo, la fecha; dos líneas fijas. */
+.panel-actividad-actor,
+.panel-actividad-fecha {
+  white-space: nowrap;
+}
+
+.panel-actividad-actor {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+

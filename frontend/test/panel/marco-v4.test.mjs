@@ -3,21 +3,23 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { leerCssPanel, resolverVarsCss } from "./util-css.mjs";
 import { renderizarBarraSuperior, renderizarMenuLateral } from "../../src/panel/panel-layout.js";
 import { ICONOS } from "../../src/panel/iconos.js";
 
-const css = readFileSync(new URL("../../src/css/panel.css", import.meta.url), "utf8");
+const css = leerCssPanel();
 const variables = readFileSync(new URL("../../src/css/variables.css", import.meta.url), "utf8");
 const cuenta = (texto, re) => (texto.match(re) ?? []).length;
 
 /** Cuerpos de todas las reglas cuyo selector (lista separada por comas) es exactamente el dado. */
-const regla = (selector) => {
+const regla = (selector, resolver = false) => {
   const cuerpos = [];
   for (const m of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
     if (m[1].split(",").some((x) => x.trim().split(/\n/).pop().trim() === selector)) cuerpos.push(m[2]);
   }
   assert.ok(cuerpos.length, `falta la regla ${selector}`);
-  return cuerpos.join(" ");
+  const texto = cuerpos.join(" ");
+  return resolver ? resolverVarsCss(texto) : texto;
 };
 /** Texto del primer @media con esa consulta (llaves equilibradas). */
 const media = (consulta) => {
@@ -48,7 +50,7 @@ test("1: estilos de la marca: 16 px/800/0.04em blanco con «ANDINO» celeste; et
   assert.match(n, /font-size:\s*16px/);
   assert.match(n, /font-weight:\s*800/);
   assert.match(n, /letter-spacing:\s*0\.04em/);
-  assert.match(n, /color:\s*#ffffff/i);
+  assert.match(resolverVarsCss(n), /color:\s*#ffffff/i);
   assert.match(regla(".panel-marca-nombre-acento"), /color:\s*var\(--panel-acento-cielo\)/);
   assert.match(variables + css, /--panel-acento-cielo:\s*#38bdf8/i);
   const e = regla(".panel-marca-etiqueta");
@@ -82,7 +84,7 @@ test("2: «Ir a la tienda» con icono de tienda en trazo; texto #cbd5e1, 14 px, 
   const barra = renderizarBarraSuperior({ nombre: "Ana", rol: "ALMACEN" });
   assert.match(barra, /<a class="panel-enlace-tienda" href="\/">\s*<svg[^>]*stroke="currentColor"[^>]*>[\s\S]*?<\/svg>\s*<span>Ir a la tienda<\/span>/);
   const r = regla(".panel-enlace-tienda");
-  assert.match(r, /color:\s*#cbd5e1/i);
+  assert.match(resolverVarsCss(r), /color:\s*#cbd5e1/i);
   assert.match(r, /font-size:\s*14px/);
   assert.match(r, /font-weight:\s*600/);
   assert.match(r, /min-height:\s*44px/);
@@ -99,7 +101,7 @@ test("2: chip del usuario: pastilla translúcida, avatar #0d6efd de 36 px, nombr
   assert.match(av, /background:\s*var\(--retail-blue\)/);
   assert.match(variables, /--retail-blue:\s*#0d6efd/i);
   const nom = regla(".panel-chip-nombre");
-  assert.match(nom, /color:\s*#ffffff/i);
+  assert.match(resolverVarsCss(nom), /color:\s*#ffffff/i);
   assert.match(nom, /font-size:\s*14px/);
   assert.match(nom, /font-weight:\s*600/);
   const rol = regla(".panel-chip-rol");
@@ -111,7 +113,7 @@ test("2: «Cerrar sesión»: borde rgba(203,213,225,0.35), fondo transparente, t
   const r = regla(".panel-boton-salir");
   assert.match(r, /border:\s*1px solid rgba\(203, 213, 225, 0\.35\)/);
   assert.match(r, /background:\s*transparent/);
-  assert.match(r, /color:\s*#e2e8f0/i);
+  assert.match(resolverVarsCss(r), /color:\s*#e2e8f0/i);
   assert.match(r, /min-height:\s*44px/);
 });
 
@@ -130,11 +132,11 @@ test("3: títulos de grupo #94a3b8 11 px/700/0.1em; entradas #cbd5e1 14 px/500; 
   assert.match(css, /--panel-menu-texto:\s*#cbd5e1/i);
   const a = regla('.panel-menu-enlace[aria-current="page"]');
   assert.match(a, /background:\s*var\(--panel-menu-activo-fondo\)/);
-  assert.match(a, /color:\s*#ffffff/i);
+  assert.match(resolverVarsCss(a), /color:\s*#ffffff/i);
   assert.match(a, /font-weight:\s*600/);
   assert.match(css, /--panel-menu-activo-fondo:\s*rgba\(56, 189, 248, 0\.16\)/);
   assert.match(regla('.panel-menu-enlace[aria-current="page"] svg'), /color:\s*var\(--panel-acento-cielo\)/);
-  assert.match(css, /\.panel-pagina \.panel-menu :focus-visible\s*\{[^}]*outline-color:\s*#ffffff/i, "el foco sigue siendo blanco");
+  assert.match(resolverVarsCss(css), /\.panel-pagina \.panel-menu :focus-visible\s*\{[^}]*outline-color:\s*#ffffff/i, "el foco sigue siendo blanco");
 });
 
 // ---------- 4. Área de contenido ----------
@@ -196,9 +198,8 @@ test("6: pastilla de 12 px/700, relleno 2px 8px, a la derecha; ámbar #fbbf24 co
   assert.match(c, /color:\s*var\(--retail-navy\)/);
   assert.match(css, /--panel-contador-ambar:\s*#fbbf24/i);
   assert.match(css, /--panel-contador-rojo:\s*#dc2626/i);
-  const r = regla(".panel-contador-rojo");
-  assert.match(r, /background:\s*var\(--panel-contador-rojo\)/);
-  assert.match(r, /color:\s*#ffffff/i);
+  assert.match(regla(".panel-contador-rojo"), /background:\s*var\(--panel-contador-rojo\)/);
+  assert.match(regla(".panel-contador-rojo", true), /color:\s*#ffffff/i);
 });
 
 // ---------- 9. Limpieza ----------

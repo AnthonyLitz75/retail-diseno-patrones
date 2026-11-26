@@ -3,6 +3,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { leerCssPanel, resolverVarsCss } from "./util-css.mjs";
 import {
   ORDEN_ROLES, altaCorta, contarPorRol, estadoCambioRol, etiquetaRolCuenta, filtrarCuentas, htmlCambioRol, htmlFilaCuenta, normalizarTexto,
 } from "../../src/administracion/cuentas-logica.js";
@@ -11,7 +12,7 @@ import { ETIQUETAS_COLUMNAS_CUENTAS } from "../../src/administracion/admin-usuar
 
 const leer = (ruta) => readFileSync(new URL(ruta, import.meta.url), "utf8");
 const plantilla = leer("../../src/layout/plantillas/administracion.html");
-const css = leer("../../src/css/panel.css");
+const css = leerCssPanel();
 const cuenta = (texto, re) => (texto.match(re) ?? []).length;
 const regla = (selector) => {
   const cuerpos = [];
@@ -19,7 +20,7 @@ const regla = (selector) => {
     if (m[1].split(",").some((x) => x.trim().split(/\n/).pop().trim() === selector)) cuerpos.push(m[2]);
   }
   assert.ok(cuerpos.length, `falta la regla ${selector}`);
-  return cuerpos.join(" ");
+  return resolverVarsCss(cuerpos.join(" "));
 };
 const seccionCuentas = plantilla.slice(plantilla.indexOf('<section id="admin-seccion-cuentas"'), plantilla.indexOf('<section id="admin-seccion-categorias"'));
 

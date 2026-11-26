@@ -1,0 +1,291 @@
+/* F2: pedidos, productos, consultas e inventario montan un módulo con su propio título (h2);
+   el <h1> de la pantalla lo pone el panel, así que ese h2 se oculta para que no haya dos. */
+.panel-pagina #titulo-pedidos,
+.panel-pagina #titulo-inventario,
+.panel-pagina #titulo-formulario,
+.panel-pagina #titulo-preguntas-vendedor {
+  display: none;
+}
+
+/* ---------- Soporte (spec 16, decisión P1) ---------- */
+
+/* Un solo portal para tres rutas: cada ruta oculta desde fuera las bandejas que no le tocan. */
+#vista-soporte[data-ruta-soporte="reclamos"] [data-bandeja="devoluciones"],
+#vista-soporte[data-ruta-soporte="devoluciones"] [data-bandeja="reclamos"],
+#vista-soporte[data-ruta-soporte="consulta"] [data-bandeja],
+#vista-soporte[data-ruta-soporte="reclamos"] > section:not([data-bandeja]),
+#vista-soporte[data-ruta-soporte="devoluciones"] > section:not([data-bandeja]) {
+  display: none;
+}
+
+/* F7: la tabla de líneas de una devolución se desplaza dentro de su tarjeta en vez de ensanchar la página. */
+.panel-pagina #vista-soporte [data-bandeja="devoluciones"] table {
+  display: block;
+  position: relative; /* F6 */
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.panel-inicio-columnas {
+  display: grid;
+  /* Tanda 2: una tabla debajo de la otra, a todo el ancho. */
+  grid-template-columns: minmax(0, 1fr);
+  gap: 24px;
+}
+
+.panel-busqueda {
+  display: grid;
+  gap: 4px;
+  min-width: 280px;
+}
+
+.panel-busqueda .form-label {
+  margin: 0;
+  font-weight: 600;
+}
+
+.panel-busqueda-fila {
+  display: flex;
+  gap: 8px;
+}
+
+.panel-busqueda-fila .form-control {
+  min-height: var(--panel-alto-pulsable);
+}
+
+.panel-busqueda [aria-invalid="true"] {
+  border-color: var(--panel-insignia-rojo-texto);
+}
+
+.panel-tabla .panel-boton {
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+@media (max-width: 991.98px) {
+  .panel-inicio-columnas {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .panel-busqueda {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+/* Formulario «Buscar pedido» propio del panel en #/consulta-pedido, encima del portal. */
+section[data-ruta="#/consulta-pedido"] > .panel-busqueda {
+  max-width: 420px;
+  margin-bottom: 24px;
+}
+
+/* ---------- Inicio del Administrador (spec 17) ---------- */
+
+:root {
+  /* Colores de «Pedidos por estado» (spec 17): de la paleta de insignias y tokens existentes. */
+  --panel-estado-pendiente: #d97706; /* ámbar del boceto (tanda 2) */
+  --panel-estado-en-preparacion: var(--retail-blue);
+  --panel-estado-despachado: var(--panel-insignia-azul-texto);
+  --panel-estado-entregado: #15803d;
+  --panel-estado-cancelado: var(--retail-muted);
+  --panel-estado-otro: var(--panel-insignia-neutro-texto);
+}
+
+.panel-estado-pendiente { background: var(--panel-estado-pendiente); }
+.panel-estado-en-preparacion { background: var(--panel-estado-en-preparacion); }
+.panel-estado-despachado { background: var(--panel-estado-despachado); }
+.panel-estado-entregado { background: var(--panel-estado-entregado); }
+.panel-estado-cancelado { background: var(--panel-estado-cancelado); }
+.panel-estado-otro { background: var(--panel-estado-otro); }
+
+.panel-estado-nombre {
+  font-weight: 600;
+}
+
+.panel-estado-numero {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.panel-lista-atencion,
+.panel-lista-actividad {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.panel-atencion,
+.panel-actividad {
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--panel-borde-fila);
+}
+
+.panel-atencion:last-child,
+.panel-actividad:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.panel-atencion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.panel-atencion p,
+.panel-actividad p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.panel-atencion .panel-boton {
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.panel-atencion-titulo,
+.panel-actividad-titulo {
+  font-weight: 700;
+  color: var(--retail-navy);
+}
+
+.panel-atencion-detalle,
+.panel-actividad-detalle {
+  color: var(--panel-texto-secundario);
+  font-size: 13px;
+}
+
+.panel-atencion-fallo {
+  color: var(--panel-insignia-rojo-texto);
+}
+
+/* Administración en el panel (P5): una sola instancia; cada ruta muestra su sección y la barra
+   de pestañas interna del módulo se oculta (administracion.js no cambia). */
+.panel-pagina #vista-administracion .pestanas-secciones {
+  display: none;
+}
+
+/* Ajuste a de T09: los indicadores internos del módulo de Administración solo se ven en Reportes. */
+.panel-pagina section[data-ruta="#/categorias"] .indicadores-admin,
+.panel-pagina section[data-ruta="#/cuentas"] .indicadores-admin,
+.panel-pagina section[data-ruta="#/incidencias"] .indicadores-admin {
+  display: none;
+}
+
+/* ---------- Auditoría (spec 18, T10) ---------- */
+
+/* El <h1> lo pone el panel: el título propio del módulo se oculta para que no haya dos. */
+.panel-pagina #titulo-auditoria-admin {
+  display: none;
+}
+
+/* Filtros en una tarjeta (la envoltura es CSS: auditoria-vista.js no cambia). */
+.panel-pagina #admin-seccion-auditoria > form {
+  margin: 0 0 16px;
+  padding: 18px;
+  background: var(--retail-surface);
+  border: 1px solid var(--retail-border);
+  border-radius: var(--panel-radio-tarjeta);
+}
+
+/* Botones de 44 px: filtros, «Descargar CSV» (movido al encabezado) y paginación. */
+.panel-pagina #admin-seccion-auditoria .btn,
+.panel-pagina [data-acciones-auditoria] .btn {
+  min-height: var(--panel-alto-pulsable);
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+/* Insignia de la acción por código (span[data-accion] de auditoria-vista.js): pastilla neutra
+   por defecto, también para códigos desconocidos. El texto sigue siendo accionEtiqueta || accion. */
+.panel-pagina #admin-seccion-auditoria span[data-accion] {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: var(--panel-radio-pastilla);
+  background: var(--panel-insignia-neutro-fondo);
+  color: var(--panel-insignia-neutro-texto);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.panel-pagina #admin-seccion-auditoria span[data-accion="PEDIDO_ESTADO"] {
+  background: var(--panel-insignia-azul-fondo);
+  color: var(--panel-insignia-azul-texto);
+}
+
+.panel-pagina #admin-seccion-auditoria span[data-accion="PRECIO_CAMBIADO"],
+.panel-pagina #admin-seccion-auditoria span[data-accion="STOCK_AJUSTADO"] {
+  background: var(--panel-insignia-ambar-fondo);
+  color: var(--panel-insignia-ambar-texto);
+}
+
+.panel-pagina #admin-seccion-auditoria span[data-accion="PRODUCTO_EDITADO"] {
+  background: var(--panel-insignia-verde-fondo);
+  color: var(--panel-insignia-verde-texto);
+}
+
+/* ---------- Celular y accesibilidad (T12) ---------- */
+
+/* Tablas heredadas montadas en el panel: desplazamiento horizontal dentro de su contenedor. */
+.panel-pagina .table-responsive {
+  position: relative; /* F6: ver .panel-tabla-contenedor */
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+/* Hijos de flex/grid que contienen tablas o texto largo: pueden encogerse sin desbordar. */
+.panel-pagina .panel-tarjeta,
+.panel-pagina .panel-inicio-lateral,
+.panel-pagina .panel-cola-columna {
+  min-width: 0;
+}
+
+/* La celda del usuario es ahora <th scope="row">; paneles.css (compartido) solo apila los td
+   de .tabla-apilable en celular, así que el panel le da el mismo trato al th. Por debajo de
+   576 px, los botones de acción de tarjetas y filas de los Inicios miden 48 px. */
+@media (max-width: 575.98px) {
+  .panel-pagina .tabla-apilable tbody th {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.4rem 0;
+    border-bottom: 0;
+    text-align: left;
+  }
+
+  .panel-pagina .tabla-apilable tbody th[data-etiqueta]::before {
+    content: attr(data-etiqueta);
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--panel-texto-secundario);
+  }
+
+  .panel-inicio .panel-tabla .panel-boton,
+  .panel-inicio .panel-pedido .panel-boton,
+  .panel-inicio .panel-atencion .panel-boton,
+  .panel-inicio .panel-consulta .panel-boton {
+    min-height: 48px;
+  }
+
+  /* Fila de «Requiere tu atención»: icono y texto arriba, botón debajo a todo el ancho. */
+  .panel-atencion:not(.panel-atencion-fallo) {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .panel-inicio .panel-atencion .panel-boton {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+}
+

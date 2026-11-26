@@ -2,10 +2,10 @@
 // casilla «Solicitada» de la devolución.
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { leerCssPanel, resolverVarsCss } from "./util-css.mjs";
 import { renderizarDetalleDevolucion } from "../../src/panel/pantallas/bandeja-vista.js";
 
-const css = readFileSync(new URL("../../src/css/panel.css", import.meta.url), "utf8");
+const css = leerCssPanel();
 const AHORA = new Date("2026-11-25T12:00:00Z");
 
 function reglaEn(texto, selector) {
@@ -14,7 +14,7 @@ function reglaEn(texto, selector) {
     if (m[1].split(",").some((x) => x.trim().split(/\n/).pop().trim() === selector)) cuerpos.push(m[2]);
   }
   assert.ok(cuerpos.length, `falta la regla ${selector}`);
-  return cuerpos.join(" ");
+  return resolverVarsCss(cuerpos.join(" "));
 }
 const regla = (selector) => reglaEn(css, selector);
 function bloquesMedia(consulta) {

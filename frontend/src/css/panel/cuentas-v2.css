@@ -1,0 +1,276 @@
+/* Cuentas y roles: lista a la izquierda y alta + permisos en una columna de 340 px. */
+.cuentas-rejilla {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 24px;
+}
+
+@media (min-width: 992px) {
+  .cuentas-rejilla {
+    grid-template-columns: minmax(0, 1fr) 340px;
+  }
+}
+
+.cuentas-tarjeta {
+  padding: 20px;
+  background: var(--retail-surface);
+  border: 1px solid var(--retail-border);
+  border-radius: var(--panel-radio-tarjeta);
+}
+
+.cuentas-lateral {
+  display: grid;
+  gap: 24px;
+}
+
+.cuentas-cabecera-lista {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.cuentas-cabecera-lista h3 {
+  margin: 0;
+}
+
+.cuentas-herramientas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+/* Filtro por rol: grupo de botones (aria-pressed) dentro de un contenedor gris. */
+.cuentas-filtros {
+  display: inline-flex;
+  gap: 4px;
+  max-width: 100%;
+  padding: 4px;
+  background: #e9edf3;
+  border-radius: 12px;
+}
+
+.cuentas-filtro {
+  min-height: 40px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--panel-texto-secundario);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.cuentas-filtro:hover {
+  color: var(--retail-ink);
+}
+
+.cuentas-filtro[aria-pressed="true"] {
+  background: var(--retail-surface);
+  color: var(--retail-ink);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.18);
+}
+
+.cuentas-busqueda {
+  flex: 1 1 200px;
+  min-width: 180px;
+}
+
+.cuentas-busqueda .form-control {
+  min-height: var(--panel-alto-pulsable);
+}
+
+.cuentas-tabla {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.cuentas-tabla thead th {
+  padding: 10px 12px;
+  background: var(--panel-fila-encabezado);
+  color: var(--panel-texto-secundario);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.cuentas-tabla tbody th,
+.cuentas-tabla tbody td {
+  padding: 12px 10px;
+  border-bottom: 1px solid var(--panel-borde-fila);
+  vertical-align: top;
+}
+
+.cuentas-tabla tbody th {
+  font-weight: 400;
+  text-align: left;
+}
+
+.cuentas-tabla select {
+  min-width: 150px;
+  min-height: 40px;
+}
+
+.cuenta-identidad {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.cuenta-identidad .panel-avatar-rol {
+  width: 36px;
+  height: 36px;
+}
+
+.cuenta-datos {
+  min-width: 0;
+}
+
+.cuenta-nombre {
+  color: var(--retail-navy);
+  font-weight: 700;
+}
+
+.cuenta-tu {
+  margin-left: 6px;
+  color: var(--panel-texto-secundario);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.cuenta-correo,
+.cuenta-alta {
+  display: block;
+  overflow-wrap: anywhere;
+  color: var(--panel-texto-secundario);
+  font-size: 13px;
+}
+
+/* Rol cambiado y sin guardar: fila ámbar, selector con borde ámbar y «Antes: …» + «Guardar». */
+.cuenta-modificada {
+  background: var(--panel-alerta-fondo);
+}
+
+.cuenta-rol-cambiado {
+  border-color: #d97706;
+}
+
+.cuenta-cambio:empty {
+  display: none;
+}
+
+.cuenta-cambio {
+  margin-top: 8px;
+}
+
+.cuenta-antes {
+  margin: 0 0 6px;
+  color: var(--panel-texto-secundario);
+  font-size: 12px;
+}
+
+.cuenta-guardar {
+  min-height: 40px;
+  padding: 0 16px;
+  background: var(--retail-blue-dark);
+  border: 1px solid var(--retail-blue-dark);
+  border-radius: var(--panel-radio-control);
+  color: var(--retail-surface);
+  font-weight: 600;
+}
+
+.cuenta-guardar:hover:not(:disabled) {
+  background: #084298;
+}
+
+.cuenta-estado {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--panel-radio-pastilla);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.cuenta-estado-punto {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.cuenta-estado-activa { background: var(--panel-tono-verde-fondo); color: var(--panel-tono-verde-texto); }
+.cuenta-estado-inactiva { background: var(--panel-tono-gris-fondo); color: var(--panel-tono-gris-texto); }
+
+.cuenta-desactivar {
+  min-height: 40px;
+  padding: 0 14px;
+  background: var(--retail-surface);
+  border: 1px solid #fca5a5;
+  border-radius: var(--panel-radio-control);
+  color: #b91c1c;
+  font-weight: 600;
+}
+
+.cuenta-desactivar:hover:not(:disabled) {
+  background: #fef2f2;
+}
+
+.cuenta-desactivar:disabled {
+  border-color: var(--retail-border);
+  color: var(--retail-muted);
+  cursor: not-allowed;
+}
+
+.cuentas-vacio {
+  padding: 24px;
+  color: var(--panel-texto-secundario);
+  text-align: center;
+}
+
+.cuentas-formulario {
+  display: grid;
+  gap: 14px;
+}
+
+.cuentas-formulario .form-label {
+  margin-bottom: 4px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.cuentas-formulario .form-control,
+.cuentas-formulario .form-select {
+  min-height: var(--panel-alto-pulsable);
+}
+
+.cuentas-formulario .form-text {
+  margin: 6px 0 0;
+}
+
+.cuentas-roles {
+  display: grid;
+  gap: 12px;
+  margin: 12px 0 0;
+}
+
+.cuentas-roles dt {
+  color: var(--retail-navy);
+  font-weight: 700;
+}
+
+.cuentas-roles dd {
+  margin: 0;
+  color: var(--panel-texto-secundario);
+  font-size: 13px;
+}
+

@@ -3,14 +3,14 @@
 // F5–F7 reglas CSS acotadas, F8 plurales.
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { leerCssPanel } from "./util-css.mjs";
 import { cargarCategoriasProducto } from "../../src/panel/categorias-producto.js";
 import { encabezadoPantalla } from "../../src/panel/pantallas/titulo-pantalla.js";
 import { MENU_POR_ROL } from "../../src/panel/menu-por-rol.js";
 import { crearCajonMenu } from "../../src/panel/cajon-menu.js";
 import { plural } from "../../src/panel/utilidades-panel.js";
 
-const css = readFileSync(new URL("../../src/css/panel.css", import.meta.url), "utf8");
+const css = leerCssPanel();
 
 // ---------- F1 ----------
 

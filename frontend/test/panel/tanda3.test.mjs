@@ -2,11 +2,11 @@
 // espaciado de cabeceras de tarjeta, indicadores en celular, actividad, barra y pie del cajón).
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { leerCssPanel } from "./util-css.mjs";
 import { renderizarActividad } from "../../src/panel/inicio/admin-inicio.js";
 import { actividadReciente } from "../../src/panel/inicio/admin-logica.js";
 
-const css = readFileSync(new URL("../../src/css/panel.css", import.meta.url), "utf8");
+const css = leerCssPanel();
 /** Cuerpos de todas las reglas cuyo selector (lista separada por comas) es exactamente el dado. */
 const regla = (selector) => {
   const cuerpos = [];

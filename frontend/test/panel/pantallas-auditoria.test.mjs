@@ -2,7 +2,8 @@
 // marcador temporal.
 import test from "node:test";
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
+import { leerCssPanel } from "./util-css.mjs";
 import { resolverRuta, crearPanelRouter } from "../../src/panel/panel-router.js";
 import { entradasDeRol } from "../../src/panel/menu-por-rol.js";
 import { renderizarEncabezadoAuditoria } from "../../src/panel/pantallas/auditoria.js";
@@ -35,7 +36,7 @@ test("el marcador desaparece: no existe el archivo y cada ruta de cada rol tiene
 });
 
 test("insignias de acción (span[data-accion]) en forma de pastilla: azul, ámbar, verde y neutro por defecto", () => {
-  const css = readFileSync(new URL("../../src/css/panel.css", import.meta.url), "utf-8");
+  const css = leerCssPanel();
   const regla = (selector) => css.match(new RegExp(`${selector.replace(/[[\]"#.]/g, "\\$&")}[^{]*\\{([^}]*)\\}`))?.[1] ?? "";
   const neutra = regla('#admin-seccion-auditoria span[data-accion]');
   assert.match(neutra, /--panel-insignia-neutro-fondo/);
@@ -47,6 +48,6 @@ test("insignias de acción (span[data-accion]) en forma de pastilla: azul, ámba
 });
 
 test("el título propio del módulo se oculta en el panel (no hay dos títulos)", () => {
-  const css = readFileSync(new URL("../../src/css/panel.css", import.meta.url), "utf-8");
+  const css = leerCssPanel();
   assert.match(css, /\.panel-pagina #titulo-auditoria-admin\s*\{[^}]*display:\s*none/);
 });

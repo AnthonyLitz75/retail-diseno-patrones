@@ -2,7 +2,7 @@
 // detalle; el elegido va en la URL). Datos como los del escenario demo, vistos por Andrea (usuario 4).
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { leerCssPanel, resolverVarsCss } from "./util-css.mjs";
 import {
   PESTANAS_DEVOLUCIONES, PESTANAS_RECLAMOS, elegirSeleccion, filtrarElementos, idDeParametros, lineasRecepcion,
   ordenarPestana, pasosDevolucion, recepcionCompleta, responsableReclamo, rutaDeElemento,
@@ -12,7 +12,7 @@ import {
   renderizarBandeja, renderizarDetalleDevolucion, renderizarDetalleReclamo, renderizarLista, renderizarPestanas,
 } from "../../src/panel/pantallas/bandeja-vista.js";
 
-const css = readFileSync(new URL("../../src/css/panel.css", import.meta.url), "utf8");
+const css = leerCssPanel();
 const visible = (html) => html.replaceAll("&#x2F;", "/");
 const contar = (texto, re) => (texto.match(re) ?? []).length;
 const AHORA = new Date("2026-11-25T12:00:00Z");
@@ -44,7 +44,7 @@ function reglaEn(texto, selector) {
     if (m[1].split(",").some((x) => x.trim().split(/\n/).pop().trim() === selector)) cuerpos.push(m[2]);
   }
   assert.ok(cuerpos.length, `falta la regla ${selector}`);
-  return cuerpos.join(" ");
+  return resolverVarsCss(cuerpos.join(" "));
 }
 const regla = (selector) => reglaEn(css, selector);
 
