@@ -11,6 +11,10 @@
 }
 
 .catalog-pagination-nav .page-item .page-link {
+  display: grid;
+  place-items: center;
+  min-width: 44px;
+  min-height: 44px;
   border-radius: 8px;
   border: 1px solid var(--retail-border);
   color: #1e293b;
@@ -23,20 +27,20 @@
 
 .catalog-pagination-nav .page-item .page-link:hover {
   background-color: #eff6ff;
-  border-color: var(--retail-blue);
-  color: var(--retail-blue);
+  border-color: var(--retail-blue-dark);
+  color: var(--retail-blue-dark);
   transform: translateY(-1px);
 }
 
 .catalog-pagination-nav .page-item.active .page-link {
-  background-color: var(--retail-blue);
-  border-color: var(--retail-blue);
+  background-color: var(--retail-blue-dark);
+  border-color: var(--retail-blue-dark);
   color: var(--retail-surface);
   box-shadow: 0 4px 10px rgba(13, 110, 253, 0.28);
 }
 
 .catalog-pagination-nav .page-item.disabled .page-link {
-  color: #94a3b8;
+  color: var(--retail-muted);
   background-color: var(--retail-bg-page);
   border-color: var(--retail-border);
   cursor: not-allowed;
@@ -132,6 +136,9 @@
 }
 
 .chip-categoria {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   padding: 0.5rem 1.1rem;
   border: 1.5px solid var(--retail-border);
   border-radius: 999px;
@@ -143,8 +150,8 @@
 
 .chip-categoria:hover,
 .chip-categoria:focus-visible {
-  border-color: var(--retail-blue);
-  color: var(--retail-blue);
+  border-color: var(--retail-blue-dark);
+  color: var(--retail-blue-dark);
 }
 
 .relacionados-grid {

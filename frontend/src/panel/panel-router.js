@@ -19,7 +19,10 @@ const SUFIJO_TITULO = "Panel del personal · Píxel Andino";
 /** Parámetros de consulta que lee cada ruta (decisión P8); el resto se ignora. */
 const PARAMETROS_POR_RUTA = Object.freeze({
   "#/consulta-pedido": Object.freeze(["pedido"]),
-  "#/productos": Object.freeze(["nuevo"]),
+  "#/pedidos": Object.freeze(["estado", "pedido"]),
+  "#/inventario": Object.freeze(["producto"]),
+  "#/productos": Object.freeze(["nuevo", "pestana"]),
+  "#/consultas": Object.freeze(["consulta"]),
   "#/cuentas": Object.freeze(["alta"]),
   "#/categorias": Object.freeze(["alta"]),
   "#/reclamos": Object.freeze(["id"]),

@@ -32,5 +32,12 @@ export function montar(contenedor, { entrada, servicios }) {
     acciones: { cambiarVista },
   });
 
-  return { alMostrar: () => controlador.cargarPedidos() };
+  return {
+    async alMostrar(parametros) {
+      await controlador.cargarPedidos(parametros);
+      if (parametros?.estado || parametros?.pedido) {
+        servicios.reemplazarRuta?.("#/pedidos");
+      }
+    },
+  };
 }

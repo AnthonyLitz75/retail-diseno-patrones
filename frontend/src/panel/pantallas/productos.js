@@ -30,6 +30,13 @@ export function pideNuevoProducto(parametros) {
   return parametros?.nuevo === "1";
 }
 
+const PESTANAS_VALIDAS = new Set(["activos", "desactivados", "stock-bajo"]);
+
+/** Pestaña solicitada en `#/productos?pestana=...`; null si no aplica o es inválida. */
+export function pestanaDeProductos(parametros) {
+  return PESTANAS_VALIDAS.has(parametros?.pestana) ? parametros.pestana : null;
+}
+
 /**
  * @param {HTMLElement} contenedor
  * @param {{ servicios: object }} contexto
@@ -83,6 +90,11 @@ export function montar(contenedor, { entrada, servicios }) {
       if (pideNuevoProducto(parametros)) {
         abrirFormularioNuevo();
         // Reemplaza el hash para que recargar la página no vuelva a abrir el formulario.
+        reemplazarRuta?.(RUTA_PRODUCTOS);
+      }
+      const pestana = pestanaDeProductos(parametros);
+      if (pestana) {
+        panelProductos.seleccionarPestana(pestana);
         reemplazarRuta?.(RUTA_PRODUCTOS);
       }
       // F1: el selector «Categoría» del formulario se rellena en cada visita (salen las categorías

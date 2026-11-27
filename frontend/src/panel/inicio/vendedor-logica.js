@@ -82,3 +82,47 @@ export function barrasCatalogo({ activos = 0, desactivados = 0 } = {}) {
     desactivados: { cantidad: desactivados, porcentaje: porcentaje(desactivados) },
   };
 }
+
+/**
+ * Desglose accionable de salud del catálogo a partir de la lista de gestión o un resumen.
+ * @param {Array<object>|{ enStock?: number, stockBajo?: number, agotado?: number, desactivados?: number, activos?: number }} datos
+ */
+export function desgloseCatalogo(datos = []) {
+  let enStock = 0;
+  let stockBajo = 0;
+  let agotado = 0;
+  let desactivados = 0;
+
+  if (Array.isArray(datos)) {
+    for (const producto of datos) {
+      if (!esActivo(producto)) desactivados += 1;
+      else if (Number(producto?.stock) <= 0) agotado += 1;
+      else if (Number(producto?.stock) <= UMBRAL_STOCK_BAJO) stockBajo += 1;
+      else enStock += 1;
+    }
+  } else if (datos && typeof datos === "object") {
+    desactivados = Math.max(0, Number(datos.desactivados ?? 0));
+    agotado = Math.max(0, Number(datos.agotado ?? 0));
+    if (datos.enStock != null) {
+      enStock = Math.max(0, Number(datos.enStock));
+      stockBajo = Math.max(0, Number(datos.stockBajo ?? 0));
+    } else {
+      const activos = Math.max(0, Number(datos.activos ?? 0));
+      const bajosTotales = Math.min(activos, Math.max(0, Number(datos.stockBajo ?? 0)));
+      agotado = Math.min(bajosTotales, agotado);
+      stockBajo = Math.max(0, bajosTotales - agotado);
+      enStock = Math.max(0, activos - bajosTotales);
+    }
+  }
+
+  const total = enStock + stockBajo + agotado + desactivados;
+  return {
+    total,
+    segmentos: [
+      { clave: "en-stock", nombre: "En stock", cantidad: enStock, color: "entregado", ruta: "#/productos?pestana=activos" },
+      { clave: "stock-bajo", nombre: "Stock bajo", cantidad: stockBajo, color: "pendiente", ruta: "#/productos?pestana=stock-bajo" },
+      { clave: "agotado", nombre: "Agotado", cantidad: agotado, color: "agotado", ruta: "#/productos?pestana=stock-bajo" },
+      { clave: "desactivados", nombre: "Desactivados", cantidad: desactivados, color: "cancelado", ruta: "#/productos?pestana=desactivados" },
+    ],
+  };
+}

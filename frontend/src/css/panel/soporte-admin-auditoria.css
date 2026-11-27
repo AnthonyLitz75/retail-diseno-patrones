@@ -88,6 +88,7 @@ section[data-ruta="#/consulta-pedido"] > .panel-busqueda {
   --panel-estado-despachado: var(--panel-insignia-azul-texto);
   --panel-estado-entregado: #15803d;
   --panel-estado-cancelado: var(--retail-muted);
+  --panel-estado-agotado: var(--panel-insignia-rojo-texto);
   --panel-estado-otro: var(--panel-insignia-neutro-texto);
 }
 
@@ -96,6 +97,7 @@ section[data-ruta="#/consulta-pedido"] > .panel-busqueda {
 .panel-estado-despachado { background: var(--panel-estado-despachado); }
 .panel-estado-entregado { background: var(--panel-estado-entregado); }
 .panel-estado-cancelado { background: var(--panel-estado-cancelado); }
+.panel-estado-agotado { background: var(--panel-estado-agotado); }
 .panel-estado-otro { background: var(--panel-estado-otro); }
 
 .panel-estado-nombre {

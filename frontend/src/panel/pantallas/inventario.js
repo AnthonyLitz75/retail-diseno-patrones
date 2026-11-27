@@ -64,5 +64,12 @@ export function montar(contenedor, { entrada, servicios }) {
     elementos,
   });
 
-  return { alMostrar: () => controlador.iniciarPanelInventario() };
+  return {
+    async alMostrar(parametros) {
+      await controlador.iniciarPanelInventario(parametros);
+      if (parametros?.producto) {
+        servicios.reemplazarRuta?.("#/inventario");
+      }
+    },
+  };
 }

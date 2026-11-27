@@ -104,10 +104,11 @@
 }
 
 .header-search-btn {
-  background: var(--retail-blue);
+  background: var(--retail-blue-dark);
   color: #ffffff;
   border: none;
   min-width: 52px;
+  min-height: 44px;
   padding: 0 1.25rem;
   display: inline-flex;
   align-items: center;
@@ -122,7 +123,7 @@
 }
 
 .header-search-btn:hover {
-  background: var(--retail-blue-dark);
+  background: #084298;
 }
 
 /* Acciones de Cuenta y Carrito */

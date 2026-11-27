@@ -90,6 +90,8 @@ test("renderizarVistaDetalleProducto construye la estructura para producto con s
   assert.match(elemento.innerHTML, /199\.00/);
   assert.match(elemento.innerHTML, /-15% OFF/);
   assert.match(elemento.innerHTML, /Agregar al carrito/);
+  assert.match(elemento.innerHTML, /product-detail-fav-btn[^>]*aria-pressed="true"/);
+  assert.match(elemento.innerHTML, /aria-label="Quitar Teclado mecánico 60% RGB Fizz K617 de favoritos"/);
 });
 
 test("renderizarVistaDetalleProducto gestiona producto agotado", () => {
@@ -108,4 +110,5 @@ test("renderizarVistaDetalleProducto gestiona producto agotado", () => {
   const elemento = renderizarVistaDetalleProducto(prodAgotado);
   assert.ok(elemento);
   assert.match(elemento.innerHTML, /Producto actualmente agotado/);
+  assert.match(elemento.innerHTML, /product-detail-fav-btn[^>]*aria-pressed="false"/);
 });

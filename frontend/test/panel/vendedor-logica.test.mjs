@@ -9,6 +9,7 @@ import {
   resumirTexto,
   nombreProductoPregunta,
   barrasCatalogo,
+  desgloseCatalogo,
   detallePreguntas,
   MAX_FILAS_STOCK_BAJO,
   MAX_PREGUNTAS_INICIO,
@@ -111,4 +112,14 @@ test("barras del catálogo: porcentaje sobre el total; con total 0, ambas al 0 %
   });
   const tercios = barrasCatalogo({ activos: 1, desactivados: 2 });
   assert.ok(Math.abs(tercios.activos.porcentaje - 100 / 3) < 1e-9);
+});
+
+test("desgloseCatalogo: separa en stock, stock bajo, agotado y desactivados", () => {
+  const resultado = desgloseCatalogo(productos);
+  assert.equal(resultado.total, 6);
+  assert.deepEqual(
+    resultado.segmentos.map((s) => [s.clave, s.cantidad]),
+    [["en-stock", 2], ["stock-bajo", 2], ["agotado", 1], ["desactivados", 1]],
+  );
+  assert.equal(desgloseCatalogo([]).total, 0);
 });

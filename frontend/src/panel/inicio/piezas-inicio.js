@@ -13,6 +13,24 @@ export function renderizarCargando() {
   return '<p class="panel-cargando">Cargando…</p>';
 }
 
+/** Skeletons equivalentes para tarjetas KPI durante la carga inicial. */
+export function renderizarSkeletonsKpi(cantidad = 4) {
+  return Array.from({ length: cantidad }, () => `<article class="panel-kpi panel-esqueleto-kpi" aria-hidden="true">
+  <span class="panel-esqueleto panel-esqueleto-etiqueta"></span>
+  <span class="panel-esqueleto panel-esqueleto-valor"></span>
+  <span class="panel-esqueleto panel-esqueleto-detalle"></span>
+</article>`).join("");
+}
+
+/** Skeletons equivalentes para listas o tablas en bloques de inicio. */
+export function renderizarSkeletonsLista(cantidad = 3) {
+  const filas = Array.from({ length: cantidad }, () => `<li class="panel-esqueleto-fila">
+  <span class="panel-esqueleto panel-esqueleto-titulo"></span>
+  <span class="panel-esqueleto panel-esqueleto-accion"></span>
+</li>`).join("");
+  return `<ul class="panel-esqueleto-lista" aria-hidden="true">${filas}</ul>`;
+}
+
 /** Error de un bloque con «Reintentar»; `fuente` dice qué recargar (data-reintentar). */
 export function renderizarErrorBloque(fuente) {
   return html`<div class="panel-error">

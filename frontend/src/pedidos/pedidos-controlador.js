@@ -19,7 +19,23 @@ import {
   solicitarDevolucion,
 } from "../atencion/atencion.js";
 import { crearSeccionAtencionPedido } from "../atencion/atencion-cliente.js";
-import { ROL, ROLES_INVENTARIO, ROLES_OPERACION, EVENTOS } from "../utilidades/constantes.js";
+import {
+  ESTADOS_FILTRO_PEDIDOS,
+  contarPedidosOperativos,
+  filtrarPedidosOperativos,
+  crearSkeletonsPedidos,
+  crearVacioFiltrosPedidos,
+  crearErrorPedidos,
+  crearBarraFiltrosPedidos,
+} from "./pedidos-filtros.js";
+import {
+  ROL,
+  ROLES_INVENTARIO,
+  ROLES_OPERACION,
+  EVENTOS,
+} from "../utilidades/constantes.js";
+
+export { ESTADOS_FILTRO_PEDIDOS, contarPedidosOperativos, filtrarPedidosOperativos };
 
 /**
  * Configura los flujos y eventos de la sección de pedidos.
@@ -139,10 +155,79 @@ export function configurarControladorPedidos({
     );
   }
 
-  async function cargarPedidos() {
+  let filtroEstadoActual = "TODOS";
+  let textoBusquedaActual = "";
+  let ultimosPedidos = [];
+  let ultimasOpcionesVista = null;
+  let controladorBarraFiltros = null;
+
+  function actualizarBarraFiltros(conteos) {
+    controladorBarraFiltros?.actualizar({
+      conteos,
+      estadoActivo: filtroEstadoActual,
+      textoBusqueda: textoBusquedaActual,
+    });
+  }
+
+  function renderizarPedidosOperativos({ pedidoEnfocado = null } = {}) {
+    if (!ultimasOpcionesVista) return;
+    actualizarBarraFiltros(contarPedidosOperativos(ultimosPedidos));
+
+    const filtrados = filtrarPedidosOperativos(ultimosPedidos, {
+      estado: filtroEstadoActual,
+      texto: textoBusquedaActual,
+    });
+
+    if (filtrados.length === 0 && ultimosPedidos.length > 0 && typeof document !== "undefined") {
+      if (estadoPedidos) {
+        estadoPedidos.className = "text-secondary";
+        estadoPedidos.classList?.remove("d-none");
+        estadoPedidos.textContent = "No hay pedidos que coincidan con el filtro aplicado.";
+      }
+      listaPedidos?.replaceChildren(
+        crearVacioFiltrosPedidos(() => {
+          filtroEstadoActual = "TODOS";
+          textoBusquedaActual = "";
+          renderizarPedidosOperativos();
+        }),
+      );
+      return;
+    }
+
+    mostrarPedidos(filtrados, ultimasOpcionesVista);
+
+    if (pedidoEnfocado && typeof listaPedidos?.querySelector === "function") {
+      const tarjeta = listaPedidos.querySelector(`#pedido-${pedidoEnfocado}`);
+      tarjeta?.classList?.add("panel-consulta-enfocada");
+      tarjeta?.scrollIntoView?.({ behavior: "smooth", block: "center" });
+    }
+  }
+
+  function asegurarBarraFiltros() {
+    if (controladorBarraFiltros || typeof listaPedidos?.before !== "function" || typeof document === "undefined") {
+      return controladorBarraFiltros;
+    }
+    controladorBarraFiltros = crearBarraFiltrosPedidos({
+      estadoInicial: filtroEstadoActual,
+      alCambiarEstado(estadoClave) {
+        if (filtroEstadoActual === estadoClave) return;
+        filtroEstadoActual = estadoClave;
+        renderizarPedidosOperativos();
+      },
+      alCambiarBusqueda(texto) {
+        textoBusquedaActual = texto;
+        renderizarPedidosOperativos();
+      },
+    });
+    listaPedidos.before(controladorBarraFiltros.barra);
+    return controladorBarraFiltros;
+  }
+
+  async function cargarPedidos(parametros = {}) {
     const estado = obtenerEstado ? obtenerEstado() : {};
     if (!estado.usuarioSesion) {
       if (seccionPedidos) seccionPedidos.hidden = true;
+      if (controladorBarraFiltros) controladorBarraFiltros.barra.hidden = true;
       if (listaPedidos) listaPedidos.replaceChildren();
       return;
     }
@@ -153,6 +238,7 @@ export function configurarControladorPedidos({
     );
     if (!esCliente && !esEmpleado) {
       if (seccionPedidos) seccionPedidos.hidden = true;
+      if (controladorBarraFiltros) controladorBarraFiltros.barra.hidden = true;
       return;
     }
 
@@ -176,14 +262,19 @@ export function configurarControladorPedidos({
       estadoPedidos.textContent = "Cargando pedidos...";
     }
     if (listaPedidos) {
-      listaPedidos.replaceChildren();
+      listaPedidos.setAttribute?.("aria-busy", "true");
+      if ((esOperativo || esCliente) && typeof document !== "undefined") {
+        listaPedidos.replaceChildren(crearSkeletonsPedidos(3));
+      } else {
+        listaPedidos.replaceChildren();
+      }
     }
 
     try {
       const respuesta = await apiRequest(ruta);
       const pedidos = await respuesta.json();
       const atenciones = esCliente ? await cargarAtencionesCliente() : null;
-      mostrarPedidos(pedidos, {
+      const opcionesVista = {
         esCliente,
         usuarioSesion: estado.usuarioSesion,
         listaPedidos,
@@ -202,12 +293,43 @@ export function configurarControladorPedidos({
         onExplorarCatalogo: () => {
           if (typeof cambiarVista === "function") cambiarVista("tienda");
         },
-      });
+        mostrarFiltros: !esOperativo,
+      };
+
+      if (esOperativo) {
+        ultimosPedidos = Array.isArray(pedidos) ? pedidos : [];
+        ultimasOpcionesVista = opcionesVista;
+        if (parametros?.estado && ESTADOS_FILTRO_PEDIDOS.includes(parametros.estado)) {
+          filtroEstadoActual = parametros.estado;
+        } else if (parametros?.pedido) {
+          const objetivo = ultimosPedidos.find(
+            (item) => String(item?.idPedido) === String(parametros.pedido),
+          );
+          if (objetivo && filtroEstadoActual !== "TODOS" && objetivo.estado !== filtroEstadoActual) {
+            filtroEstadoActual = "TODOS";
+          }
+        }
+        asegurarBarraFiltros();
+        renderizarPedidosOperativos({ pedidoEnfocado: parametros?.pedido || null });
+      } else {
+        if (controladorBarraFiltros) controladorBarraFiltros.barra.hidden = true;
+        mostrarPedidos(pedidos, opcionesVista);
+      }
     } catch (error) {
       if (estadoPedidos) {
         estadoPedidos.className = "text-danger";
+        estadoPedidos.classList?.remove("d-none");
         estadoPedidos.textContent = `No se pudieron cargar los pedidos. ${error.message}`;
       }
+      if (listaPedidos && typeof document !== "undefined") {
+        listaPedidos.replaceChildren(
+          crearErrorPedidos(() => {
+            void cargarPedidos(parametros);
+          }),
+        );
+      }
+    } finally {
+      listaPedidos?.removeAttribute?.("aria-busy");
     }
   }
 

@@ -68,16 +68,21 @@ export function crearElementoTarjetaProducto(
   const tarjetaTop = document.createElement("div");
   tarjetaTop.className = "product-card-top";
 
+  const actualizarEstadoFavorito = (activo) => {
+    botonFav.classList.toggle("is-favorite", activo);
+    botonFav.setAttribute("aria-pressed", String(activo));
+    botonFav.setAttribute(
+      "aria-label",
+      activo ? `Quitar ${producto.nombre} de favoritos` : `Guardar ${producto.nombre} en favoritos`,
+    );
+  };
+
   const botonFav = document.createElement("button");
   botonFav.type = "button";
   botonFav.className = "product-fav-btn";
-  if (esFavorito(producto.id)) botonFav.classList.add("is-favorite");
-  botonFav.setAttribute(
-    "aria-label",
-    `Guardar ${producto.nombre} en favoritos`,
-  );
+  actualizarEstadoFavorito(esFavorito(producto.id));
   botonFav.innerHTML = html`
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
       <path fill-rule="evenodd" d="M8 1.314C12.438-3.248 23.534 4.735 8 15-7.534 4.736 3.562-3.248 8 1.314z"/>
     </svg>
   `;
@@ -85,10 +90,11 @@ export function crearElementoTarjetaProducto(
     e.stopPropagation();
     if (typeof callbacks.onAlternarFavorito === "function") {
       callbacks.onAlternarFavorito(producto, botonFav);
+      actualizarEstadoFavorito(botonFav.classList.contains("is-favorite"));
       return;
     }
     const res = alternarFavorito(producto.id);
-    botonFav.classList.toggle("is-favorite", res.activo);
+    actualizarEstadoFavorito(res.activo);
     mostrarToast(
       res.activo
         ? `¡Añadido a favoritos! ${producto.nombre}`
@@ -211,7 +217,7 @@ export function crearElementoTarjetaProducto(
       const btnPreguntas = document.createElement("button");
       btnPreguntas.type = "button";
       btnPreguntas.className =
-        "btn btn-link btn-sm text-secondary text-decoration-none w-100 mt-1 py-0 product-card-question-btn";
+        "btn btn-link btn-sm text-secondary text-decoration-none w-100 mt-1 product-card-question-btn";
       btnPreguntas.textContent = "Consultar dudas";
       btnPreguntas.addEventListener("click", (e) => {
         e.stopPropagation();

@@ -16,6 +16,7 @@ import {
   renderizarChipsFiltrosActivos as renderizarChipsFiltrosActivosVista,
 } from "./vistas/catalogo-vista.js";
 import { generarSkeletonCards } from "./componentes/skeleton-loader.js";
+import { EVENTO_FAVORITOS, obtenerFavoritos } from "./componentes/favoritos.js";
 import { configurarFormularioProducto } from "./gestion/formulario-producto.js";
 import { resumenCatalogo } from "./vistas/explorar.js";
 import { ROL } from "../utilidades/constantes.js";
@@ -47,6 +48,7 @@ export function configurarControladorCatalogo({
     precioMaximo,
     selectorOrden,
     switchSoloStock,
+    switchSoloFavoritos: switchSoloFavoritosElemento,
     botonLimpiarFiltros,
     formulario,
     categoriaProducto,
@@ -56,10 +58,66 @@ export function configurarControladorCatalogo({
   const {
     obtenerCallbacksTarjeta,
     mostrarToast,
+    obtenerIdsFavoritos = obtenerFavoritos,
   } = acciones;
 
   let temporizadorBusqueda;
   let solicitudCatalogo = 0;
+  let labelFavoritos = null;
+  let soloFavoritosActivo = false;
+  const switchSoloFavoritos = asegurarSwitchFavoritos();
+
+  function asegurarSwitchFavoritos() {
+    if (switchSoloFavoritosElemento) return switchSoloFavoritosElemento;
+    if (typeof document === "undefined") return null;
+    const stockInput = switchSoloStock || document.querySelector("#filtro-solo-stock");
+    if (typeof stockInput?.closest !== "function") {
+      return null;
+    }
+    const existente = document.querySelector("#filtro-solo-favoritos");
+    if (existente) {
+      labelFavoritos = document.querySelector("#label-solo-favoritos");
+      return existente;
+    }
+    const grupoStock = stockInput.closest(".form-check");
+    if (!grupoStock || typeof grupoStock.after !== "function") return null;
+
+    const grupoFav = document.createElement("div");
+    grupoFav.className = "form-check form-switch mb-0 d-flex align-items-center gap-2";
+
+    const inputFav = document.createElement("input");
+    inputFav.className = "form-check-input mt-0";
+    inputFav.type = "checkbox";
+    inputFav.role = "switch";
+    inputFav.id = "filtro-solo-favoritos";
+
+    const label = document.createElement("label");
+    label.id = "label-solo-favoritos";
+    label.className = "form-check-label small fw-semibold text-dark text-nowrap";
+    label.htmlFor = "filtro-solo-favoritos";
+    label.textContent = `Solo favoritos (${obtenerIdsFavoritos().length})`;
+    labelFavoritos = label;
+
+    grupoFav.append(inputFav, label);
+    grupoStock.after(grupoFav);
+    return inputFav;
+  }
+
+  function sincronizarEtiquetaFavoritos() {
+    if (labelFavoritos) {
+      labelFavoritos.textContent = `Solo favoritos (${obtenerIdsFavoritos().length})`;
+    }
+  }
+
+  function marcarErrorRangoPrecios(invalido) {
+    for (const campo of [precioMinimo, precioMaximo]) {
+      if (!campo) continue;
+      campo.classList?.toggle("is-invalid", invalido);
+      if (invalido) campo.setAttribute("aria-invalid", "true");
+      else campo.removeAttribute("aria-invalid");
+    }
+    estadoCatalogo?.setAttribute?.("role", invalido ? "alert" : "status");
+  }
 
   function sincronizarCategoriaDestacada() {
     if (typeof document === "undefined") return;
@@ -141,7 +199,12 @@ export function configurarControladorCatalogo({
         break;
       case "soloEnStock":
         if (switchSoloStock) switchSoloStock.checked = false;
-        actualizarVistaCatalogo();
+        actualizarVistaCatalogo({ resetearPagina: true });
+        break;
+      case "soloFavoritos":
+        soloFavoritosActivo = false;
+        if (switchSoloFavoritos) switchSoloFavoritos.checked = false;
+        actualizarVistaCatalogo({ resetearPagina: true });
         break;
     }
   }
@@ -155,6 +218,7 @@ export function configurarControladorCatalogo({
         precioMin: precioMinimo ? precioMinimo.value : "",
         precioMax: precioMaximo ? precioMaximo.value : "",
         soloEnStock: switchSoloStock ? switchSoloStock.checked : false,
+        soloFavoritos: switchSoloFavoritos ? switchSoloFavoritos.checked : soloFavoritosActivo,
       },
       contenedorChips: document.querySelector("#chips-filtros-activos"),
       onQuitarFiltro: quitarFiltro,
@@ -177,8 +241,11 @@ export function configurarControladorCatalogo({
     sincronizarCategoriaDestacada();
     if (precioMinimo) precioMinimo.value = "";
     if (precioMaximo) precioMaximo.value = "";
+    marcarErrorRangoPrecios(false);
     if (selectorOrden) selectorOrden.value = CRITERIOS_ORDEN.DEFECTO;
     if (switchSoloStock) switchSoloStock.checked = false;
+    soloFavoritosActivo = false;
+    if (switchSoloFavoritos) switchSoloFavoritos.checked = false;
     void cargarProductos();
   }
 
@@ -200,13 +267,17 @@ export function configurarControladorCatalogo({
     if (resetearPagina) {
       estado.paginaActualCatalogo = 1;
     }
+    sincronizarEtiquetaFavoritos();
     renderizarChipsFiltrosActivos();
     const criterioOrden = selectorOrden ? selectorOrden.value : CRITERIOS_ORDEN.DEFECTO;
     const soloEnStock = switchSoloStock ? switchSoloStock.checked : false;
+    const soloFavoritos = switchSoloFavoritos ? switchSoloFavoritos.checked : soloFavoritosActivo;
 
     const productosFiltrados = aplicarFiltrosYOrden(estado.productosDisponibles, {
       criterioOrden,
       soloEnStock,
+      soloFavoritos,
+      idsFavoritos: soloFavoritos ? obtenerIdsFavoritos() : null,
     });
 
     const resultadoPaginacion = paginarProductos(
@@ -267,13 +338,16 @@ export function configurarControladorCatalogo({
     const max = (!precioMaximo || precioMaximo.value === "") ? null : Number(precioMaximo.value);
 
     if (min !== null && max !== null && min > max) {
+      marcarErrorRangoPrecios(true);
       if (estadoCatalogo) {
         estadoCatalogo.className = "text-danger";
         estadoCatalogo.textContent = "El precio mínimo no puede superar al precio máximo.";
       }
+      if (contenedorPaginacion) contenedorPaginacion.hidden = true;
       if (contenedor) contenedor.replaceChildren();
       return;
     }
+    marcarErrorRangoPrecios(false);
 
     const parametros = new URLSearchParams();
     if (campoBusqueda && campoBusqueda.value.trim()) {
@@ -413,6 +487,22 @@ export function configurarControladorCatalogo({
     );
   }
 
+  if (switchSoloFavoritos) {
+    switchSoloFavoritos.addEventListener("change", () => {
+      soloFavoritosActivo = switchSoloFavoritos.checked;
+      actualizarVistaCatalogo({ resetearPagina: true });
+    });
+  }
+
+  if (typeof document !== "undefined") {
+    document.addEventListener(EVENTO_FAVORITOS, () => {
+      sincronizarEtiquetaFavoritos();
+      if (switchSoloFavoritos?.checked ?? soloFavoritosActivo) {
+        actualizarVistaCatalogo({ resetearPagina: true });
+      }
+    });
+  }
+
   if (botonLimpiarFiltros) {
     botonLimpiarFiltros.addEventListener("click", reiniciarFiltrosCatalogo);
   }
@@ -431,6 +521,12 @@ export function configurarControladorCatalogo({
     },
   });
 
+  function establecerSoloFavoritos(activo) {
+    soloFavoritosActivo = Boolean(activo);
+    if (switchSoloFavoritos) switchSoloFavoritos.checked = soloFavoritosActivo;
+    actualizarVistaCatalogo({ resetearPagina: true });
+  }
+
   return {
     cargarProductos,
     cargarCategorias,
@@ -438,6 +534,7 @@ export function configurarControladorCatalogo({
     cambiarPaginaCatalogo,
     reiniciarFiltrosCatalogo,
     sincronizarCategoriaDestacada,
+    establecerSoloFavoritos,
     poblarVitrinaInicio,
     cargarPreguntasCliente,
   };

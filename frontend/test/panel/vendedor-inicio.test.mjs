@@ -24,12 +24,15 @@ const contar = (html, patron) => (html.match(patron) || []).length;
 
 // ---------- Estructura ----------
 
-test("encabezado: <h1> Inicio, apoyo y los botones «Ver catálogo» y «Nuevo producto»", () => {
-  const html = renderizarInicioVendedor();
+test("encabezado: fecha de hoy, <h1> Inicio, apoyo, botones con icono y skeletons iniciales", () => {
+  const html = renderizarInicioVendedor({ hoy: new Date(2026, 10, 26) });
+  assert.match(html, /<p class="panel-fecha">Jueves 26 de noviembre<\/p>/);
   assert.match(html, /<h1[^>]*class="panel-titulo"[^>]*>Inicio<\/h1>/);
   assert.match(html, /Tu catálogo y lo que conviene reponer o responder hoy\./);
-  assert.match(html, /<a [^>]*class="panel-boton panel-boton-secundario"[^>]*href="#\/productos"[^>]*>Ver catálogo<\/a>/);
-  assert.match(html, /<a [^>]*class="panel-boton panel-boton-principal"[^>]*href="#\/productos\?nuevo=1"[^>]*>Nuevo producto<\/a>/);
+  assert.match(html, /<a [^>]*class="panel-boton panel-boton-secundario"[^>]*href="#\/productos"[^>]*>[\s\S]*?<span>Ver catálogo<\/span><\/a>/);
+  assert.match(html, /<a [^>]*class="panel-boton panel-boton-principal"[^>]*href="#\/productos\?nuevo=1"[^>]*>[\s\S]*?<span>Nuevo producto<\/span><\/a>/);
+  assert.equal(contar(html, /class="panel-kpi panel-esqueleto-kpi"/g), 4);
+  assert.equal(contar(html, /class="panel-esqueleto-lista"/g), 3);
 });
 
 test("los bloques de la spec: stock bajo, consultas y catálogo", () => {
@@ -62,16 +65,21 @@ test("no hay ids repetidos en el DOM del panel del Vendedor (marco, Inicio, vist
 
 // ---------- Indicadores ----------
 
-test("indicadores con datos de las dos fuentes", () => {
+test("indicadores con datos de las dos fuentes: iconos, alerta de stock bajo y enlace Reponer ahora", () => {
   const html = renderizarIndicadoresVendedor({
     productos: { activos: 12, desactivados: 3, stockBajo: 2 },
     preguntas: { pendientes: 4 },
   });
-  assert.equal(contar(html, /class="panel-kpi"/g), 4);
+  assert.equal(contar(html, /<article class="panel-kpi (panel-kpi-icono|panel-kpi-alerta)"/g), 4);
+  assert.match(html, /panel-kpi-alerta[\s\S]*?Stock bajo[\s\S]*?>2<[\s\S]*?Reponer ahora/);
   assert.match(html, /Productos activos[\s\S]*?>12<[\s\S]*?Visibles en la tienda/);
   assert.match(html, /Desactivados[\s\S]*?>3<[\s\S]*?Ocultos para los clientes/);
-  assert.match(html, /Stock bajo[\s\S]*?>2<[\s\S]*?Por debajo del mínimo/);
   assert.match(html, /Preguntas pendientes[\s\S]*?>4<[\s\S]*?Esperan tu respuesta/);
+  const sinStockBajo = renderizarIndicadoresVendedor({
+    productos: { activos: 12, desactivados: 0, stockBajo: 0 },
+    preguntas: { pendientes: 0 },
+  });
+  assert.doesNotMatch(sinStockBajo, /panel-kpi-alerta/);
   assert.match(renderizarIndicadoresVendedor({ productos: null, preguntas: { pendientes: 0 } }), /Todo respondido/);
 });
 
@@ -105,18 +113,23 @@ test("tabla de stock bajo: clase propia del panel, encabezados y acción oculta 
   assert.match(html, /<th scope="col"><span class="visually-hidden">Acción<\/span><\/th>/);
   assert.match(html, /<th scope="row">Mouse<\/th>[\s\S]*?panel-insignia-rojo[^>]*>Agotado</);
   assert.match(html, /<th scope="row">Audífonos<\/th>[\s\S]*?panel-insignia-ambar[^>]*>Stock bajo</);
-  assert.match(html, /<button [^>]*type="button"[^>]*data-ajustar-stock="2"[^>]*>Ajustar stock<\/button>/);
+  assert.match(html, /<button [^>]*type="button"[^>]*class="panel-boton panel-boton-principal"[^>]*data-ajustar-stock="2"[^>]*>Ajustar stock<\/button>/);
+  assert.match(html, /<button [^>]*type="button"[^>]*class="panel-boton panel-boton-secundario"[^>]*data-ajustar-stock="4"[^>]*>Ajustar stock<\/button>/);
+
+  const conMeta = renderizarTablaStockBajo([{ id: 9, sku: "PA-0010", categoria: "Teclados", nombre: "Teclado Pro", stock: 0 }], 1);
+  assert.match(conMeta, /<span class="panel-stock-nombre">Teclado Pro<\/span><span class="panel-stock-meta">PA-0010 · Teclados<\/span>/);
 });
 
 test("tabla de stock bajo: como máximo 5 filas; «Ver los {n}» usa el total", () => {
   const ocho = Array.from({ length: 8 }, (_, i) => ({ id: i + 1, nombre: `P${i + 1}`, stock: 1 }));
   const html = renderizarTablaStockBajo(ocho, 8);
   assert.equal(contar(html, /<tr>\s*<th scope="row">/g), 5);
-  assert.match(html, /<a [^>]*href="#\/productos"[^>]*>Ver los 8<\/a>/);
+  assert.match(html, /<a [^>]*href="#\/productos\?pestana=stock-bajo"[^>]*>Ver los 8<\/a>/);
 });
 
-test("tabla de stock bajo vacía: «Ningún producto con stock bajo.» y sin enlace", () => {
+test("tabla de stock bajo vacía: recuadro positivo «Ningún producto con stock bajo.» y sin enlace", () => {
   const html = renderizarTablaStockBajo([], 0);
+  assert.match(html, /class="panel-vacio-ok"/);
   assert.match(html, /Ningún producto con stock bajo\./);
   assert.doesNotMatch(html, /Ver los/);
   assert.doesNotMatch(html, /<table/);
@@ -128,22 +141,26 @@ test("tabla de stock bajo: escapa los nombres", () => {
 
 // ---------- Consultas ----------
 
-test("consultas: hasta 3, con producto, texto resumido, «Responder» y «Ver todas»", () => {
+test("consultas: hasta 3, con producto, cliente, espera, texto resumido, «Responder» y «Ver todas»", () => {
+  const ahora = new Date("2026-11-20T12:00:00Z");
   const preguntas = [
-    { idConsulta: 1, productoId: 2, nombreProducto: "Mouse", pregunta: "¿Es inalámbrico?", creadaEn: "2026-11-18T00:00:00Z" },
+    { idConsulta: 1, productoId: 2, nombreProducto: "Mouse", clienteNombre: "Ana", pregunta: "¿Es inalámbrico?", creadaEn: "2026-11-18T00:00:00Z" },
     { idConsulta: 2, productoId: 4, pregunta: "x".repeat(100), creadaEn: "2026-11-19T00:00:00Z" },
     { idConsulta: 3, productoId: 99, pregunta: "<script>alert(1)</script>", creadaEn: "2026-11-20T00:00:00Z" },
     { idConsulta: 4, productoId: 2, pregunta: "Cuarta", creadaEn: "2026-11-21T00:00:00Z" },
   ];
-  const html = renderizarConsultas(preguntas, [{ id: 4, nombre: "Audífonos" }]);
+  const html = renderizarConsultas(preguntas, [{ id: 4, nombre: "Audífonos" }], ahora);
   assert.equal(contar(html, /<li /g), 3);
   assert.match(html, />Mouse</);
+  assert.match(html, /· Ana/);
+  assert.match(html, /panel-espera panel-espera-rojo/);
   assert.match(html, />Audífonos</);
   assert.match(html, />Producto #99</);
   assert.match(html, /x{79}…/);
   assert.doesNotMatch(html, /<script>/);
   assert.doesNotMatch(html, /Cuarta/);
-  assert.equal(contar(html, /<a [^>]*href="#\/consultas"[^>]*>Responder<\/a>/g), 3);
+  assert.equal(contar(html, /panel-boton panel-boton-principal"[^>]*href="#\/consultas\?consulta=1"[^>]*>Responder<\/a>/g), 1);
+  assert.equal(contar(html, /<a [^>]*href="#\/consultas\?consulta=\d+"[^>]*>Responder<\/a>/g), 3);
   assert.match(html, /<a [^>]*href="#\/consultas"[^>]*>Ver todas<\/a>/);
 });
 
@@ -156,21 +173,26 @@ test("consultas vacías: recuadro «No hay preguntas pendientes» con su línea 
 
 // ---------- Catálogo ----------
 
-test("catálogo: barras con texto, ancho proporcional y la parte visual oculta a lectores", () => {
-  const html = renderizarCatalogo({ activos: 12, desactivados: 3 });
-  // Tanda 2 (punto 5): etiqueta, barra y número en una fila; el texto sigue ahí para los lectores.
-  assert.match(html, /<p class="panel-barra-etiqueta">Activos<\/p>[\s\S]*?<p class="panel-barra-cantidad">12<\/p>/);
-  assert.match(html, /<p class="panel-barra-etiqueta">Desactivados<\/p>[\s\S]*?<p class="panel-barra-cantidad">3<\/p>/);
-  assert.match(html, /<div class="panel-barra-relleno panel-barra-verde" style="width: 80%"><\/div>/);
-  assert.match(html, /<div class="panel-barra-relleno panel-barra-gris" style="width: 20%"><\/div>/);
-  assert.equal(contar(html, /class="panel-barra" aria-hidden="true"/g), 2);
+test("catálogo: barra segmentada y casillas con enlace a su pestaña correspondiente", () => {
+  const html = renderizarCatalogo([
+    { id: 1, stock: 12, activo: true },
+    { id: 2, stock: 3, activo: true },
+    { id: 3, stock: 0, activo: true },
+    { id: 4, stock: 5, activo: false },
+  ]);
+  assert.match(html, /<div class="panel-segmentos" aria-hidden="true">/);
+  assert.equal(contar(html, /class="panel-segmento /g), 4);
+  assert.match(html, /href="#\/productos\?pestana=activos"[^>]*>En stock<\/a><span class="panel-estado-numero">1</);
+  assert.match(html, /href="#\/productos\?pestana=stock-bajo"[^>]*>Stock bajo<\/a><span class="panel-estado-numero">1</);
+  assert.match(html, /href="#\/productos\?pestana=stock-bajo"[^>]*>Agotado<\/a><span class="panel-estado-numero">1</);
+  assert.match(html, /href="#\/productos\?pestana=desactivados"[^>]*>Desactivados<\/a><span class="panel-estado-numero">1</);
   assert.doesNotMatch(html, /Aún no hay productos/);
 });
 
-test("catálogo sin productos: barras al 0 % y «Aún no hay productos.»", () => {
-  const html = renderizarCatalogo({ activos: 0, desactivados: 0 });
-  assert.equal(contar(html, /style="width: 0%"/g), 2);
+test("catálogo sin productos: muestra «Aún no hay productos.»", () => {
+  const html = renderizarCatalogo([]);
   assert.match(html, /Aún no hay productos\./);
+  assert.doesNotMatch(html, /panel-segmentos/);
 });
 
 // ---------- Aviso de cambios de productos ----------

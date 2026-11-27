@@ -7,8 +7,25 @@ import {
   crearParametrosMovimientos,
   crearSolicitudEntrada,
 } from "./almacen.js";
+import {
+  configurarValidacionEntrada,
+  crearErrorMovimientos,
+  crearEstadoVacioMovimientos,
+  crearSkeletonsMovimientos,
+} from "./inventario-estados.js";
 import { paginarProductos } from "../catalogo/componentes/filtros-catalogo.js";
+import { etiquetarCeldas } from "../utilidades/tabla-apilable.js";
 import { ROLES_INVENTARIO, ROLES_OPERACION } from "../utilidades/constantes.js";
+
+/** Etiquetas de columna del kardex para apilamiento móvil (.tabla-apilable). */
+export const COLUMNAS_KARDEX = Object.freeze([
+  "Fecha",
+  "Producto",
+  "Movimiento",
+  "Motivo",
+  "Responsable",
+  "Cantidad",
+]);
 
 /** Revisión UX (punto 9): el kardex muestra 10 movimientos por página. */
 export const MOVIMIENTOS_POR_PAGINA = 10;
@@ -61,6 +78,7 @@ export function crearFilaMovimientoKardex(movimiento, productosInventario = []) 
   cantidad.textContent = `${signo}${cantidadFirmada}`;
 
   fila.append(fecha, producto, tipo, motivo, responsable, cantidad);
+  etiquetarCeldas(fila, COLUMNAS_KARDEX);
   return fila;
 }
 
@@ -128,7 +146,9 @@ export function poblarSelectoresInventario(productos, selectores, selectorEntrad
     for (const prod of productos) {
       const opcion = document.createElement("option");
       opcion.value = String(prod.id);
-      opcion.textContent = prod.nombre;
+      opcion.textContent = prod.stock != null
+        ? `${prod.nombre} (stock: ${Math.max(0, Number(prod.stock) || 0)})`
+        : prod.nombre;
       selector.append(opcion);
     }
 
@@ -242,14 +262,38 @@ export function configurarPanelInventario({
     estadoEntradaInventario.setAttribute?.("aria-live", "polite");
   }
 
+  function hayFiltrosMovimientos() {
+    return Boolean(
+      selectorProductoMovimientos?.value ||
+        movimientosDesde?.value ||
+        movimientosHasta?.value,
+    );
+  }
+
+  function limpiarFiltrosMovimientos() {
+    if (selectorProductoMovimientos) selectorProductoMovimientos.value = "";
+    if (movimientosDesde) movimientosDesde.value = "";
+    if (movimientosHasta) movimientosHasta.value = "";
+    void cargarMovimientosInventario();
+  }
+
   function pintarPaginaMovimientos(pagina) {
     const info = paginarProductos(movimientosCargados, pagina, MOVIMIENTOS_POR_PAGINA);
     estadoMovimientos.className = "small text-secondary mt-2 mb-2";
     estadoMovimientos.textContent = textoEstadoKardex(info);
     const productos = obtenerEstado().productosInventario || [];
-    listaMovimientos.replaceChildren(
-      ...info.items.map((movimiento) => crearFilaMovimientoKardex(movimiento, productos)),
-    );
+    if (info.totalItems === 0) {
+      listaMovimientos.replaceChildren(
+        crearEstadoVacioMovimientos({
+          conFiltros: hayFiltrosMovimientos(),
+          onLimpiar: limpiarFiltrosMovimientos,
+        }),
+      );
+    } else {
+      listaMovimientos.replaceChildren(
+        ...info.items.map((movimiento) => crearFilaMovimientoKardex(movimiento, productos)),
+      );
+    }
     if (paginacionMovimientos) {
       paginacionMovimientos.hidden = info.totalPaginas <= 1;
       paginacionMovimientos.replaceChildren(
@@ -270,9 +314,11 @@ export function configurarPanelInventario({
   async function cargarMovimientosInventario() {
     if (!estadoMovimientos || !listaMovimientos) return;
 
+    listaMovimientos.closest?.("table")?.classList?.add("tabla-apilable");
     estadoMovimientos.className = "small text-secondary mt-2 mb-2";
     estadoMovimientos.textContent = "Consultando movimientos…";
-    listaMovimientos.replaceChildren();
+    listaMovimientos.setAttribute?.("aria-busy", "true");
+    listaMovimientos.replaceChildren(...crearSkeletonsMovimientos(3));
 
     const estado = obtenerEstado();
     if (!estado.productosInventario || estado.productosInventario.length === 0) {
@@ -303,10 +349,18 @@ export function configurarPanelInventario({
       if (paginacionMovimientos) paginacionMovimientos.hidden = true;
       estadoMovimientos.className = "small text-danger mt-2 mb-2";
       estadoMovimientos.textContent = `No se pudieron cargar los movimientos. ${error.message}`;
+      listaMovimientos.replaceChildren(
+        crearErrorMovimientos(
+          "No se pudo consultar el historial de movimientos.",
+          cargarMovimientosInventario,
+        ),
+      );
+    } finally {
+      listaMovimientos.removeAttribute?.("aria-busy");
     }
   }
 
-  async function iniciarPanelInventario() {
+  async function iniciarPanelInventario(parametros = {}) {
     const estado = obtenerEstado();
     const rol = estado.usuarioSesion?.rol;
     if (!ROLES_INVENTARIO.includes(rol)) {
@@ -319,28 +373,54 @@ export function configurarPanelInventario({
       seccionEntradaInventario.hidden = !ROLES_OPERACION.includes(rol);
     }
     if (estadoMovimientos) {
+      estadoMovimientos.className = "small text-secondary mt-2 mb-2";
       estadoMovimientos.textContent = "Cargando productos y movimientos…";
+    }
+    if (listaMovimientos) {
+      listaMovimientos.setAttribute?.("aria-busy", "true");
+      listaMovimientos.replaceChildren(...crearSkeletonsMovimientos(3));
     }
 
     try {
       const respuesta = await apiRequest("/api/productos");
       estado.productosInventario = await respuesta.json();
       poblarSelectores();
+      if (parametros?.producto && selectorProductoMovimientos) {
+        const existe = (estado.productosInventario || []).some((p) => String(p.id) === String(parametros.producto));
+        if (existe) selectorProductoMovimientos.value = String(parametros.producto);
+      }
       await cargarMovimientosInventario();
     } catch (error) {
       if (estadoMovimientos) {
         estadoMovimientos.className = "small text-danger mt-2 mb-2";
         estadoMovimientos.textContent = `No se pudo cargar el inventario. ${error.message}`;
       }
+      listaMovimientos?.removeAttribute?.("aria-busy");
+      listaMovimientos?.replaceChildren(
+        crearErrorMovimientos("No se pudo cargar el inventario.", () => iniciarPanelInventario(parametros)),
+      );
     }
   }
 
   // Listener para registro de entrada de inventario
   if (formularioEntradaInventario) {
+    const validadorEntrada = configurarValidacionEntrada({
+      formulario: formularioEntradaInventario,
+      campos: { producto: selectorProductoEntrada, cantidad: cantidadEntrada, motivo: motivoEntrada },
+      estadoEntrada: estadoEntradaInventario,
+    });
+
     formularioEntradaInventario.addEventListener("submit", async (evento) => {
       evento.preventDefault();
+      const validacion = validadorEntrada.validar();
+      if (!validacion.valido) return;
+
       const boton = formularioEntradaInventario.querySelector('button[type="submit"]');
-      if (boton) boton.disabled = true;
+      const textoOriginal = boton?.textContent || "Registrar entrada";
+      if (boton) {
+        boton.disabled = true;
+        boton.textContent = "Registrando...";
+      }
 
       if (estadoEntradaInventario) {
         estadoEntradaInventario.className = "small mt-2 mb-0 text-secondary";
@@ -365,6 +445,7 @@ export function configurarPanelInventario({
           mostrarToast("Entrada de inventario registrada correctamente.", "exito");
         }
         formularioEntradaInventario.reset();
+        validadorEntrada.limpiarTodos();
         await cargarMovimientosInventario();
         if (typeof cargarProductosCatalogo === "function") {
           await cargarProductosCatalogo();
@@ -378,7 +459,10 @@ export function configurarPanelInventario({
           mostrarToast(`No se pudo registrar la entrada: ${error.message}`, "error");
         }
       } finally {
-        if (boton) boton.disabled = false;
+        if (boton) {
+          boton.disabled = false;
+          boton.textContent = textoOriginal;
+        }
       }
     });
   }

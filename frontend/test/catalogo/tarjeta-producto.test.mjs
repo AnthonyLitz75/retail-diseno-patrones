@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { crearElementoTarjetaProducto } from "../../src/catalogo/componentes/tarjeta-producto.js";
 
 // Mock mínimo de DOM si estamos en entorno Node.js
@@ -35,6 +36,7 @@ if (typeof document === "undefined") {
       this.textContent = "";
       this.title = "";
       this.innerHTML = "";
+      this._listeners = {};
     }
     setAttribute(k, v) {
       this.attributes[k] = String(v);
@@ -45,7 +47,13 @@ if (typeof document === "undefined") {
     append(...nodes) {
       nodes.forEach((n) => this.children.push(n));
     }
-    addEventListener() {}
+    addEventListener(ev, fn) {
+      if (!this._listeners[ev]) this._listeners[ev] = [];
+      this._listeners[ev].push(fn);
+    }
+    dispatchEvent(ev) {
+      (this._listeners[ev.type] || []).forEach((fn) => fn(ev));
+    }
     querySelector() {
       return new MockElement("div");
     }
@@ -119,4 +127,48 @@ test("crearElementoTarjetaProducto marca tarjeta como agotada si stock es 0", ()
 
   assert.ok(tarjeta.classList.contains("is-out-of-stock"));
   assert.ok(tarjeta.classList.contains("product-card-agotado"));
+});
+
+test("botón favorito expone aria-pressed dinámico y pregunta no recorta altura con py-0", () => {
+  const producto = { id: 10, sku: "PA-0010", nombre: "Mouse Pro", stock: 5, precio: 99 };
+  const tarjeta = crearElementoTarjetaProducto(producto, {
+    esCarousel: false,
+    callbacks: {
+      onAlternarFavorito: (_p, btn) => btn.classList.toggle("is-favorite"),
+    },
+  });
+  const btnFav = tarjeta.children[0].children.find((n) => n.className === "product-fav-btn");
+  assert.equal(btnFav.getAttribute("aria-pressed"), "false");
+  assert.equal(btnFav.getAttribute("aria-label"), "Guardar Mouse Pro en favoritos");
+
+  btnFav.dispatchEvent({ type: "click", stopPropagation() {} });
+  assert.equal(btnFav.getAttribute("aria-pressed"), "true");
+  assert.equal(btnFav.getAttribute("aria-label"), "Quitar Mouse Pro de favoritos");
+
+  const actionsBox = tarjeta.children.at(-1);
+  const btnPreguntas = actionsBox.children.find((n) => n.className.includes("product-card-question-btn"));
+  assert.ok(btnPreguntas);
+  assert.doesNotMatch(btnPreguntas.className, /\bpy-0\b/);
+});
+
+test("tienda y carrito cumplen objetivos táctiles >= 44 px y contraste --retail-blue-dark", () => {
+  const leer = (ruta) => readFileSync(new URL(ruta, import.meta.url), "utf8");
+  const headerCss = leer("../../src/css/header.css");
+  const tarjetasCss = leer("../../src/css/catalogo/tarjetas-producto.css");
+  const filtrosCss = leer("../../src/css/catalogo/filtros-y-acciones.css");
+  const pildorasCss = leer("../../src/css/catalogo/pildoras-y-detalle.css");
+  const carritoCss = leer("../../src/css/carrito.css");
+
+  assert.match(headerCss, /\.header-search-btn\s*\{[^}]*background:\s*var\(--retail-blue-dark\)[^}]*min-height:\s*44px/);
+  assert.match(tarjetasCss, /\.section-carousel-btn\s*\{[^}]*width:\s*44px;[^}]*height:\s*44px/);
+  assert.match(tarjetasCss, /\.product-fav-btn\s*\{[^}]*width:\s*44px;[^}]*height:\s*44px/);
+  assert.match(tarjetasCss, /\.product-badge-new\s*\{[^}]*background:\s*var\(--retail-blue-dark\)/);
+  assert.match(tarjetasCss, /\.product-btn-add\s*\{[^}]*min-height:\s*44px/);
+  assert.match(tarjetasCss, /\.product-card\.is-out-of-stock \.product-image-box\s*\{/);
+  assert.doesNotMatch(tarjetasCss, /\.product-card\.is-out-of-stock\s*\{/);
+  assert.match(filtrosCss, /\.filter-chip\s*\{[^}]*min-height:\s*44px/);
+  assert.match(filtrosCss, /\.filter-chip\.is-active\s*\{[^}]*background:\s*var\(--retail-blue-dark\)/);
+  assert.match(pildorasCss, /\.quantity-selector-group button\s*\{[^}]*min-width:\s*44px;\s*min-height:\s*44px/);
+  assert.match(carritoCss, /\.cart-btn-remove,\s*\.cart-item-remove\s*\{[^}]*min-width:\s*44px;\s*min-height:\s*44px/);
+  assert.match(carritoCss, /@media \(max-width: 575\.98px\)[\s\S]*\.cart-stepper-btn\s*\{[^}]*width:\s*44px;\s*height:\s*44px/);
 });

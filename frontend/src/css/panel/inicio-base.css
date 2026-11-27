@@ -171,3 +171,85 @@
   color: var(--retail-surface);
 }
 
+/* Skeletons compartidos de carga inicial (Fase 3 Vendedor / panel) */
+.panel-esqueleto {
+  display: inline-block;
+  height: 1rem;
+  border-radius: var(--panel-radio-pastilla);
+  background: linear-gradient(90deg, var(--panel-fila-encabezado) 25%, var(--panel-borde-fila) 50%, var(--panel-fila-encabezado) 75%);
+  background-size: 200% 100%;
+  animation: panel-esqueleto-pulso 1.3s ease-in-out infinite;
+}
+
+.panel-esqueleto-kpi { display: grid; gap: 8px; }
+.panel-esqueleto-etiqueta { width: 58%; height: 0.8rem; }
+.panel-esqueleto-valor { width: 34%; height: 1.75rem; }
+.panel-esqueleto-detalle { width: 72%; height: 0.8rem; }
+
+.panel-esqueleto-lista { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+.panel-esqueleto-fila {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--panel-borde-fila);
+}
+.panel-esqueleto-fila:last-child { border-bottom: 0; padding-bottom: 0; }
+.panel-esqueleto-titulo { width: min(14rem, 60%); }
+.panel-esqueleto-accion { width: 5.5rem; height: var(--panel-alto-pulsable); border-radius: var(--panel-radio-control); flex-shrink: 0; }
+
+/* Buscador de productos con botón limpiar y tarjetas de consultas */
+.panel-productos-buscador { position: relative; min-width: 0; }
+.panel-productos-buscador .form-control { min-height: var(--panel-alto-pulsable); padding-right: 2.85rem; }
+.panel-productos-limpiar {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  display: grid;
+  place-items: center;
+  width: var(--panel-alto-pulsable);
+  height: var(--panel-alto-pulsable);
+  padding: 0;
+  border: 0;
+  border-radius: var(--panel-radio-control);
+  background: transparent;
+  color: var(--panel-texto-secundario);
+  font-size: 1.25rem;
+  line-height: 1;
+  transform: translateY(-50%);
+}
+.panel-productos-limpiar:hover { color: var(--retail-ink); }
+.panel-productos-limpiar[hidden] { display: none; }
+
+.panel-consultas-lista { display: grid; gap: 14px; }
+.panel-consulta-tarjeta { display: grid; gap: 10px; }
+.panel-consulta-meta { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.panel-consulta-titulo { margin: 0; font-size: 1rem; font-weight: 700; color: var(--retail-navy); }
+.panel-consulta-cuerpo { margin: 0; color: var(--retail-ink); overflow-wrap: anywhere; }
+.panel-consulta-pie { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 4px; }
+.panel-consulta-contador { font-size: 12px; color: var(--panel-texto-secundario); font-variant-numeric: tabular-nums; }
+.panel-consulta-tarjeta [aria-invalid="true"] { border-color: var(--panel-insignia-rojo-texto); }
+
+@keyframes panel-esqueleto-pulso {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel-esqueleto { animation: none; }
+}
+
+@media (max-width: 575.98px) {
+  .panel-inicio .panel-consulta {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .panel-inicio .panel-consulta .panel-boton,
+  .panel-consulta-tarjeta .panel-boton {
+    width: 100%;
+    min-height: 48px;
+  }
+}
+

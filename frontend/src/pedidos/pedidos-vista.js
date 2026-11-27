@@ -290,6 +290,7 @@ export function mostrarPedidos(
     crearAtencion = null,
     onAbrirDespacho = null,
     onExplorarCatalogo = null,
+    mostrarFiltros = true,
   } = {},
 ) {
   if (!listaPedidos) return;
@@ -352,7 +353,7 @@ export function mostrarPedidos(
 
   // Boceto "Mis pedidos": filtros por estado con su conteo (solo si hay más de un estado).
   const filtros = contarPedidosPorFiltro(pedidos);
-  if (filtros.length > 2) {
+  if (mostrarFiltros && filtros.length > 2) {
     listaPedidos.append(crearFiltrosPedidos(filtros, listaPedidos, estadoPedidos));
   }
 

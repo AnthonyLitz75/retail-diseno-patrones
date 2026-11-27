@@ -348,10 +348,8 @@
   background: var(--retail-bg-page);
 }
 
-@media (max-width: 767.98px) {
-  .panel-productos-barra {
-    grid-template-columns: 1fr;
-  }
+.panel-productos-barra .form-select {
+  min-height: 44px;
 }
 
 .panel-productos-pestanas {
@@ -364,13 +362,40 @@
 }
 
 .panel-productos-pestana {
+  min-height: 40px;
   padding: 0.4rem 0.8rem;
   border: 0;
   border-radius: 0.5rem;
   background: transparent;
-  color: var(--retail-muted);
+  color: #475569;
   font-size: 0.85rem;
   font-weight: 600;
+}
+
+@media (max-width: 991.98px) {
+  .panel-productos-barra {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .panel-productos-pestanas {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .panel-productos-barra {
+    grid-template-columns: 1fr;
+  }
+
+  .panel-productos-pestanas {
+    width: 100%;
+  }
+
+  .panel-productos-pestana {
+    flex: 1 1 auto;
+    min-height: 44px;
+  }
 }
 
 .panel-productos-pestana[aria-pressed="true"] {

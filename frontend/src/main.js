@@ -39,6 +39,7 @@ import { configurarModalReclamaciones } from "./modales/modal-reclamaciones.js";
 import { configurarBandejaNotificaciones } from "./notificaciones/bandeja-vista.js";
 import { configurarControladorPedidos } from "./pedidos/pedidos-controlador.js";
 import { configurarControladorCatalogo } from "./catalogo/catalogo-controlador.js";
+import { configurarDockCuenta } from "./layout/dock-cuenta.js";
 import { configurarControlesUI } from "./layout/controles-ui.js";
 import { configurarSesionYVistas } from "./estado/sesion.js";
 import { configurarEnrutadorSPA } from "./router/router.js";
@@ -152,8 +153,8 @@ const catalogoCtrl = configurarControladorCatalogo({
     filtroCategoria: document.querySelector("#filtro-categoria"),
     precioMinimo: document.querySelector("#precio-min"),
     precioMaximo: document.querySelector("#precio-max"),
-    selectorOrden: document.querySelector("#orden-catalogo"),
-    switchSoloStock: document.querySelector("#solo-stock"),
+    selectorOrden: document.querySelector("#orden-productos"),
+    switchSoloStock: document.querySelector("#filtro-solo-stock"),
     botonLimpiarFiltros: document.querySelector("#limpiar-filtros"),
   },
   acciones: {
@@ -184,6 +185,8 @@ const enrutadorSPA = configurarEnrutadorSPA({
     cargarArbolCategorias: () => uiCtrl.cargarArbolCategorias(),
     sincronizarCategoriaDestacada: () =>
       catalogoCtrl.sincronizarCategoriaDestacada(),
+    establecerSoloFavoritos: (activo) =>
+      catalogoCtrl.establecerSoloFavoritos(activo),
     cambiarVista: (vista) => sesionCtrl.cambiarVista(vista),
     agregarProductoAlCarrito: (id, prod, cant) =>
       agregarProductoAlCarrito(id, prod, cant),
@@ -210,16 +213,28 @@ const uiCtrl = configurarControlesUI({
     bloqueCatalogoCompleto: document.querySelector("#bloque-catalogo-completo"),
     vistaDetalleProducto: document.querySelector("#vista-detalle-producto"),
     vista404: document.querySelector("#vista-404"),
-    estadoCatalogo: document.querySelector("#estado-catalogo"),
   },
   acciones: {
-    mostrarProductos: () => catalogoCtrl.actualizarVistaCatalogo(),
     mostrarToast,
     manejarRutaHash: () => enrutadorSPA.manejarRutaHash(),
   },
 });
 
 // 9. Sesión de Usuario y Vistas
+const dockCuentaCtrl = configurarDockCuenta({
+  dockBtnUsuario: document.querySelector("#dock-btn-usuario"),
+  obtenerUsuarioSesion: () => estado.usuarioSesion,
+  acciones: {
+    irAMisCompras: () => {
+      window.location.hash = "#/pedidos";
+      sesionCtrl.cambiarVista("pedidos");
+    },
+    irAMiAtencion: () => sesionCtrl.cambiarVista("atencion"),
+    irAFavoritos: () => document.querySelector("#dock-btn-favoritos")?.click(),
+    cerrarSesion: () => sesionCtrl.cerrarSesion(),
+  },
+});
+
 const sesionCtrl = configurarSesionYVistas({
   apiRequest,
   estado,
@@ -259,6 +274,7 @@ const sesionCtrl = configurarSesionYVistas({
       if (vista === "pedidos") void pedidosCtrl.cargarPedidos();
       else if (vista === "atencion" && rol === ROL.CLIENTE) void miAtencion.cargar();
     },
+    onActualizarCuenta: (usuario) => dockCuentaCtrl.actualizar(usuario),
   },
 });
 

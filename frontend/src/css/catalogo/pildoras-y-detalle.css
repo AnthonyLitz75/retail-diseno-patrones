@@ -38,15 +38,15 @@
 .category-pill:hover {
   background: var(--retail-bg-page);
   border-color: #cbd5e1;
-  color: var(--retail-blue);
+  color: var(--retail-blue-dark);
   transform: translateY(-1px);
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
 }
 
 .category-pill.is-active {
-  background: var(--retail-blue);
+  background: var(--retail-blue-dark);
   color: var(--retail-surface);
-  border-color: var(--retail-blue);
+  border-color: var(--retail-blue-dark);
   box-shadow: 0 4px 14px rgba(13, 110, 253, 0.32);
 }
 
@@ -57,7 +57,7 @@
   height: 26px;
   border-radius: 50%;
   background: #eff6ff;
-  color: var(--retail-blue);
+  color: var(--retail-blue-dark);
   flex-shrink: 0;
   transition: all 0.18s ease;
 }
@@ -140,7 +140,7 @@
   height: 44px;
   display: grid;
   place-items: center;
-  color: #94a3b8;
+  color: var(--retail-muted);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   cursor: pointer;
   transition: all 0.18s ease;
@@ -148,13 +148,13 @@
 }
 
 .product-detail-fav-btn:hover {
-  color: #ef4444;
+  color: #dc2626;
   transform: scale(1.1);
-  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.2);
+  box-shadow: 0 6px 16px rgba(220, 38, 38, 0.2);
 }
 
 .product-detail-fav-btn.is-favorite {
-  color: #ef4444;
+  color: #dc2626;
   background: #fff1f2;
   border-color: #fecdd3;
 }
@@ -169,7 +169,7 @@
 }
 
 .product-detail-price {
-  color: var(--retail-blue) !important;
+  color: var(--retail-blue-dark) !important;
   letter-spacing: -0.02em;
 }
 
@@ -178,14 +178,24 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
+.quantity-selector-group button {
+  min-width: 44px;
+  min-height: 44px;
+}
+
 .quantity-selector-group button:hover:not(:disabled) {
   background: #f1f5f9;
-  color: var(--retail-blue);
+  color: var(--retail-blue-dark);
 }
 
 .quantity-selector-group .qty-value {
   min-width: 40px;
   text-align: center;
+}
+
+.product-detail-actions .btn-add-cart,
+.product-detail-actions .btn-ask-question {
+  min-height: 44px;
 }
 
 .product-detail-actions .btn-primary {

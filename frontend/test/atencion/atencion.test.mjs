@@ -124,3 +124,51 @@ test('Mi atención: resumen de abiertos y estado de preguntas', async () => {
     preguntas: { total: 0, abiertos: 0 }, reclamos: { total: 0, abiertos: 0 }, devoluciones: { total: 0, abiertos: 0 }
   })
 })
+
+test('Mi atención muestra skeletons al cargar, Reintentar si falla y acordeón al recuperar', async () => {
+  class NodoAtencion {
+    constructor(tag) {
+      this.tagName = tag.toUpperCase()
+      this.className = ''
+      this.children = []
+      this.textContent = ''
+      this.id = ''
+      this.atributos = new Map()
+      this._eventos = {}
+    }
+    append(...nodes) { this.children.push(...nodes) }
+    replaceChildren(...nodes) { this.children = [...nodes] }
+    setAttribute(k, v) { this.atributos.set(k, String(v)) }
+    removeAttribute(k) { this.atributos.delete(k) }
+    addEventListener(ev, cb) { (this._eventos[ev] ??= []).push(cb) }
+    dispatch(ev) { for (const cb of this._eventos[ev] ?? []) cb({ type: ev }) }
+  }
+
+  const prevDoc = global.document
+  global.document = { createElement: (tag) => new NodoAtencion(tag) }
+  try {
+    const { configurarMiAtencion } = await import('../../src/atencion/mi-atencion.js')
+    const contenedor = new NodoAtencion('div')
+    let fallar = true
+    const apiMock = async () => {
+      if (fallar) throw new Error('Sin conexión')
+      return { json: async () => [] }
+    }
+
+    const ctrl = configurarMiAtencion({ apiRequest: apiMock, contenedor })
+    const acordeon = contenedor.children[0].children[0].children[3]
+
+    await ctrl.cargar()
+    assert.equal(acordeon.atributos.get('aria-busy'), undefined)
+    assert.equal(acordeon.children[0].className, 'panel-error')
+    const btnReintentar = acordeon.children[0].children.find((n) => n.tagName === 'BUTTON')
+    assert.equal(btnReintentar.textContent, 'Reintentar')
+
+    fallar = false
+    btnReintentar.dispatch('click')
+    await new Promise((resolve) => setTimeout(resolve, 10))
+    assert.equal(acordeon.children.length, 3)
+  } finally {
+    global.document = prevDoc
+  }
+})

@@ -1,7 +1,7 @@
 /**
  * @file almacen-inicio.js
- * Panel del personal (spec 14 y decisiones P3/P4): Inicio de Almacén en #/inicio.
- * - Indicadores, cola de pedidos en tres columnas, stock crítico y entrada rápida de mercadería.
+ * Panel del personal (spec 14 y decisiones P3/P4; Fase 1 UI/UX): Inicio de Almacén en #/inicio.
+ * - Indicadores, cola de pedidos en tres columnas, stock crítico conectado y entrada rápida.
  * - Preparar y entregar reutilizan ejecutarActualizacionEstadoPedido (un clic, como hoy);
  *   despachar abre #modal-despacho con crearFormularioDespacho.
  * - Cada bloque carga y falla por separado, con «Reintentar». Sin datos de ejemplo.
@@ -11,6 +11,10 @@
 import { html, seguro } from "../../utilidades/seguridad.js";
 import { formatoPrecio } from "../../utilidades/formato.js";
 import { crearFormularioDespacho, ejecutarActualizacionEstadoPedido } from "../../pedidos/pedidos-vista.js";
+import { fechaDeHoy } from "./admin-logica.js";
+import { esperaDe } from "./soporte-logica.js";
+import { icono } from "../iconos.js";
+import { plural } from "../utilidades-panel.js";
 import {
   ESTADOS_COLA,
   agruparPedidosPorEstado,
@@ -24,7 +28,15 @@ import {
   validarEntrada,
   MAX_MOTIVO_ENTRADA,
 } from "./almacen-logica.js";
-import { SIN_VALOR, renderizarCargando, renderizarErrorBloque, renderizarKpi } from "./piezas-inicio.js";
+import {
+  SIN_VALOR,
+  cuadroIcono,
+  renderizarCargando,
+  renderizarErrorBloque,
+  renderizarKpi,
+  renderizarSkeletonsKpi,
+  renderizarSkeletonsLista,
+} from "./piezas-inicio.js";
 
 /** Botón de acción de cada tarjeta según el estado del pedido (spec 14). */
 export const ACCION_POR_ESTADO = Object.freeze({
@@ -48,6 +60,20 @@ const kpi = renderizarKpi;
 
 // ---------- Marcado (puro) ----------
 
+function tarjetaKpiAlmacen(etiqueta, valor, detalle, nombreIcono, tono, { alerta = false, enlace = null } = {}) {
+  const clase = alerta ? "panel-kpi panel-kpi-alerta" : "panel-kpi panel-kpi-icono";
+  const enlaceHtml = enlace ? html`<a class="panel-kpi-enlace" href="${seguro(enlace.ruta)}">${enlace.texto}</a>` : "";
+  return html`<article class="${clase}">
+  ${seguro(cuadroIcono(nombreIcono, alerta ? "alerta" : tono))}
+  <div class="panel-kpi-cuerpo">
+    <p class="panel-kpi-etiqueta">${etiqueta}</p>
+    <p class="panel-kpi-valor">${valor}</p>
+    <p class="panel-kpi-detalle">${detalle}</p>
+    ${seguro(enlaceHtml)}
+  </div>
+</article>`;
+}
+
 /**
  * Cuatro indicadores (decisión P4). Si una fuente no cargó, sus indicadores muestran «—».
  * @param {{ pedidos: object|null, productos: object|null }} datos
@@ -56,23 +82,49 @@ export function renderizarIndicadores({ pedidos = null, productos = null } = {})
   const sinDatos = "Sin datos";
   return [
     pedidos
-      ? kpi("Por preparar", pedidos.porPreparar, detallePorPreparar(pedidos.pendientes, pedidos.enPreparacion))
+      ? (pedidos.porPreparar > 0
+        ? tarjetaKpiAlmacen("Por preparar", pedidos.porPreparar,
+          detallePorPreparar(pedidos.pendientes, pedidos.enPreparacion), "pedidos", "alerta",
+          { alerta: true, enlace: { ruta: pedidos.pendientes > 0 ? "#/pedidos?estado=PENDIENTE" : "#/pedidos?estado=EN_PREPARACION", texto: "Atender cola" } })
+        : tarjetaKpiAlmacen("Por preparar", pedidos.porPreparar,
+          detallePorPreparar(pedidos.pendientes, pedidos.enPreparacion), "verificacion", "verde"))
       : kpi("Por preparar", SIN_VALOR, sinDatos),
-    pedidos ? kpi("Despachados", pedidos.despachados, "En camino al cliente") : kpi("Despachados", SIN_VALOR, sinDatos),
-    productos ? kpi("Stock bajo", productos.stockBajo, "Por debajo del mínimo") : kpi("Stock bajo", SIN_VALOR, sinDatos),
+    pedidos
+      ? tarjetaKpiAlmacen("Despachados", pedidos.despachados, "En camino al cliente", "despacho", "cielo")
+      : kpi("Despachados", SIN_VALOR, sinDatos),
     productos
-      ? kpi("Unidades en almacén", productos.unidades, detalleProductosActivos(productos.productosActivos))
+      ? tarjetaKpiAlmacen("Stock bajo", productos.stockBajo, "Por debajo del mínimo",
+        productos.stockBajo > 0 ? "incidencias" : "verificacion",
+        productos.stockBajo > 0 ? "ambar" : "verde")
+      : kpi("Stock bajo", SIN_VALOR, sinDatos),
+    productos
+      ? tarjetaKpiAlmacen("Unidades en almacén", productos.unidades,
+        detalleProductosActivos(productos.productosActivos), "inventario", "azul")
       : kpi("Unidades en almacén", SIN_VALOR, sinDatos),
   ].join("");
 }
 
-export function renderizarTarjetaPedido(pedido) {
+function etiquetaEsperaPedido(creadoEn, ahora) {
+  if (!creadoEn) return "";
+  const espera = esperaDe(creadoEn, ahora);
+  if (espera.horas == null) return "";
+  return html`<span class="panel-espera panel-espera-${espera.nivel}">${seguro(icono("reloj"))}${espera.texto}</span>`;
+}
+
+export function renderizarTarjetaPedido(pedido, { prioritario = true, ahora = new Date() } = {}) {
   const accion = ACCION_POR_ESTADO[pedido.estado];
+  const claseBoton = prioritario ? "panel-boton-accion" : "panel-boton-secundario panel-boton-cola";
   const boton = accion
-    ? html`<button type="button" class="panel-boton panel-boton-accion" data-accion="${accion.accion}" data-pedido="${pedido.idPedido}">${accion.texto}</button>`
+    ? html`<button type="button" class="panel-boton ${claseBoton}" data-accion="${accion.accion}" data-pedido="${pedido.idPedido}">${accion.texto}</button>`
     : "";
+  const espera = etiquetaEsperaPedido(pedido.creadoEn, ahora);
+  const cliente = pedido.clienteNombre ? html`<p class="panel-pedido-cliente">${pedido.clienteNombre}</p>` : "";
   return html`<li><article class="panel-pedido">
-  <p class="panel-pedido-numero">Pedido #${pedido.idPedido}</p>
+  <div class="panel-pedido-cabecera">
+    <p class="panel-pedido-numero">Pedido #${pedido.idPedido}</p>
+    ${seguro(espera)}
+  </div>
+  ${seguro(cliente)}
   <p class="panel-pedido-detalle">${resumenArticulos(pedido)}</p>
   <p class="panel-pedido-monto">${seguro(formatoPrecio(pedido.total))}</p>
   ${seguro(boton)}
@@ -85,11 +137,13 @@ function cabeceraColumna(estado, contador) {
 }
 
 /** Columna de la cola con su contador; «Sin pedidos» si está vacía. */
-export function renderizarColumna(estado, pedidos) {
+export function renderizarColumna(estado, pedidos, ahora = new Date()) {
   const resto = pedidos.length - MAX_PEDIDOS_POR_COLUMNA;
-  const verMas = resto > 0 ? `<a class="panel-enlace panel-cola-mas" href="#/pedidos">Ver ${resto} más</a>` : "";
+  const verMas = resto > 0 ? `<a class="panel-enlace panel-cola-mas" href="#/pedidos?estado=${estado}">Ver ${resto} más</a>` : "";
+  const esAccionPrioritaria = estado !== "DESPACHADO";
   const contenido = pedidos.length
-    ? html`<ul class="panel-cola-lista">${seguro(pedidos.slice(0, MAX_PEDIDOS_POR_COLUMNA).map(renderizarTarjetaPedido).join(""))}</ul>${seguro(verMas)}`
+    ? html`<ul class="panel-cola-lista">${seguro(pedidos.slice(0, MAX_PEDIDOS_POR_COLUMNA)
+      .map((p, i) => renderizarTarjetaPedido(p, { prioritario: esAccionPrioritaria && i === 0, ahora })).join(""))}</ul>${seguro(verMas)}`
     : '<p class="panel-vacio">Sin pedidos</p>';
   return html`<section class="panel-cola-columna" aria-label="${COLUMNAS[estado].titulo}">
   ${seguro(cabeceraColumna(estado, pedidos.length))}
@@ -100,33 +154,51 @@ export function renderizarColumna(estado, pedidos) {
 function renderizarColumnaCargando(estado) {
   return html`<section class="panel-cola-columna" aria-label="${COLUMNAS[estado].titulo}">
   <h3 class="panel-cola-titulo">${COLUMNAS[estado].titulo}</h3>
-  ${seguro(renderizarCargando())}
+  ${seguro(renderizarSkeletonsLista(2))}
 </section>`;
 }
 
-/** Lista de stock crítico (ya filtrada por stockCritico) o el texto del bloque si está vacía. */
+/** Lista de stock crítico (ya filtrada por stockCritico) con acción rápida «+ Reponer». */
 export function renderizarStockCritico(lista) {
-  if (!lista.length) return '<p class="panel-vacio">Todo el stock está sobre el mínimo.</p>';
+  if (!lista.length) {
+    return `<div class="panel-vacio-ok">
+  ${cuadroIcono("verificacion", "verde")}
+  <p>Todo el stock está sobre el mínimo.</p>
+</div>`;
+  }
   const filas = lista.map((p) => {
     const { texto, variante } = etiquetaStock(p.stock);
-    return html`<li class="panel-fila-stock"><span>${p.nombre}</span><span class="panel-insignia panel-insignia-${variante}">${texto}</span></li>`;
+    return html`<li class="panel-fila-stock">
+  <div class="panel-stock-info">
+    <span class="panel-stock-nombre">${p.nombre}</span>
+    <span class="panel-insignia panel-insignia-${variante}">${texto}</span>
+  </div>
+  <button type="button" class="panel-boton panel-boton-secundario panel-boton-reponer" data-reponer-producto="${p.id}" aria-label="Reponer ${p.nombre}">+ Reponer</button>
+</li>`;
   });
   return html`<ul class="panel-lista-stock">${seguro(filas.join(""))}</ul>`;
 }
 
-/** Estructura completa del Inicio con los bloques en estado «Cargando…». */
-export function renderizarInicioAlmacen() {
+/** Estructura completa del Inicio con skeletons equivalentes durante la carga inicial. */
+export function renderizarInicioAlmacen({ hoy = new Date() } = {}) {
   return html`<div class="panel-inicio">
-  <header class="panel-encabezado">
-    <h1 class="panel-titulo">Inicio</h1>
-    <p class="panel-apoyo">Pedidos por preparar y mercadería que necesita reposición.</p>
+  <header class="panel-encabezado panel-encabezado-acciones">
+    <div>
+      <p class="panel-fecha">${fechaDeHoy(hoy)}</p>
+      <h1 class="panel-titulo">Inicio</h1>
+      <p class="panel-apoyo">Pedidos por preparar y mercadería que necesita reposición.</p>
+    </div>
+    <div class="panel-acciones-encabezado">
+      <a class="panel-boton panel-boton-secundario" href="#/inventario">${seguro(icono("inventario"))}<span>Ir al kardex</span></a>
+      <a class="panel-boton panel-boton-principal" href="#/pedidos">${seguro(icono("pedidos"))}<span>Ver pedidos</span></a>
+    </div>
   </header>
   <nav class="panel-chips-rapidos" aria-label="Accesos rápidos">
     <a class="panel-chip" href="#/inicio" aria-current="page">Inicio</a>
     <a class="panel-chip" href="#/pedidos">Pedidos</a>
     <a class="panel-chip" href="#/inventario">Kardex</a>
   </nav>
-  <section id="inicio-indicadores" class="panel-kpis" aria-label="Indicadores" aria-busy="true">${seguro(renderizarCargando())}</section>
+  <section id="inicio-indicadores" class="panel-kpis" aria-label="Indicadores" aria-busy="true">${seguro(renderizarSkeletonsKpi(4))}</section>
   <div class="panel-inicio-rejilla panel-inicio-rejilla-cola">
     <section class="panel-tarjeta panel-bloque-cola" aria-labelledby="inicio-titulo-cola">
       <div class="panel-bloque-cabecera">
@@ -137,24 +209,28 @@ export function renderizarInicioAlmacen() {
     </section>
     <div class="panel-inicio-lateral">
       <section class="panel-tarjeta" aria-labelledby="inicio-titulo-stock">
-        <h2 id="inicio-titulo-stock" class="panel-subtitulo">Stock crítico</h2>
-        <div id="inicio-stock" aria-busy="true">${seguro(renderizarCargando())}</div>
+        <div class="panel-bloque-cabecera">
+          <h2 id="inicio-titulo-stock" class="panel-subtitulo">Stock crítico</h2>
+          <a class="panel-enlace" href="#/inventario">Ver kardex</a>
+        </div>
+        <div id="inicio-stock" aria-busy="true">${seguro(renderizarSkeletonsLista(4))}</div>
       </section>
       <section class="panel-tarjeta" aria-labelledby="inicio-titulo-entrada">
         <h2 id="inicio-titulo-entrada" class="panel-subtitulo">Entrada rápida de mercadería</h2>
         <form id="inicio-form-entrada" class="panel-formulario" novalidate>
           <label for="inicio-producto-entrada" class="form-label">Producto</label>
-          <select id="inicio-producto-entrada" class="form-select" required>
+          <select id="inicio-producto-entrada" class="form-select" aria-describedby="inicio-stock-producto-ayuda inicio-errores-entrada" required>
             <option value="">Selecciona un producto</option>
           </select>
+          <p id="inicio-stock-producto-ayuda" class="panel-ayuda" role="status" aria-live="polite" hidden></p>
           <div class="panel-formulario-fila">
             <div class="panel-campo">
               <label for="inicio-cantidad-entrada" class="form-label">Cantidad</label>
-              <input id="inicio-cantidad-entrada" class="form-control" type="number" min="1" step="1" inputmode="numeric" required>
+              <input id="inicio-cantidad-entrada" class="form-control" type="number" min="1" step="1" inputmode="numeric" placeholder="Ej.: 10" aria-describedby="inicio-errores-entrada" required>
             </div>
             <div class="panel-campo">
               <label for="inicio-motivo-entrada" class="form-label">Motivo</label>
-              <input id="inicio-motivo-entrada" class="form-control" type="text" maxlength="${MAX_MOTIVO_ENTRADA}" required>
+              <input id="inicio-motivo-entrada" class="form-control" type="text" maxlength="${MAX_MOTIVO_ENTRADA}" placeholder="Ej.: Reposición de proveedor" aria-describedby="inicio-errores-entrada" required>
             </div>
           </div>
           <div id="inicio-errores-entrada" class="panel-errores-formulario" role="alert"></div>
@@ -183,6 +259,7 @@ export function montar(contenedor, { servicios }) {
   const zonaStock = buscar("inicio-stock");
   const formulario = buscar("inicio-form-entrada");
   const campoProducto = buscar("inicio-producto-entrada");
+  const ayudaStockProducto = buscar("inicio-stock-producto-ayuda");
   const campoCantidad = buscar("inicio-cantidad-entrada");
   const campoMotivo = buscar("inicio-motivo-entrada");
   const zonaErrores = buscar("inicio-errores-entrada");
@@ -195,6 +272,19 @@ export function montar(contenedor, { servicios }) {
 
   const ocupado = (zona, valor) => (valor ? zona.setAttribute("aria-busy", "true") : zona.removeAttribute("aria-busy"));
 
+  function actualizarAyudaStock() {
+    if (!ayudaStockProducto) return;
+    const seleccionado = (productos ?? []).find((p) => String(p.id) === campoProducto.value);
+    if (!seleccionado) {
+      ayudaStockProducto.hidden = true;
+      ayudaStockProducto.textContent = "";
+      return;
+    }
+    const stock = Math.max(0, Number(seleccionado.stock) || 0);
+    ayudaStockProducto.hidden = false;
+    ayudaStockProducto.textContent = `Stock actual: ${plural(stock, "unidad", "unidades")}.`;
+  }
+
   function pintarIndicadores() {
     const calculo = calcularIndicadoresAlmacen(pedidos ?? [], productos ?? []);
     zonaIndicadores.innerHTML = renderizarIndicadores({
@@ -206,6 +296,7 @@ export function montar(contenedor, { servicios }) {
 
   async function cargarPedidos() {
     ocupado(zonaCola, true);
+    zonaCola.innerHTML = ESTADOS_COLA.map(renderizarColumnaCargando).join("");
     try {
       const respuesta = await apiRequest("/api/pedidos/operativos");
       pedidos = await respuesta.json();
@@ -227,10 +318,12 @@ export function montar(contenedor, { servicios }) {
     campoProducto.replaceChildren(new Option("Selecciona un producto", ""),
       ...opciones.map((p) => new Option(p.nombre, String(p.id))));
     if (opciones.some((p) => String(p.id) === elegido)) campoProducto.value = elegido;
+    actualizarAyudaStock();
   }
 
   async function cargarProductos() {
     ocupado(zonaStock, true);
+    zonaStock.innerHTML = renderizarSkeletonsLista(4);
     try {
       const respuesta = await apiRequest("/api/productos");
       productos = await respuesta.json();
@@ -287,10 +380,25 @@ export function montar(contenedor, { servicios }) {
     });
   }
 
+  function reponerProducto(productoId) {
+    campoProducto.value = String(productoId);
+    campoProducto.removeAttribute("aria-invalid");
+    actualizarAyudaStock();
+    formulario.scrollIntoView?.({ block: "nearest", behavior: "smooth" });
+    campoCantidad.focus();
+  }
+
+  campoProducto.addEventListener("change", actualizarAyudaStock);
+
   contenedor.addEventListener("click", (evento) => {
     const reintentar = evento.target.closest("[data-reintentar]");
     if (reintentar) {
       void (reintentar.dataset.reintentar === "pedidos" ? recargarPedidos() : recargarProductos());
+      return;
+    }
+    const reponer = evento.target.closest("[data-reponer-producto]");
+    if (reponer) {
+      reponerProducto(reponer.dataset.reponerProducto);
       return;
     }
     const accion = evento.target.closest("[data-accion]");
@@ -320,7 +428,9 @@ export function montar(contenedor, { servicios }) {
       return;
     }
     mostrarErrores({});
+    const textoOriginal = botonEntrada.textContent;
     botonEntrada.disabled = true;
+    botonEntrada.textContent = "Registrando...";
     botonEntrada.setAttribute("aria-busy", "true");
     try {
       await apiRequest("/api/inventario/entradas", { method: "POST", json: resultado.cuerpo });
@@ -335,6 +445,7 @@ export function montar(contenedor, { servicios }) {
       mostrarErrores({ servidor: error.message });
     } finally {
       botonEntrada.disabled = false;
+      botonEntrada.textContent = textoOriginal;
       botonEntrada.removeAttribute("aria-busy");
     }
   });

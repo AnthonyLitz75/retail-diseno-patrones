@@ -34,5 +34,13 @@ export function montar(contenedor, { entrada, servicios }) {
     acciones: { mostrarToast },
   });
 
-  return { alMostrar: () => controlador.cargarPreguntasVendedor() };
+  return {
+    async alMostrar(parametros) {
+      await controlador.cargarPreguntasVendedor();
+      if (parametros?.consulta) {
+        controlador.enfocarConsulta(parametros.consulta);
+        servicios.reemplazarRuta?.("#/consultas");
+      }
+    },
+  };
 }

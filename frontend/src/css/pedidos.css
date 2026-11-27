@@ -217,6 +217,27 @@
     margin-top: 0;
     font-size: 0.9rem;
   }
+
+  #seccion-pedidos .card-body,
+  .order-card-header,
+  .order-card-body {
+    padding: 1rem;
+  }
+
+  .order-shipping-box {
+    padding: 0.75rem 1rem;
+  }
+
+  .order-product-item {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    padding: 0.75rem;
+  }
+
+  .filtro-pedido {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
 }
 
 /* Banner de Pedido Cancelado */
@@ -391,6 +412,9 @@
 }
 
 .filtro-pedido {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   padding: 0.4rem 0.95rem;
   border: 1.5px solid var(--retail-border);
   border-radius: 999px;
@@ -404,4 +428,81 @@
   border-color: var(--retail-navy);
   background: var(--retail-navy);
   color: var(--retail-surface);
+}
+
+/* Estados de carga y error para Mis compras y Mi atención en la tienda */
+.storefront .panel-esqueleto-lista {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.storefront .panel-esqueleto-fila {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--retail-border);
+  border-radius: 12px;
+  background: var(--retail-surface);
+}
+
+.storefront .panel-esqueleto {
+  display: inline-block;
+  height: 1rem;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #eef2f7 25%, #e2e8f0 50%, #eef2f7 75%);
+  background-size: 200% 100%;
+  animation: store-esqueleto-pulso 1.3s ease-in-out infinite;
+}
+
+.storefront .panel-esqueleto-titulo {
+  width: min(14rem, 60%);
+}
+
+.storefront .panel-esqueleto-accion {
+  width: 6rem;
+  height: 44px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.storefront .panel-error {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.storefront .panel-boton-secundario {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 1rem;
+  border: 1px solid var(--retail-border);
+  border-radius: 10px;
+  background: var(--retail-surface);
+  color: var(--retail-navy);
+  font-weight: 600;
+}
+
+@keyframes store-esqueleto-pulso {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .storefront .panel-esqueleto {
+    animation: none;
+  }
 }

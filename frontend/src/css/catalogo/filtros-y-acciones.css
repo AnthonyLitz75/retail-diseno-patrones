@@ -53,7 +53,11 @@
 }
 
 .product-card-question-btn {
-  font-size: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  font-size: 0.78rem;
 }
 
 /* Barra Compacta de Filtros */
@@ -80,6 +84,9 @@
 }
 
 .filter-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   padding: 0.4rem 0.9rem;
   border-radius: 999px;
   border: 1px solid var(--retail-border);
@@ -93,14 +100,14 @@
 }
 
 .filter-chip:hover {
-  border-color: var(--retail-blue);
-  color: var(--retail-blue);
+  border-color: var(--retail-blue-dark);
+  color: var(--retail-blue-dark);
 }
 
 .filter-chip.is-active {
-  background: var(--retail-blue);
+  background: var(--retail-blue-dark);
   color: var(--retail-surface);
-  border-color: var(--retail-blue);
+  border-color: var(--retail-blue-dark);
 }
 
 /* Migas de Pan (Breadcrumbs) */
@@ -118,7 +125,7 @@
 }
 
 .store-breadcrumbs .breadcrumb-item a {
-  color: var(--retail-blue);
+  color: var(--retail-blue-dark);
   text-decoration: none;
   font-weight: 500;
   transition: color 0.15s ease;

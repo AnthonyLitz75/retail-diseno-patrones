@@ -80,11 +80,18 @@ export function crearPanelProductos({
   const seccion = el("div", "panel-productos mt-4");
 
   const barra = el("div", "panel-productos-barra");
+  const buscador = el("div", "panel-productos-buscador");
   const busqueda = el("input", "form-control");
   busqueda.type = "search";
   busqueda.id = "buscar-gestion-productos";
   busqueda.placeholder = "Buscar por nombre o código";
   busqueda.setAttribute("aria-label", "Buscar productos por nombre o código");
+  const limpiarBusqueda = el("button", "panel-productos-limpiar", "×");
+  limpiarBusqueda.type = "button";
+  limpiarBusqueda.id = "limpiar-busqueda-productos";
+  limpiarBusqueda.setAttribute("aria-label", "Limpiar búsqueda de productos");
+  limpiarBusqueda.hidden = true;
+  buscador.append(busqueda, limpiarBusqueda);
   const categoria = el("select", "form-select");
   categoria.id = "categoria-gestion-productos";
   categoria.setAttribute("aria-label", "Filtrar por categoría");
@@ -92,11 +99,15 @@ export function crearPanelProductos({
   const pestanas = el("div", "panel-productos-pestanas");
   pestanas.setAttribute("role", "group");
   pestanas.setAttribute("aria-label", "Estado de los productos");
-  barra.append(busqueda, categoria, pestanas);
+  barra.append(buscador, categoria, pestanas);
 
   const estado = el("p", "small text-secondary mt-3 mb-2");
   estado.setAttribute("role", "status");
   estado.setAttribute("aria-live", "polite");
+
+  const reintentar = el("button", "panel-boton panel-boton-secundario mt-2", "Reintentar");
+  reintentar.type = "button";
+  reintentar.hidden = true;
 
   const tabla = el("table", "table align-middle tabla-apilable mb-0 tabla-gestion-productos");
   const cabecera = el("thead");
@@ -120,7 +131,7 @@ export function crearPanelProductos({
   paginacion.setAttribute("aria-label", "Páginas de productos");
   pie.append(rango, paginacion);
 
-  seccion.append(barra, estado, envoltura, pie);
+  seccion.append(barra, estado, reintentar, envoltura, pie);
 
   let productos = [];
   let pestanaActual = "activos";
@@ -179,7 +190,11 @@ export function crearPanelProductos({
     nombre.append(ficha);
     const stock = el("td", `text-end fw-semibold ${producto.stock <= UMBRAL_STOCK_BAJO ? "text-warning-emphasis" : ""}`, String(producto.stock));
     const estadoCelda = el("td");
-    estadoCelda.append(el("span", `badge ${esActivo(producto) ? "text-bg-success" : "text-bg-secondary"}`, esActivo(producto) ? "Activo" : "Desactivado"));
+    estadoCelda.append(el(
+      "span",
+      `panel-insignia ${esActivo(producto) ? "panel-insignia-verde" : "panel-insignia-neutro"}`,
+      esActivo(producto) ? "Activo" : "Desactivado",
+    ));
 
     const acciones = esActivo(producto)
       ? accionesPersonalProducto(producto, {
@@ -204,13 +219,55 @@ export function crearPanelProductos({
     return fila;
   }
 
+  function crearSkeletonsTabla(cantidad = 4) {
+    return Array.from({ length: cantidad }, () => {
+      const fila = el("tr");
+      fila.setAttribute("aria-hidden", "true");
+      for (const ancho of ["65%", "45%", "35%", "25%", "45%", "50%"]) {
+        const celda = el("td");
+        const barraSkeleton = el("span", "panel-esqueleto");
+        barraSkeleton.style.width = ancho;
+        celda.append(barraSkeleton);
+        fila.append(celda);
+      }
+      return fila;
+    });
+  }
+
+  function crearFilaVacia() {
+    const fila = el("tr");
+    const celda = el("td", "text-center py-4 text-secondary");
+    celda.colSpan = COLUMNAS.length;
+    if (productos.length === 0) {
+      celda.textContent = "Aún no hay productos registrados en el catálogo.";
+    } else {
+      const texto = el("p", "mb-2", "No hay productos que coincidan con los filtros.");
+      const limpiar = el("button", "panel-boton panel-boton-secundario", "Limpiar filtros");
+      limpiar.type = "button";
+      limpiar.addEventListener("click", () => {
+        pestanaActual = "activos";
+        categoria.value = "";
+        busqueda.value = "";
+        paginaActual = 1;
+        pintar();
+        busqueda.focus?.();
+      });
+      celda.append(texto, limpiar);
+    }
+    fila.append(celda);
+    return fila;
+  }
+
   function pintar() {
+    limpiarBusqueda.hidden = busqueda.value.length === 0;
+    reintentar.hidden = true;
     pintarPestanas();
     const filtrados = filtrarProductosGestion(productos, { pestana: pestanaActual, categoria: categoria.value, texto: busqueda.value });
     const pagina = paginarLista(filtrados, paginaActual);
     paginaActual = pagina.pagina;
-    cuerpo.replaceChildren(...pagina.items.map(crearFila));
-    estado.textContent = filtrados.length === 0 ? "No hay productos con esos filtros." : "";
+    cuerpo.replaceChildren(...(filtrados.length === 0 ? [crearFilaVacia()] : pagina.items.map(crearFila)));
+    estado.className = "small text-secondary mt-3 mb-2";
+    estado.textContent = filtrados.length === 0 ? "" : `${filtrados.length} ${filtrados.length === 1 ? "producto encontrado" : "productos encontrados"}`;
     rango.textContent = filtrados.length === 0
       ? ""
       : `Mostrando ${pagina.inicio + 1}–${pagina.inicio + pagina.items.length} de ${filtrados.length}`;
@@ -232,14 +289,26 @@ export function crearPanelProductos({
     paginaActual = 1;
     pintar();
   });
+  limpiarBusqueda.addEventListener("click", () => {
+    busqueda.value = "";
+    paginaActual = 1;
+    pintar();
+    busqueda.focus?.();
+  });
   categoria.addEventListener("change", () => {
     paginaActual = 1;
     pintar();
   });
+  reintentar.addEventListener("click", () => {
+    void cargar();
+  });
 
   async function cargar() {
+    reintentar.hidden = true;
     estado.className = "small text-secondary mt-3 mb-2";
     estado.textContent = "Cargando productos…";
+    tabla.setAttribute("aria-busy", "true");
+    if (productos.length === 0) cuerpo.replaceChildren(...crearSkeletonsTabla(4));
     try {
       productos = await listarProductosGestion(apiRequest);
       pintarCategorias();
@@ -248,8 +317,20 @@ export function crearPanelProductos({
       cuerpo.replaceChildren();
       estado.className = "small text-danger mt-3 mb-2";
       estado.textContent = `No se pudieron cargar los productos. ${error.message}`;
+      reintentar.hidden = false;
+    } finally {
+      tabla.removeAttribute("aria-busy");
     }
   }
 
-  return { element: seccion, cargar };
+  function seleccionarPestana(clave) {
+    if (!PESTANAS_PRODUCTOS.some((p) => p.clave === clave)) return false;
+    pestanaActual = clave;
+    paginaActual = 1;
+    if (productos.length > 0) pintar();
+    else pintarPestanas();
+    return true;
+  }
+
+  return { element: seccion, cargar, seleccionarPestana };
 }

@@ -129,6 +129,24 @@ test('obtenerChipsFiltrosActivos genera etiquetas legibles y detecta solo filtro
   assert.deepEqual(chips2[0], { tipo: 'precioMin', label: 'Precio mín: S/ 50.00' })
   assert.deepEqual(chips2[1], { tipo: 'precioMax', label: 'Precio máx: S/ 150.50' })
   assert.deepEqual(chips2[2], { tipo: 'soloEnStock', label: 'Solo en stock' })
+
+  const chipsFav = obtenerChipsFiltrosActivos({ soloFavoritos: true })
+  assert.deepEqual(chipsFav, [{ tipo: 'soloFavoritos', label: 'Solo favoritos' }])
+})
+
+test('aplicarFiltrosYOrden con soloFavoritos filtra por idsFavoritos y combina con soloEnStock', () => {
+  const favs = aplicarFiltrosYOrden(productosMuestra, {
+    soloFavoritos: true,
+    idsFavoritos: [2, 5]
+  })
+  assert.deepEqual(favs.map((p) => p.id), [2, 5])
+
+  const favsStock = aplicarFiltrosYOrden(productosMuestra, {
+    soloFavoritos: true,
+    soloEnStock: true,
+    idsFavoritos: [2, 5]
+  })
+  assert.deepEqual(favsStock.map((p) => p.id), [5])
 })
 
 test('paginarProductos maneja colecciones vacías o no válidas', () => {

@@ -17,11 +17,18 @@ export const CRITERIOS_ORDEN = {
  * @param {object} [opciones={}]
  * @param {string} [opciones.criterioOrden='defecto'] - 'defecto' | 'precio_asc' | 'precio_desc' | 'nombre_asc' | 'nombre_desc'
  * @param {boolean} [opciones.soloEnStock=false] - Si es true, solo incluye productos con stock > 0
+ * @param {boolean} [opciones.soloFavoritos=false] - Si es true, solo incluye IDs en idsFavoritos
+ * @param {Array<number>|null} [opciones.idsFavoritos=null] - Lista de IDs favoritos
  * @returns {Array<object>} Nueva colección ordenada y filtrada
  */
 export function aplicarFiltrosYOrden(
   productos,
-  { criterioOrden = CRITERIOS_ORDEN.DEFECTO, soloEnStock = false } = {},
+  {
+    criterioOrden = CRITERIOS_ORDEN.DEFECTO,
+    soloEnStock = false,
+    soloFavoritos = false,
+    idsFavoritos = null,
+  } = {},
 ) {
   if (!Array.isArray(productos)) {
     return [];
@@ -31,6 +38,15 @@ export function aplicarFiltrosYOrden(
 
   if (soloEnStock) {
     resultado = resultado.filter((producto) => Number(producto?.stock) > 0);
+  }
+
+  if (soloFavoritos) {
+    const favoritosSet = new Set(
+      (Array.isArray(idsFavoritos) ? idsFavoritos : []).map(Number),
+    );
+    resultado = resultado.filter((producto) =>
+      favoritosSet.has(Number(producto?.id)),
+    );
   }
 
   switch (criterioOrden) {
@@ -80,6 +96,7 @@ export function obtenerChipsFiltrosActivos({
   precioMin = "",
   precioMax = "",
   soloEnStock = false,
+  soloFavoritos = false,
 } = {}) {
   const chips = [];
 
@@ -105,6 +122,10 @@ export function obtenerChipsFiltrosActivos({
 
   if (soloEnStock) {
     chips.push({ tipo: "soloEnStock", label: "Solo en stock" });
+  }
+
+  if (soloFavoritos) {
+    chips.push({ tipo: "soloFavoritos", label: "Solo favoritos" });
   }
 
   return chips;

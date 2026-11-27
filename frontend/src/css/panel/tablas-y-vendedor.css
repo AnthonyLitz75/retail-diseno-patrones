@@ -69,6 +69,37 @@
   text-decoration: none;
 }
 
+#inicio-titulo-stock-bajo,
+#inicio-titulo-consultas {
+  padding-right: 6.5rem;
+}
+
+.panel-stock-nombre { display: block; }
+.panel-stock-meta { display: block; margin-top: 2px; font-size: 12px; font-weight: 500; color: var(--panel-texto-secundario); }
+
+.panel-tabla-stock td:nth-child(3),
+.panel-tabla-stock td:nth-child(4) {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.panel-consulta-cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  margin-bottom: 2px;
+}
+
+.panel-consulta-cliente {
+  font-size: 12px;
+  color: var(--panel-texto-secundario);
+}
+
+.panel-estado-enlace { color: inherit; text-decoration: none; }
+.panel-estado-enlace:hover, .panel-estado-enlace:focus-visible { text-decoration: underline; }
+.panel-consulta-enfocada { border-color: var(--retail-blue) !important; box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.14); }
+
 /* «Ver los {n}» y «Ver todas» llegan dentro del bloque que carga el módulo: se anclan a la
    línea del título, a la derecha. */
 .panel-bloque-enlace {

@@ -39,8 +39,8 @@
 }
 
 .section-carousel-btn {
-  width: 32px;
-  height: 32px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   border: 1px solid var(--retail-border);
   background: var(--retail-surface);
@@ -53,9 +53,9 @@
 }
 
 .section-carousel-btn:hover {
-  background: var(--retail-blue);
+  background: var(--retail-blue-dark);
   color: var(--retail-surface);
-  border-color: var(--retail-blue);
+  border-color: var(--retail-blue-dark);
 }
 
 /* Track de Carrusel Horizontal */
@@ -122,23 +122,27 @@
 }
 
 .product-fav-btn {
+  width: 44px;
+  height: 44px;
+  margin: -6px 0 -6px -8px;
   background: transparent;
   border: none;
+  border-radius: 50%;
   padding: 0;
   cursor: pointer;
-  color: #94a3b8;
+  color: var(--retail-muted);
   display: grid;
   place-items: center;
   transition: color 0.15s ease, transform 0.15s ease;
 }
 
 .product-fav-btn:hover {
-  color: #ef4444;
-  transform: scale(1.15);
+  color: #dc2626;
+  transform: scale(1.1);
 }
 
 .product-fav-btn.is-favorite {
-  color: #ef4444;
+  color: #dc2626;
 }
 
 .product-badge-discount {
@@ -152,7 +156,7 @@
 }
 
 .product-badge-new {
-  background: var(--retail-blue);
+  background: var(--retail-blue-dark);
   color: var(--retail-surface);
   font-size: 0.72rem;
   font-weight: 700;
@@ -245,6 +249,7 @@
   border: none;
   border-radius: 8px;
   width: 100%;
+  min-height: 44px;
   padding: 0.6rem 1rem;
   font-size: 0.85rem;
   font-weight: 700;
@@ -253,21 +258,22 @@
 }
 
 .product-btn-add:hover:not(:disabled) {
-  background: var(--retail-blue);
+  background: var(--retail-blue-dark);
   transform: translateY(-1px);
 }
 
-/* Estado Agotado */
-.product-card.is-out-of-stock {
-  opacity: 0.75;
+/* Estado Agotado: atenuar solo imagen/botón para conservar el contraste del texto */
+.product-card.is-out-of-stock .product-image-box {
+  opacity: 0.65;
 }
 
 .product-btn-agotado {
   background: var(--retail-border);
-  color: var(--retail-muted);
+  color: #475569;
   border: none;
   border-radius: 8px;
   width: 100%;
+  min-height: 44px;
   padding: 0.6rem 1rem;
   font-size: 0.85rem;
   font-weight: 700;

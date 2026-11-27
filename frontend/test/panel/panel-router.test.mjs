@@ -66,8 +66,18 @@ test("con un parámetro repetido vale el primero", () => {
   assert.deepEqual(resolverRuta("#/consulta-pedido?pedido=3&pedido=9", "SOPORTE").parametros, { pedido: "3" });
 });
 
-test("los parámetros que la ruta no usa se ignoran sin redirigir", () => {
-  const r = resolverRuta("#/pedidos?pedido=3&x=1", "ALMACEN");
+test("los parámetros declarados se pasan al controlador y los desconocidos se ignoran sin redirigir", () => {
+  const conConocidos = resolverRuta("#/pedidos?estado=PENDIENTE&pedido=3&x=1", "ALMACEN");
+  assert.equal(conConocidos.ruta, "#/pedidos");
+  assert.deepEqual(conConocidos.parametros, { estado: "PENDIENTE", pedido: "3" });
+  assert.equal(conConocidos.redireccion, undefined);
+
+  const inv = resolverRuta("#/inventario?producto=7&otro=1", "ALMACEN");
+  assert.equal(inv.ruta, "#/inventario");
+  assert.deepEqual(inv.parametros, { producto: "7" });
+  assert.equal(inv.redireccion, undefined);
+
+  const r = resolverRuta("#/pedidos?x=1", "ALMACEN");
   assert.equal(r.ruta, "#/pedidos");
   assert.deepEqual(r.parametros, {});
   assert.equal(r.redireccion, undefined);
@@ -330,7 +340,7 @@ test("alMostrar se llama cada vez que se muestra la pantalla, también la primer
 test("alMostrar recibe los parámetros de la ruta", async () => {
   const e = entornoConGancho("#/pedidos?pedido=3");
   await e.router.iniciar();
-  assert.deepEqual(e.llamadas, [["#/pedidos", {}]]);
+  assert.deepEqual(e.llamadas, [["#/pedidos", { pedido: "3" }]]);
 });
 
 test("una pantalla sin alMostrar se muestra igual", async () => {

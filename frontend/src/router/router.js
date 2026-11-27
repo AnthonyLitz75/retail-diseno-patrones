@@ -90,6 +90,7 @@ export function configurarEnrutadorSPA({
     cargarProductos,
     cargarArbolCategorias,
     sincronizarCategoriaDestacada,
+    establecerSoloFavoritos,
     cambiarVista,
     agregarProductoAlCarrito,
     abrirModalPreguntas,
@@ -174,16 +175,29 @@ export function configurarEnrutadorSPA({
     }
 
     if (rutaInfo.tipo === "catalogo") {
+      const pideFavoritos = rutaInfo.query?.favoritos === "1";
       mostrarTienda();
       if (bloqueVitrinaInicio) bloqueVitrinaInicio.hidden = true;
       if (bloqueCatalogoCompleto) bloqueCatalogoCompleto.hidden = false;
-      const crumbs = construirBreadcrumbs(rutaInfo, estado.categoriasArbol);
+      const crumbs = pideFavoritos
+        ? [
+            { etiqueta: "Inicio", url: "#/", esActivo: false },
+            { etiqueta: "Catálogo", url: "#/catalogo", esActivo: false },
+            { etiqueta: "Favoritos", esActivo: true },
+          ]
+        : construirBreadcrumbs(rutaInfo, estado.categoriasArbol);
       renderizarCrumbs(crumbs);
-      if (filtroCategoria && filtroCategoria.value !== "") {
+      const cambioCategoria = filtroCategoria && filtroCategoria.value !== "";
+      if (cambioCategoria) {
         filtroCategoria.value = "";
         if (typeof sincronizarCategoriaDestacada === "function")
           sincronizarCategoriaDestacada();
+      }
+      if (cambioCategoria || !estado.productosDisponibles?.length) {
         if (typeof cargarProductos === "function") await cargarProductos();
+      }
+      if (typeof establecerSoloFavoritos === "function") {
+        establecerSoloFavoritos(pideFavoritos);
       }
       if (typeof document !== "undefined") {
         document

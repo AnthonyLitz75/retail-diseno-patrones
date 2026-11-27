@@ -57,11 +57,11 @@ test("2: «Ver los {n}» y «Ver todas» (Vendedor) se anclan a la línea del t�
 
 const pedido = (id) => ({ idPedido: id, estado: "PENDIENTE", total: 10, productos: [{ nombreProducto: "X", cantidad: 1 }] });
 
-test("3: la columna muestra como máximo 4 pedidos y «Ver {n} más» → #/pedidos; el contador sigue siendo el total", () => {
+test("3: la columna muestra como máximo 4 pedidos y «Ver {n} más» → #/pedidos?estado=…; el contador sigue siendo el total", () => {
   assert.equal(MAX_PEDIDOS_POR_COLUMNA, 4);
   const seis = renderizarColumna("PENDIENTE", [1, 2, 3, 4, 5, 6].map(pedido));
   assert.equal(cuenta(seis, /<article class="panel-pedido">/g), 4);
-  assert.match(seis, /<a class="panel-enlace panel-cola-mas" href="#\/pedidos">Ver 2 más<\/a>/);
+  assert.match(seis, /<a class="panel-enlace panel-cola-mas" href="#\/pedidos\?estado=PENDIENTE">Ver 2 más<\/a>/);
   assert.match(seis, /panel-insignia[^>]*>6</, "el contador sigue en 6");
   const cuatro = renderizarColumna("PENDIENTE", [1, 2, 3, 4].map(pedido));
   assert.equal(cuenta(cuatro, /<article/g), 4);
@@ -90,12 +90,13 @@ test("4: Cantidad y Motivo comparten fila (1 parte y 2 partes); apilados por deb
 
 // ---------- 5. Catálogo ----------
 
-test("5: cada barra del catálogo es una fila: etiqueta, barra y número", () => {
-  const html = renderizarCatalogo({ activos: 32, desactivados: 4, stockBajo: 2 });
-  assert.match(html, /<div class="panel-barra-fila">\s*<p class="panel-barra-etiqueta">Activos<\/p>\s*<div class="panel-barra" aria-hidden="true">[\s\S]*?<\/div><\/div>\s*<p class="panel-barra-cantidad">32<\/p>/);
-  assert.match(html, />Desactivados<\/p>[\s\S]*?panel-barra-cantidad">4</);
-  assert.match(regla(".panel-barra-fila"), /display:\s*grid/);
-  assert.match(regla(".panel-barra-fila"), /grid-template-columns:\s*minmax\([^)]*\)\s+minmax\(0, 1fr\)\s+auto/);
+test("5: la tarjeta del catálogo usa segmentos y casillas por estado de stock", () => {
+  const html = renderizarCatalogo({ activos: 32, desactivados: 4, stockBajo: 2, agotado: 1 });
+  assert.match(html, /<div class="panel-segmentos" aria-hidden="true">/);
+  assert.match(html, />En stock<\/a><span class="panel-estado-numero">30</);
+  assert.match(html, />Stock bajo<\/a><span class="panel-estado-numero">1</);
+  assert.match(html, />Agotado<\/a><span class="panel-estado-numero">1</);
+  assert.match(html, />Desactivados<\/a><span class="panel-estado-numero">4</);
 });
 
 // ---------- 6. Soporte ----------

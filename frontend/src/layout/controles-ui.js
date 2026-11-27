@@ -4,7 +4,7 @@
  */
 
 import { generarSlug } from "../router/parser-rutas.js";
-import { esFavorito } from "../catalogo/componentes/favoritos.js";
+import { obtenerFavoritos } from "../catalogo/componentes/favoritos.js";
 import { enlacesCategorias, pintarChipsCategorias } from "../catalogo/vistas/explorar.js";
 
 /**
@@ -29,11 +29,9 @@ export function configurarControlesUI({
     bloqueCatalogoCompleto,
     vistaDetalleProducto,
     vista404,
-    estadoCatalogo,
   } = elementos;
 
   const {
-    mostrarProductos,
     mostrarToast,
     manejarRutaHash,
   } = acciones;
@@ -188,21 +186,21 @@ export function configurarControlesUI({
     const dockBtnFavoritos = document.querySelector("#dock-btn-favoritos");
     if (dockBtnFavoritos) {
       dockBtnFavoritos.addEventListener("click", () => {
-        const productosFav = (estado.productosDisponibles || []).filter((p) => esFavorito(p.id));
-        if (productosFav.length > 0) {
-          if (typeof mostrarProductos === "function") {
-            mostrarProductos(productosFav);
-          }
-          if (estadoCatalogo) {
-            estadoCatalogo.textContent = `Mostrando ${productosFav.length} producto(s) en tus favoritos`;
-          }
-          document.querySelector("#productos")?.scrollIntoView({ behavior: "smooth" });
-        } else {
+        if (obtenerFavoritos().length === 0) {
           if (typeof mostrarToast === "function") {
             mostrarToast(
               "Aún no tienes productos guardados en favoritos. Haz clic en el corazón de cualquier tarjeta.",
               "info",
             );
+          }
+          return;
+        }
+        if (typeof window !== "undefined") {
+          const destino = "#/catalogo?favoritos=1";
+          if (window.location.hash === destino) {
+            if (typeof manejarRutaHash === "function") manejarRutaHash();
+          } else {
+            window.location.hash = destino;
           }
         }
       });

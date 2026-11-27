@@ -164,3 +164,38 @@ test("destruirRouter remueve el listener de hashchange en window", () => {
   destruirRouter();
   assert.equal(eventoRemovido, "hashchange");
 });
+
+test("#/catalogo?favoritos=1 activa el filtro de favoritos y #/catalogo lo desactiva", async () => {
+  global.window = {
+    location: { hash: "#/catalogo?favoritos=1" },
+    addEventListener() {},
+    removeEventListener() {},
+  };
+
+  const vistaTienda = global.document.createElement("div");
+  const bloqueVitrina = global.document.createElement("div");
+  const bloqueCatalogo = global.document.createElement("div");
+  const llamadasFavoritos = [];
+
+  const router = configurarEnrutadorSPA({
+    estado: { productosDisponibles: [{ id: 1, nombre: "Teclado" }] },
+    elementos: {
+      vistaTienda,
+      bloqueVitrinaInicio: bloqueVitrina,
+      bloqueCatalogoCompleto: bloqueCatalogo,
+    },
+    acciones: {
+      establecerSoloFavoritos: (activo) => llamadasFavoritos.push(activo),
+    },
+  });
+
+  await router.manejarRutaHash();
+  assert.equal(vistaTienda.hidden, false);
+  assert.equal(bloqueVitrina.hidden, true);
+  assert.equal(bloqueCatalogo.hidden, false);
+  assert.deepEqual(llamadasFavoritos, [true]);
+
+  global.window.location.hash = "#/catalogo";
+  await router.manejarRutaHash();
+  assert.deepEqual(llamadasFavoritos, [true, false]);
+});

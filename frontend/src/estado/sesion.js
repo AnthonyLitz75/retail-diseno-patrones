@@ -59,6 +59,7 @@ export function configurarSesionYVistas({
     mostrarToast,
     hayCarritoInvitado,
     onCambioVista,
+    onActualizarCuenta,
   } = acciones;
 
   let vistaActiva = "tienda";
@@ -161,6 +162,7 @@ export function configurarSesionYVistas({
     if (typeof establecerUsuarioSesion === "function") {
       establecerUsuarioSesion(usuario);
     }
+    onActualizarCuenta?.(usuario);
 
     if (enlaceLogin) enlaceLogin.hidden = true;
     if (enlaceRegistro) enlaceRegistro.hidden = true;
@@ -219,6 +221,7 @@ export function configurarSesionYVistas({
     if (typeof establecerUsuarioSesion === "function") {
       establecerUsuarioSesion(null);
     }
+    onActualizarCuenta?.(null);
     estado.preguntasCliente = [];
 
     if (seccionGestionProductos) seccionGestionProductos.hidden = true;

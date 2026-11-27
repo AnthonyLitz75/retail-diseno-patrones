@@ -1,4 +1,5 @@
 const CLAVE_STORAGE_FAVORITOS = 'retail_wishlist'
+export const EVENTO_FAVORITOS = 'retail:favoritos-actualizados'
 
 /**
  * Obtiene el conjunto de IDs de productos en favoritos desde localStorage
@@ -55,6 +56,10 @@ export function alternarFavorito(productoId) {
     } catch (err) {
       console.warn('No se pudo guardar la lista de favoritos:', err)
     }
+  }
+
+  if (typeof document !== 'undefined' && typeof CustomEvent === 'function') {
+    document.dispatchEvent(new CustomEvent(EVENTO_FAVORITOS, { detail: { total: favoritos.length } }))
   }
 
   return { activo, total: favoritos.length }

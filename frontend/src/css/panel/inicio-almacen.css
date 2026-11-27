@@ -58,9 +58,24 @@
   margin: 0;
 }
 
+.panel-pedido-cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 8px;
+}
+
 .panel-pedido-numero {
   font-weight: 700;
   color: var(--retail-navy);
+}
+
+.panel-pedido-cliente {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--retail-ink);
+  overflow-wrap: anywhere;
 }
 
 .panel-pedido-detalle {
@@ -80,6 +95,14 @@
   white-space: nowrap;
 }
 
+.panel-pedido .panel-boton-cola {
+  width: 100%;
+  margin-top: 8px;
+  padding-inline: 8px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
 .panel-cola-mas {
   justify-content: center;
   width: 100%;
@@ -91,8 +114,29 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  min-width: 0;
   padding-bottom: 12px;
   border-bottom: 1px solid var(--panel-borde-fila);
+}
+
+.panel-stock-info {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  min-width: 0;
+}
+
+.panel-stock-info .panel-stock-nombre {
+  font-weight: 600;
+  color: var(--retail-navy);
+  overflow-wrap: anywhere;
+}
+
+.panel-boton-reponer {
+  flex-shrink: 0;
+  min-height: var(--panel-alto-pulsable);
+  white-space: nowrap;
 }
 
 .panel-fila-stock:last-child {
@@ -187,7 +231,8 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .panel-pedido .panel-boton-accion {
+  .panel-pedido .panel-boton-accion,
+  .panel-pedido .panel-boton-cola {
     min-height: 48px;
   }
 }
@@ -198,8 +243,23 @@
     overflow-wrap: normal;
   }
 
+  .panel-fila-stock {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .panel-boton-reponer {
+    width: 100%;
+    min-height: 48px;
+  }
+
   .panel-formulario-fila {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .panel-pagina .tabla-apilable tr.panel-fila-estado-kardex td {
+    display: block;
+    text-align: left;
   }
 }
 

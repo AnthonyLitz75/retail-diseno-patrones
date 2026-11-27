@@ -78,8 +78,8 @@ export function renderizarVistaDetalleProducto(producto, {
         <div class="col-12 col-md-6 col-lg-5">
           <div class="product-detail-gallery position-relative rounded-4 p-4 text-center bg-white border">
             <!-- Botón Favorito Flotante -->
-            <button type="button" class="product-detail-fav-btn position-absolute top-0 end-0 m-3 ${esFavorito ? "is-favorite" : ""}" aria-label="Guardar en favoritos" title="Guardar en favoritos">
-              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16">
+            <button type="button" class="product-detail-fav-btn position-absolute top-0 end-0 m-3 ${esFavorito ? "is-favorite" : ""}" aria-pressed="${esFavorito ? "true" : "false"}" aria-label="${esFavorito ? `Quitar ${producto.nombre} de favoritos` : `Guardar ${producto.nombre} en favoritos`}" title="Guardar en favoritos">
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
                 <path fill-rule="evenodd" d="M8 1.314C12.438-3.248 23.534 4.735 8 15-7.534 4.736 3.562-3.248 8 1.314z"/>
               </svg>
             </button>
@@ -248,9 +248,16 @@ export function renderizarVistaDetalleProducto(producto, {
   }
 
   if (btnFav) {
+    let favActual = Boolean(esFavorito);
     btnFav.addEventListener("click", () => {
       onAlternarFavorito();
-      btnFav.classList.toggle("is-favorite");
+      favActual = !favActual;
+      btnFav.classList.toggle("is-favorite", favActual);
+      btnFav.setAttribute?.("aria-pressed", String(favActual));
+      btnFav.setAttribute?.(
+        "aria-label",
+        favActual ? `Quitar ${producto.nombre} de favoritos` : `Guardar ${producto.nombre} en favoritos`,
+      );
     });
   }
 

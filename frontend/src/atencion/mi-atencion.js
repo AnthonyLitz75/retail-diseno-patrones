@@ -13,6 +13,7 @@ import {
 } from "./atencion.js";
 import { formatoPrecio } from "../utilidades/formato.js";
 import { crearElemento as el } from "../utilidades/dom.js";
+import { crearErrorPedidos, crearSkeletonsPedidos } from "../pedidos/pedidos-filtros.js";
 
 /** Estado visible de una pregunta de producto. */
 export function etiquetaEstadoPregunta(pregunta) {
@@ -90,6 +91,10 @@ export function configurarMiAtencion({ apiRequest, contenedor }) {
   async function cargar() {
     estado.className = "small text-secondary mb-2";
     estado.textContent = "Cargando tu atención...";
+    acordeon.setAttribute?.("aria-busy", "true");
+    if (typeof document !== "undefined") {
+      acordeon.replaceChildren(crearSkeletonsPedidos(3));
+    }
     try {
       const [preguntas, reclamos, devoluciones] = await Promise.all([
         apiRequest("/api/preguntas/mis-preguntas").then((r) => r.json()),
@@ -117,6 +122,13 @@ export function configurarMiAtencion({ apiRequest, contenedor }) {
     } catch (error) {
       estado.className = "small text-danger mb-2";
       estado.textContent = `No se pudo cargar tu atención. ${error.message}`;
+      if (typeof document !== "undefined") {
+        acordeon.replaceChildren(
+          crearErrorPedidos(cargar, "No se pudo consultar tu atención en este momento."),
+        );
+      }
+    } finally {
+      acordeon.removeAttribute?.("aria-busy");
     }
   }
 
